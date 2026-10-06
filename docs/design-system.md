@@ -71,6 +71,13 @@ tier-1 *parent*: its tier-2 children are that page's concepts, and `katas.js`
 scroll-spies them, so the sidebar doubles as the page contents. Tier 1 carries
 icons; tier 2 does not.
 
+**Brand mark.** The sibling apps put a two-letter monogram in
+`.hf-sidebar__mark` ("SC", "HR"). Here it carries the site icon's diagram, so
+the sidebar and the browser tab show one mark. `tools/build-icons.py` is the
+single definition: it writes the favicon set and `assets/brand/mark.svg`, which
+`.kt-mark` draws as a CSS mask in `currentColor`, so the mark keeps the
+system's own colours, including `.hf-sidebar--dark`.
+
 **Header.** The three § 9.9 elements, adapted to a site with no sign-in:
 
 | # | Element | Here |

@@ -108,6 +108,20 @@ a.hf-sidebar__brand:focus-visible {
   color: inherit;
 }
 
+/* The brand mark carries the site icon's diagram instead of a two-letter
+   monogram, so the sidebar and the browser tab show the same mark. Drawn as
+   a mask in currentColor, it takes .hf-sidebar__mark's own colours -- white
+   on black, and the inverse in .hf-sidebar--dark -- with no second copy of
+   the shape. Source: tools/build-icons.py -> assets/brand/mark.svg. */
+.kt-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  -webkit-mask: url("../brand/mark.svg") center / contain no-repeat;
+  mask: url("../brand/mark.svg") center / contain no-repeat;
+}
+
 /* .hf-header__title is styled for an <h1>; here it is a <div>, because the
    page's own headline is the document's h1. */
 div.hf-header__title { display: block; }
