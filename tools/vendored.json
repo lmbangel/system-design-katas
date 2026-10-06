@@ -1,0 +1,14 @@
+{
+  "assets/hume-finbiz/hume-finbiz.css": "66cb22799cf4163b82a632291474f322f1bbc431c1f3090bb4b7cae64b4a45ec",
+  "assets/hume-finbiz/hume-finbiz.js": "ae43a78f127bd1b8ad5a4f67f09789d032647b30206cb5d1b40b7615400081bd",
+  "assets/vendor/archivo/archivo.css": "e2270e488e51caf28550ad3b85435ed67cecae95596bd5922d022488b57bb0a2",
+  "assets/vendor/archivo/files/archivo-latin-100-normal.woff2": "d9a497863f4360de7326531d5e6f79ecdcadcbadc4167361926f36c1105f3f45",
+  "assets/vendor/archivo/files/archivo-latin-400-normal.woff2": "07f9160163da2ec0f6376ef9d27a2bb8163f98019ba798da4baafb154e30056e",
+  "assets/vendor/archivo/files/archivo-latin-500-normal.woff2": "ab74eca5ad115fe4cfec82ba641e5d37e4d92c58dfb1bfc1e464e9039c9d17cf",
+  "assets/vendor/archivo/files/archivo-latin-600-normal.woff2": "d9e8c29fdd348edde2a4f9aae438e569dd165bbbdebda78495824a2d9aaa67e8",
+  "assets/vendor/archivo/files/archivo-latin-700-normal.woff2": "abada6cd4c92a9a706f6d7ed3189f322ff43dd78b9402c7d1137465b861d2a04",
+  "assets/vendor/bootstrap-icons/bootstrap-icons.min.css": "f643d6fe7e679f9de3e16311600c5ef5cd6b098f7a3a8828fcc29255d2b33e62",
+  "assets/vendor/bootstrap-icons/fonts/bootstrap-icons.woff": "bb1de989b83970f6f4e54de1cd974c5cba55b73582da5e1b225a6d0edf029483",
+  "assets/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2": "476adf42b40325098fcfa8b36ab3e769186bb4f6ce6a249753e2e1a9c22bf99e",
+  "assets/vendor/bootstrap/bootstrap.min.css": "3c8f27e6009ccfd710a905e6dcf12d0ee3c6f2ac7da05b0572d3e0d12e736fc8"
+}

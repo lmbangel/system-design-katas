@@ -1,0 +1,145 @@
+/* ==========================================================================
+   System design katas - page behaviour
+   Loads after hume-finbiz.js. Vanilla, no dependencies.
+
+   1. Shell        HumeFinbiz.init(): sidebar toggle, collapse, flyouts, the
+                   freshness indicator.
+   2. Freshness    The indicator here reports when the CONTENT was last revised,
+                   not a data sync. HumeFinbiz writes "Last successful sync" into
+                   its title on every render; this puts the true meaning back.
+   3. Code tabs    One code block, three languages. Scoped per block.
+   4. Scroll spy   Marks the tier-2 nav link of the concept on screen.
+   5. Checklist    prep-checklist.html. State persists per item in localStorage.
+
+   Replaces the three inline <script> variants the pages used to carry. The
+   prep checklist's old version toggled each box twice per click (an onclick
+   attribute AND a listener), so a click never visibly did anything.
+   ========================================================================== */
+
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------- 1 shell */
+
+  if (window.HumeFinbiz) {
+    window.HumeFinbiz.init({
+      storageKey: 'hf.shell.katas',
+      sync: { tickMs: 60000 }
+    });
+  }
+
+  // The current page's tier-1 item is a parent (its tier-2 children are the
+  // concepts on this page), so per the system it is bolded, not filled.
+  // init() finds no active leaf link on such a page, falls through to
+  // setActive(), and setActive() clears every .is-current-parent -- put it back.
+  document.querySelectorAll('.hf-nav__item--parent > .hf-nav__link[aria-current="page"]').forEach(function (b) {
+    b.classList.add('is-current-parent');
+  });
+
+  /* -------------------------------------------------------- 2 freshness */
+
+  function retitleSync() {
+    document.querySelectorAll('[data-hf-sync]').forEach(function (el) {
+      var iso = el.getAttribute('data-synced-at');
+      var d = iso ? new Date(iso) : null;
+      if (!d || isNaN(d.getTime())) return;
+      el.setAttribute('title', 'Content last revised ' + d.toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      }));
+    });
+  }
+  retitleSync();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) retitleSync(); });
+  setInterval(retitleSync, 60000);
+
+  /* -------------------------------------------------------- 3 code tabs */
+
+  document.querySelectorAll('.code-block').forEach(function (block) {
+    var tabs = block.querySelectorAll('.tab');
+    var bar = block.querySelector('.code-tabs');
+    if (bar) bar.setAttribute('role', 'tablist');
+
+    tabs.forEach(function (tab) {
+      var pane = document.getElementById(tab.getAttribute('data-target'));
+      tab.setAttribute('type', 'button');
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
+      if (pane) {
+        tab.setAttribute('aria-controls', pane.id);
+        pane.setAttribute('role', 'tabpanel');
+      }
+
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        block.querySelectorAll('.code-pane').forEach(function (p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        if (pane) pane.classList.add('active');
+      });
+    });
+  });
+
+  /* ------------------------------------------------------- 4 scroll spy */
+
+  var spyLinks = {};
+  document.querySelectorAll('.hf-nav__link--t2[href^="#"]').forEach(function (a) {
+    spyLinks[a.getAttribute('href').slice(1)] = a;
+  });
+
+  if ('IntersectionObserver' in window && Object.keys(spyLinks).length) {
+    var current = null;
+    var setCurrent = function (id) {
+      if (id === current) return;
+      if (current && spyLinks[current]) {
+        spyLinks[current].classList.remove('is-active');
+        spyLinks[current].removeAttribute('aria-current');
+      }
+      current = id;
+      if (spyLinks[id]) {
+        spyLinks[id].classList.add('is-active');
+        spyLinks[id].setAttribute('aria-current', 'location');
+      }
+    };
+
+    // A section counts as "on screen" once its top passes the upper third.
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) setCurrent(e.target.id); });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+
+    Object.keys(spyLinks).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+  }
+
+  /* -------------------------------------------------------- 5 checklist */
+
+  function store(key, val) {
+    try {
+      if (typeof val === 'undefined') return window.localStorage.getItem(key);
+      window.localStorage.setItem(key, val);
+    } catch (e) { return null; }
+  }
+
+  document.querySelectorAll('.check-box').forEach(function (box, i) {
+    var key = 'check-' + i;          // the key the old script used: progress survives
+    var item = box.closest('.check-item');
+
+    var render = function (on) {
+      box.classList.toggle('checked', on);
+      box.setAttribute('aria-checked', on ? 'true' : 'false');
+      if (item) item.classList.toggle('is-done', on);
+    };
+
+    render(store(key) === 'true');
+
+    box.addEventListener('click', function () {
+      var on = !box.classList.contains('checked');
+      render(on);
+      store(key, on ? 'true' : 'false');
+    });
+  });
+}());

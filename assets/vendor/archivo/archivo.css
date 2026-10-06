@@ -1,0 +1,16 @@
+/* Archivo, self-hosted. Latin subset, the five weights the design system loads.
+   Source: @fontsource/archivo (SIL Open Font License 1.1).
+   Use this instead of the Google Fonts CDN wherever an application must work
+   without external network calls, or where outbound requests to third parties
+   are not acceptable. */
+
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100; font-display: swap;
+  src: url('files/archivo-latin-100-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('files/archivo-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('files/archivo-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('files/archivo-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('files/archivo-latin-700-normal.woff2') format('woff2'); }
