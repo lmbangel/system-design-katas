@@ -13,6 +13,8 @@ half pixels and soften slightly; it stays legible.
 
 Writes, into assets/brand/:
     favicon.svg            modern browsers
+    mark.svg               the diagram alone, no square: the sidebar mark
+                           draws it as a CSS mask in currentColor (katas.css)
     apple-touch-icon.png   180px, iOS home screen
 and favicon.ico (16 / 32 / 48) at the site root, where browsers look for one
 unasked, and which covers browsers without SVG icons.
@@ -37,12 +39,21 @@ LINKS = [(15, 11, 2, 5),              # stem
          (7, 17, 2, 4), (23, 17, 2, 4)]   # drops
 
 
+def rects() -> str:
+    return "".join(f'<rect x="{x}" y="{y}" width="{w}" height="{h}"/>' for x, y, w, h in NODES + LINKS)
+
+
 def svg() -> str:
-    rects = "".join(f'<rect x="{x}" y="{y}" width="{w}" height="{h}"/>' for x, y, w, h in NODES + LINKS)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}">'
             f'<title>System design katas</title>'
             f'<rect width="{GRID}" height="{GRID}" fill="{INK}"/>'
-            f'<g fill="{PAPER}">{rects}</g></svg>\n')
+            f'<g fill="{PAPER}">{rects()}</g></svg>\n')
+
+
+def mark() -> str:
+    # Used as a mask, so only its alpha matters; the fill is arbitrary.
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}">'
+            f'<g fill="{INK}">{rects()}</g></svg>\n')
 
 
 def raster(size: int) -> Image.Image:
@@ -59,9 +70,10 @@ def raster(size: int) -> Image.Image:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "favicon.svg").write_text(svg(), encoding="utf-8", newline="\n")
+    (OUT / "mark.svg").write_text(mark(), encoding="utf-8", newline="\n")
     raster(180).save(OUT / "apple-touch-icon.png", optimize=True)
     raster(48).save(ROOT / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
-    for p in (OUT / "favicon.svg", OUT / "apple-touch-icon.png", ROOT / "favicon.ico"):
+    for p in (OUT / "favicon.svg", OUT / "mark.svg", OUT / "apple-touch-icon.png", ROOT / "favicon.ico"):
         print(f"{p.relative_to(ROOT).as_posix():32} {p.stat().st_size:>6} bytes")
 
 
