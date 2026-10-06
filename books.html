@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<!-- LOAD ORDER IS MANDATORY: bootstrap -> icons -> archivo -> hume-finbiz -> katas.
+     hume-finbiz.css re-points Bootstrap's own custom properties; reordering
+     silently un-themes the page. See docs/design-system.md. -->
+<link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/vendor/archivo/archivo.css">
+<link rel="stylesheet" href="assets/hume-finbiz/hume-finbiz.css">
+<link rel="stylesheet" href="assets/css/katas.css">
+<title>Recommended books · backend.systems</title>
+</head>
+<body>
+<div class="hf-shell">
+
+  <aside class="hf-sidebar">
+    <a class="hf-sidebar__brand" href="index.html" aria-label="Overview">
+      <span class="hf-sidebar__mark"><span class="kt-mark" aria-hidden="true"></span></span>
+      <span class="hf-sidebar__wordmark">System design<small>Backend katas</small></span>
+    </a>
+
+    <nav class="hf-nav" aria-label="Main navigation">
+      <div class="hf-nav__item"><a class="hf-nav__link" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__section">Tier 1 · Foundations</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="02-data-storage.html"><i class="bi bi-database hf-nav__icon"></i><span class="hf-nav__text">02 · Data &amp; storage</span></a></div>
+      <div class="hf-nav__section">Tier 2 · Building blocks</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="03-apis-contracts.html"><i class="bi bi-plug hf-nav__icon"></i><span class="hf-nav__text">03 · APIs &amp; contracts</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="04-microservices-patterns.html"><i class="bi bi-boxes hf-nav__icon"></i><span class="hf-nav__text">04 · Microservices patterns</span></a></div>
+      <div class="hf-nav__section">Tier 3 · Production</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="05-reliability-observability.html"><i class="bi bi-activity hf-nav__icon"></i><span class="hf-nav__text">05 · Reliability &amp; observability</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
+      <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Applied design</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="books.html" aria-current="page">
+          <i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#ddia" title="Designing Data-Intensive Applications"><span class="hf-nav__text">Designing Data-Intensive Applications</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#database-internals" title="Database Internals"><span class="hf-nav__text">Database Internals</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#understanding-distributed-systems" title="Understanding Distributed Systems"><span class="hf-nav__text">Understanding Distributed Systems</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#philosophy-of-software-design" title="A Philosophy of Software Design"><span class="hf-nav__text">A Philosophy of Software Design</span></a></div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="hf-sidebar__foot">
+      <div class="hf-sidebar__env"><span class="hf-sync__dot"></span><span>Study guide · v1</span></div>
+    </div>
+  </aside>
+
+  <div class="hf-main">
+
+    <header class="hf-header">
+      <button class="hf-header__toggle" data-hf-sidebar-toggle aria-label="Toggle navigation" aria-expanded="true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="hf-header__titles">
+        <div class="hf-header__title">Recommended books</div>
+        <div class="hf-header__crumbs">Backend katas / Reading list</div>
+      </div>
+
+      <div class="hf-header__spacer"></div>
+
+      <div class="hf-header__actions">
+        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Previous: Interview checklist" title="Previous: Interview checklist"><i class="bi bi-arrow-left"></i></a>
+      </div>
+    </header>
+
+    <main class="hf-content">
+      <div class="hf-content__inner kt-page">
+
+      <header class="kt-hero">
+        <span class="hf-eyebrow">Reading list</span>
+        <h1 class="kt-hero__title">Four books that <em>complete the picture</em>.</h1>
+        <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
+        <div class="kt-facts">
+          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">4</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Start with</span><span class="hf-stat__value">DDIA</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">In the study plan</span><span class="hf-stat__value">Weeks 1–3</span></div>
+        </div>
+      </header>
+
+      <div class="kt-books">
+      <section class="card kt-book" id="ddia" data-nav="Designing Data-Intensive Applications" aria-labelledby="ddia-title">
+        <div class="card-body">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--solid hf-status--nodot">Must read</span>
+            <h2 class="kt-book__title" id="ddia-title">Designing Data-Intensive Applications</h2>
+            <p class="hf-meta">Martin Kleppmann</p>
+          </div>
+          <p class="kt-book__desc">The single most recommended book for system design interviews. Replication, partitioning, consistency, batch vs stream — the theory behind every page in this guide.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="01-distributed-systems.html">01 · Distributed systems</a>, <a href="02-data-storage.html">02 · Data &amp; storage</a>, <a href="05-reliability-observability.html">05 · Reliability &amp; observability</a>, <a href="06-performance-scale.html">06 · Performance &amp; scale</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Week 1 weekend: chapters 5–7 (replication, partitioning, transactions). The checklist asks for chapters 5–9.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="database-internals" data-nav="Database Internals" aria-labelledby="database-internals-title">
+        <div class="card-body">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Deep dive</span>
+            <h2 class="kt-book__title" id="database-internals-title">Database Internals</h2>
+            <p class="hf-meta">Alex Petrov</p>
+          </div>
+          <p class="kt-book__desc">B-trees, LSM trees, WAL, MVCC, storage engine internals. When an interviewer asks “why Postgres over Cassandra”, this gives you the engine-level reasoning.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="02-data-storage.html">02 · Data &amp; storage, in depth</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Week 2 weekend: the chapters on B-trees and LSM trees.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="understanding-distributed-systems" data-nav="Understanding Distributed Systems" aria-labelledby="understanding-distributed-systems-title">
+        <div class="card-body">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Accessible</span>
+            <h2 class="kt-book__title" id="understanding-distributed-systems-title">Understanding Distributed Systems</h2>
+            <p class="hf-meta">Roberto Vitillo</p>
+          </div>
+          <p class="kt-book__desc">A gentler entry point than DDIA. Consensus, failure detection, replication — good for reinforcing pillar 01 before going deeper.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="01-distributed-systems.html">01 · Distributed systems, as reinforcement</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Not scheduled. Read it before DDIA if pillar 01 felt heavy.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="philosophy-of-software-design" data-nav="A Philosophy of Software Design" aria-labelledby="philosophy-of-software-design-title">
+        <div class="card-body">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Thinking</span>
+            <h2 class="kt-book__title" id="philosophy-of-software-design-title">A Philosophy of Software Design</h2>
+            <p class="hf-meta">John Ousterhout</p>
+          </div>
+          <p class="kt-book__desc">Not about systems — about complexity, abstractions and API surfaces. Deep modules, information hiding, tactical vs strategic programming. The senior mindset book.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd>Code design and senior thinking, rather than one pillar</dd>
+            <dt>In the study plan</dt>
+            <dd>Week 3 weekend. It is short enough to finish in one.</dd>
+          </dl>
+        </div>
+      </section>
+      </div>
+
+      <footer>
+        <p class="big">Breadth here. Depth there.</p>
+        <p>The study plan on the <a href="prep-checklist.html#study-plan">interview checklist</a> schedules three of these.</p>
+      </footer>
+      </div>
+    </main>
+
+  </div><!-- /.hf-main -->
+</div><!-- /.hf-shell -->
+
+<script src="assets/hume-finbiz/hume-finbiz.js"></script>
+<script src="assets/js/katas.js"></script>
+</body>
+</html>

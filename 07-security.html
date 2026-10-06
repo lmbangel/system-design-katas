@@ -58,8 +58,10 @@
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
-      <div class="hf-nav__section">Prepare</div>
+      <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
     </nav>
 
     <div class="hf-sidebar__foot">
@@ -83,7 +85,7 @@
 
       <div class="hf-header__actions">
         <a class="hf-iconbtn" href="06-performance-scale.html" aria-label="Previous: 06 · Performance &amp; scale" title="Previous: 06 · Performance &amp; scale"><i class="bi bi-arrow-left"></i></a>
-        <a class="hf-iconbtn" href="payment-system.html" aria-label="Next: A · Payment processing" title="Next: A · Payment processing"><i class="bi bi-arrow-right"></i></a>
+        <a class="hf-iconbtn" href="payment-system.html" aria-label="Next: Payment processing" title="Next: Payment processing"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
 
@@ -105,21 +107,6 @@
     <div class="principle"><div class="num">PRINCIPLE 02</div><h4>Least privilege everywhere.</h4><p>Every service, token, and role gets the minimum permissions it needs. Broad access is a future incident.</p></div>
     <div class="principle"><div class="num">PRINCIPLE 03</div><h4>Secrets are not config.</h4><p>Passwords, keys, and tokens belong in a vault — never in env vars, repos, or config files.</p></div>
     <div class="principle"><div class="num">PRINCIPLE 04</div><h4>Log everything. Blame nothing.</h4><p>An immutable audit trail is your best friend after a breach.</p></div>
-  </section>
-  <section class="toc">
-    <h2>Concepts</h2>
-    <ol>
-      <li><a href="#c1"><span class="n">01</span><span class="name">Defence in depth</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c2"><span class="n">02</span><span class="name">Threat modelling (STRIDE)</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c3"><span class="n">03</span><span class="name">Secrets management</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c4"><span class="n">04</span><span class="name">Least privilege &amp; IAM</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c5"><span class="n">05</span><span class="name">mTLS &amp; service identity</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c6"><span class="n">06</span><span class="name">Encryption at rest &amp; in transit</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c7"><span class="n">07</span><span class="name">Supply-chain security &amp; SBOM</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c8"><span class="n">08</span><span class="name">Audit logging</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c9"><span class="n">09</span><span class="name">Rate limiting &amp; DDoS defence</span><span class="tagmini">core</span></a></li>
-      <li><a href="#c10"><span class="n">10</span><span class="name">Zero trust</span><span class="tagmini bonus">bonus</span></a></li>
-    </ol>
   </section>
 
   <!-- ============ S1 — DEFENCE IN DEPTH ============ -->
@@ -972,16 +959,6 @@
     </div>
   </section>
 
-  <nav class="pageend-nav" aria-label="Previous and next">
-    <a class="prev" href="06-performance-scale.html">
-      <div class="label"><i class="bi bi-arrow-left"></i> Previous</div>
-      <div class="title-line">06 · Performance &amp; scale</div>
-    </a>
-    <a class="next" href="payment-system.html">
-      <div class="label">Next <i class="bi bi-arrow-right"></i></div>
-      <div class="title-line">A · Payment processing</div>
-    </a>
-  </nav>
 
   <footer>
     <p class="big">Trust nothing. Verify everything. Log it all.</p>

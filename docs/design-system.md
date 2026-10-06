@@ -32,8 +32,9 @@ The same ones `sc.humeint.africa` and `reports.fbserv.africa` follow:
    vendored. A gap goes in `assets/css/katas.css`, composed from tokens.
 
 `node tools/verify-design.js` enforces 1–3, the load order, the sidebar toggle, the
-single font, the nav-tier limit, token-only diagrams and the vendored-file
-hashes (`tools/vendored.json`, taken from `sc.humeint.africa`). It cannot check
+single font, the nav-tier limit, token-only diagrams, the site icon, that every
+page's navigation matches the site map (`tools/build-nav.js --check`) and the
+vendored-file hashes (`tools/vendored.json`, taken from `sc.humeint.africa`). It cannot check
 visual regression or cross-browser rendering — those still need a person.
 
 ---
@@ -65,11 +66,33 @@ no network — previously it needed Google Fonts to render at all.
 
 Every page carries `.hf-shell`: sidebar, header, content.
 
-**Sidebar.** Brand (links home, same deviation and reason as the reports
-portal), then one tier-1 item per page, grouped by tier. The current page is a
-tier-1 *parent*: its tier-2 children are that page's concepts, and `katas.js`
-scroll-spies them, so the sidebar doubles as the page contents. Tier 1 carries
-icons; tier 2 does not.
+**Navigation is the sidebar's job.** It is the one place to move around the
+site, so nothing on the pages repeats it:
+
+- One tier-1 item per page, grouped into sections in reading order:
+  *Tier 1 · Foundations* through *Tier 4 · Cross-cutting*, then *Applied
+  design*, *Interview prep* and *Reading list*. Tier 1 carries icons; tier 2
+  does not.
+- The page you are on is a tier-1 *parent*. Its tier-2 children are that
+  page's own sections — concepts, checklist areas, books — and `katas.js`
+  scroll-spies them, so the sidebar is also the page's contents.
+- On load the sidebar scrolls itself so the current page is in view, and
+  while you read it keeps the highlighted section in view. Only the sidebar
+  scrolls; the page never jumps.
+- The header's previous / next arrows are the single sequential control.
+
+The old design's on-page contents cards and page-end previous / next cards
+were removed: each duplicated the sidebar or the header. "Connects to" links
+inside concepts stay — they are content, pointing at related ideas, not
+navigation.
+
+**One site map.** `tools/build-nav.js` holds the page list and writes every
+page's sidebar and header from it. To add a page: add it to `SITE` there, give
+its sections `id` + `data-nav="Label"` (concept sections are picked up from
+their `<h2>` automatically), and run `node tools/build-nav.js`. A hand edit to
+a sidebar fails `verify-design.js`.
+
+**Brand.** Links home, same deviation and reason as the reports portal.
 
 **Brand mark.** The sibling apps put a two-letter monogram in
 `.hf-sidebar__mark` ("SC", "HR"). Here it carries the site icon's diagram, so
@@ -84,7 +107,7 @@ system's own colours, including `.hf-sidebar--dark`.
 |---|---|---|
 | 1 | Sidebar toggle | As the system ships it. Collapse state persists. |
 | 2 | Freshness indicator | **Omitted, deliberately.** The first version showed when the content was last revised; removed at the owner's request on 2026-10-06. The site has no data feed, so nothing is lost. |
-| 3 | User menu | **Omitted, deliberately.** There is no user. The reports portal's sign-in page drops the shell controls for the same reason: a control that can do nothing is worse than none. Its slot holds previous / next page links. |
+| 3 | User menu | **Omitted, deliberately.** There is no user. The reports portal's sign-in page drops the shell controls for the same reason: a control that can do nothing is worse than none. Its slot holds the previous / next arrows. |
 
 ---
 
@@ -93,7 +116,7 @@ system's own colours, including `.hf-sidebar--dark`.
 **The content.** Every concept, diagram, explanation and code sample is as it
 was. This retrofit is a skin, plus the fixes in § 6.
 
-**The kata class names.** `.pattern`, `.callout-box`, `.code-pane`, `.toc`,
+**The kata class names.** `.pattern`, `.callout-box`, `.code-pane`,
 `.principle` and the rest keep their names and are restyled onto `--hf-*`
 tokens in `katas.css`, following the rule `sc.humeint.africa` records: *a class
 a script depends on keeps its name and gets restyled*. New components are
@@ -109,16 +132,16 @@ prefixed `.kt-`.
 | `.masthead` | `.kt-hero`: `.hf-eyebrow`, a thin display headline, `.hf-lede`, `.hf-stat` tiles |
 | Emphasis in headlines (yellow italic serif) | Semibold, upright — hierarchy from weight, not colour |
 | `.principle` (coloured top borders) | Flat card, hairline border |
-| `.toc` | Card with a caps header and rows, like a report index |
+| `.toc` (on-page contents) | **Removed.** The sidebar lists the page's sections and scroll-spies them |
 | `.tag.hot/.cool/.warm/...` | All `.hf-status--neutral`: they were categories, not states |
-| `.tagmini.advanced` / `.bonus` | `--warning` / `--info` — a real signal for planning time |
 | `.pattern-num` (120px outlined numeral) | Solid black square, the sidebar brand mark |
 | `.callout-box.use` / `.avoid` | `.hf-alert--success` / `--danger` in all but name |
 | `▲ ▼ 📖 📍` glyphs | Bootstrap Icons (`check2-circle`, `x-circle`, `book`, `geo-alt`) — one icon set |
 | `.code-block` (Dracula on navy) | Card, `.hf-tabs`-style tabs, sunken pane, near-monochrome syntax (`--kt-code-*`) |
 | `.bonus-divider`, `.section-divider` | Section head: label, title, rule |
-| `.pageend-nav` | Two flat cards; hover lifts to `--hf-e1` |
-| Index topic cards, fake book covers | The reports-portal landing: eyebrow per group, cards with chips and an OPEN button |
+| `.pageend-nav` | **Removed.** The header's previous / next arrows |
+| Index topic cards | **Removed.** The overview has one curriculum `.hf-table`: reading order, coverage, concepts, reading time, total |
+| Index book cards with fake covers | Their own page, `books.html`, under *Reading list* in the sidebar: each book tied to the pillars it covers and to the study plan |
 | `.check-tag` | `.hf-status--success / --warning / --danger` |
 | `.score-card` | `.hf-stat` with a status top rule and a `<progress>` bar |
 
@@ -153,13 +176,13 @@ produce the system's own pale status backgrounds.
   `<button role="checkbox">` with one handler. Saved progress uses the same
   `localStorage` keys, so nothing already ticked is lost.
 - **Prev / next skipped pages.** Pillar 03's "next" went to 05 and 05's
-  "previous" to 03, missing 04. Both the header arrows and the page-end cards
-  are now generated from one ordered list.
+  "previous" to 03, missing 04. The header arrows are now generated from one
+  ordered list (`tools/build-nav.js`).
 - **Index counts disagreed with the pages** (e.g. "14 concepts" for pages
   with 10, and different reading times). The overview now uses the pages'
   own numbers.
-- **The prep checklist was not linked from the index.** It is now in the
-  sidebar and has a card on the overview.
+- **The prep checklist was not linked from the index.** It now has its own
+  sidebar section, *Interview prep*.
 
 ## 7. Still outstanding
 

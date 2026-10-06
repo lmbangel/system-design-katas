@@ -42,8 +42,10 @@
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
-      <div class="hf-nav__section">Prepare</div>
+      <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
     </nav>
 
     <div class="hf-sidebar__foot">
@@ -66,7 +68,6 @@
       <div class="hf-header__spacer"></div>
 
       <div class="hf-header__actions">
-        
         <a class="hf-iconbtn" href="01-distributed-systems.html" aria-label="Next: 01 · Distributed systems" title="Next: 01 · Distributed systems"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
@@ -116,214 +117,118 @@
         </div>
       </div>
 
-      <section class="kt-group" aria-labelledby="g-t1">
-        <p class="hf-eyebrow" id="g-t1">Tier one · Foundations</p>
-        <p class="kt-group__sub">The vocabulary everything else uses.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 01</span>
-              <h3 class="kt-card__title">Distributed systems fundamentals</h3>
-              <p class="kt-card__desc">CAP, PACELC, consistency models, consensus, logical clocks, the impossibility results. The maths your architectures cannot escape.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">35 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="01-distributed-systems.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 02</span>
-              <h3 class="kt-card__title">Data &amp; storage</h3>
-              <p class="kt-card__desc">Indexes, isolation, MVCC, sharding, replication, CDC. Where most performance and correctness bugs actually live.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">40 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="02-data-storage.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
+      <section class="hf-section kt-curriculum" aria-labelledby="curriculum">
+        <div class="hf-section__head">
+          <h2 class="hf-section__title" id="curriculum">The curriculum</h2>
+          <p class="hf-meta">In reading order — the sidebar follows the same order.</p>
         </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-t2">
-        <p class="hf-eyebrow" id="g-t2">Tier two · Building blocks</p>
-        <p class="kt-group__sub">How services talk, how systems compose.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 03</span>
-              <h3 class="kt-card__title">APIs &amp; service contracts</h3>
-              <p class="kt-card__desc">REST vs gRPC vs GraphQL, versioning, schema evolution, pagination at scale, rate limiting, authn / authz patterns.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">40 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="03-apis-contracts.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 04</span>
-              <h3 class="kt-card__title">Microservices patterns</h3>
-              <p class="kt-card__desc">Saga, Circuit Breaker, Retry, Gateway, Idempotency, Events, Bulkhead, Discovery, CQRS, Outbox, Sidecar, Strangler.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">12 patterns</span><span class="hf-status hf-status--neutral hf-status--nodot">40 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="04-microservices-patterns.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-t3">
-        <p class="hf-eyebrow" id="g-t3">Tier three · Operating in production</p>
-        <p class="kt-group__sub">What separates seniors from mids.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 05</span>
-              <h3 class="kt-card__title">Reliability &amp; observability</h3>
-              <p class="kt-card__desc">SLOs, error budgets, the four golden signals, structured logging, distributed tracing, deployment strategies.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">40 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="05-reliability-observability.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 06</span>
-              <h3 class="kt-card__title">Performance &amp; scale</h3>
-              <p class="kt-card__desc">Back-of-envelope estimation, profiling, N+1, caching, connection pools, async I/O, batch vs stream, network costs.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">45 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="06-performance-scale.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-t4">
-        <p class="hf-eyebrow" id="g-t4">Tier four · Cross-cutting</p>
-        <p class="kt-group__sub">Concerns that touch every layer.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Pillar 07</span>
-              <h3 class="kt-card__title">Security as architecture</h3>
-              <p class="kt-card__desc">Secrets management, least privilege per service, defence in depth, threat modelling, supply chain, mesh authn / authz.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">10 concepts</span><span class="hf-status hf-status--neutral hf-status--nodot">45 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="07-security.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-applied">
-        <p class="hf-eyebrow" id="g-applied">Applied system design</p>
-        <p class="kt-group__sub">The pillars composed into real systems, the way you would present them in a 35-minute design interview — trade-offs, code, and references to real engineering write-ups.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Applied · A</span>
-              <h3 class="kt-card__title">Payment processing</h3>
-              <p class="kt-card__desc">Double-entry ledger, idempotency, payment state machine, checkout saga, PCI tokenisation, reconciliation, webhook delivery.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">8 deep-dives</span><span class="hf-status hf-status--neutral hf-status--nodot">50 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="payment-system.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Applied · B</span>
-              <h3 class="kt-card__title">Order fulfilment &amp; logistics</h3>
-              <p class="kt-card__desc">Inventory reservation, warehouse routing, fulfilment saga, real-time tracking with H3 geospatial, ETA estimation, returns, CQRS pipeline.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">8 deep-dives</span><span class="hf-status hf-status--neutral hf-status--nodot">50 min</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Go · Python · Java</span>
-                <a class="btn btn-secondary btn-sm" href="order-fulfilment.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-prep">
-        <p class="hf-eyebrow" id="g-prep">Prepare</p>
-        <p class="kt-group__sub">A senior interview is four or five rounds, not one.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <span class="hf-caps">Checklist</span>
-              <h3 class="kt-card__title">Interview prep checklist</h3>
-              <p class="kt-card__desc">Every round mapped — system design, coding, behavioural, estimation, networking, SQL — with what this guide covers, what it does not, and a study plan.</p>
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">6 areas</span><span class="hf-status hf-status--neutral hf-status--nodot">4-week plan</span></div>
-              <div class="kt-card__foot">
-                <span class="hf-meta">Progress saved in this browser</span>
-                <a class="btn btn-secondary btn-sm" href="prep-checklist.html">Open <i class="bi bi-arrow-right"></i></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="kt-group" aria-labelledby="g-books">
-        <p class="hf-eyebrow" id="g-books">Recommended reading</p>
-        <p class="kt-group__sub">This guide teaches the breadth; these four teach the depth. If you read one, make it DDIA.</p>
-        <div class="kt-cards">
-          <div class="card kt-card">
-            <div class="card-body">
-              <div class="kt-card__chips"><span class="hf-status hf-status--solid hf-status--nodot">Must read</span></div>
-              <h3 class="kt-card__title">Designing Data-Intensive Applications</h3>
-              <p class="hf-meta">Martin Kleppmann</p>
-              <p class="kt-card__desc">The single most recommended book for system design interviews. Replication, partitioning, consistency, batch vs stream — the theory behind every page here.</p>
-              <div class="kt-card__foot"><span class="hf-meta"><i class="bi bi-journal-bookmark"></i> Covers: Pillars 01, 02, 05, 06</span></div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">Deep dive</span></div>
-              <h3 class="kt-card__title">Database Internals</h3>
-              <p class="hf-meta">Alex Petrov</p>
-              <p class="kt-card__desc">B-trees, LSM trees, WAL, MVCC, storage engine internals. When an interviewer asks “why Postgres over Cassandra”, this gives you the engine-level reasoning.</p>
-              <div class="kt-card__foot"><span class="hf-meta"><i class="bi bi-journal-bookmark"></i> Covers: Pillar 02, in depth</span></div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">Accessible</span></div>
-              <h3 class="kt-card__title">Understanding Distributed Systems</h3>
-              <p class="hf-meta">Roberto Vitillo</p>
-              <p class="kt-card__desc">A gentler entry point than DDIA. Consensus, failure detection, replication — good for reinforcing pillar 01 before going deeper.</p>
-              <div class="kt-card__foot"><span class="hf-meta"><i class="bi bi-journal-bookmark"></i> Covers: Pillar 01, reinforcement</span></div>
-            </div>
-          </div>
-          <div class="card kt-card">
-            <div class="card-body">
-              <div class="kt-card__chips"><span class="hf-status hf-status--neutral hf-status--nodot">Thinking</span></div>
-              <h3 class="kt-card__title">A Philosophy of Software Design</h3>
-              <p class="hf-meta">John Ousterhout</p>
-              <p class="kt-card__desc">Not about systems — about complexity, abstractions and API surfaces. Deep modules, information hiding, tactical vs strategic programming.</p>
-              <div class="kt-card__foot"><span class="hf-meta"><i class="bi bi-journal-bookmark"></i> Covers: Code design, senior thinking</span></div>
-            </div>
+        <div class="hf-table-wrap">
+          <div class="hf-table-scroll">
+          <table class="hf-table">
+            <thead>
+              <tr>
+                <th class="kt-col-num" scope="col">#</th>
+                <th scope="col">Page</th>
+                <th scope="col">What it covers</th>
+                <th class="hf-num" scope="col">Concepts</th>
+                <th class="hf-num" scope="col">Reading</th>
+              </tr>
+            </thead>
+            <tbody>
+            <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Tier 1 · Foundations <span class="hf-meta">The vocabulary everything else uses.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">01</td>
+              <td><a href="01-distributed-systems.html">Distributed systems</a></td>
+              <td class="hf-ink-2">CAP, PACELC, consistency models, consensus, logical clocks, the impossibility results.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">35 min</td>
+            </tr>
+            <tr>
+              <td class="kt-col-num">02</td>
+              <td><a href="02-data-storage.html">Data &amp; storage</a></td>
+              <td class="hf-ink-2">Indexes, isolation, MVCC, sharding, replication, CDC.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">40 min</td>
+            </tr>
+            <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Tier 2 · Building blocks <span class="hf-meta">How services talk, how systems compose.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">03</td>
+              <td><a href="03-apis-contracts.html">APIs &amp; contracts</a></td>
+              <td class="hf-ink-2">REST vs gRPC vs GraphQL, versioning, schema evolution, pagination, rate limiting, authn / authz.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">40 min</td>
+            </tr>
+            <tr>
+              <td class="kt-col-num">04</td>
+              <td><a href="04-microservices-patterns.html">Microservices patterns</a></td>
+              <td class="hf-ink-2">Saga, circuit breaker, retry, gateway, idempotency, events, bulkhead, CQRS, outbox, strangler.</td>
+              <td class="hf-num">12</td>
+              <td class="hf-num">40 min</td>
+            </tr>
+            <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Tier 3 · Production <span class="hf-meta">What separates seniors from mids.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">05</td>
+              <td><a href="05-reliability-observability.html">Reliability &amp; observability</a></td>
+              <td class="hf-ink-2">SLOs, error budgets, golden signals, structured logging, tracing, deployment strategies.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">40 min</td>
+            </tr>
+            <tr>
+              <td class="kt-col-num">06</td>
+              <td><a href="06-performance-scale.html">Performance &amp; scale</a></td>
+              <td class="hf-ink-2">Estimation, profiling, N+1, caching, connection pools, async I/O, batch vs stream.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">45 min</td>
+            </tr>
+            <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Tier 4 · Cross-cutting <span class="hf-meta">Concerns that touch every layer.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">07</td>
+              <td><a href="07-security.html">Security</a></td>
+              <td class="hf-ink-2">Secrets, least privilege, defence in depth, threat modelling, supply chain, zero trust.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">45 min</td>
+            </tr>
+            <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Applied design <span class="hf-meta">The pillars composed into real systems, as you would present them in a design interview.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">A</td>
+              <td><a href="payment-system.html">Payment processing</a></td>
+              <td class="hf-ink-2">Double-entry ledger, idempotency, payment state machine, checkout saga, PCI, reconciliation, webhooks.</td>
+              <td class="hf-num">8</td>
+              <td class="hf-num">50 min</td>
+            </tr>
+            <tr>
+              <td class="kt-col-num">B</td>
+              <td><a href="order-fulfilment.html">Order fulfilment</a></td>
+              <td class="hf-ink-2">Inventory reservation, warehouse routing, fulfilment saga, H3 tracking, ETA, returns, CQRS.</td>
+              <td class="hf-num">8</td>
+              <td class="hf-num">50 min</td>
+            </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td></td>
+                <th scope="row" colspan="2">Total</th>
+                <td class="hf-num">88</td>
+                <td class="hf-num">6.4 hrs</td>
+              </tr>
+            </tfoot>
+          </table>
           </div>
         </div>
       </section>
 
       <section class="kt-quote">
         <blockquote>The senior engineer's job isn't to know everything. It's to know which thing.</blockquote>
-        <p>Start with <a href="01-distributed-systems.html">tier one</a>, jump to <a href="04-microservices-patterns.html">the patterns</a>, or go straight to the <a href="payment-system.html">applied designs</a>.</p>
       </section>
 
       <footer>
