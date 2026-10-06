@@ -2,14 +2,10 @@
    System design katas - page behaviour
    Loads after hume-finbiz.js. Vanilla, no dependencies.
 
-   1. Shell        HumeFinbiz.init(): sidebar toggle, collapse, flyouts, the
-                   freshness indicator.
-   2. Freshness    The indicator here reports when the CONTENT was last revised,
-                   not a data sync. HumeFinbiz writes "Last successful sync" into
-                   its title on every render; this puts the true meaning back.
-   3. Code tabs    One code block, three languages. Scoped per block.
-   4. Scroll spy   Marks the tier-2 nav link of the concept on screen.
-   5. Checklist    prep-checklist.html. State persists per item in localStorage.
+   1. Shell        HumeFinbiz.init(): sidebar toggle, collapse, flyouts.
+   2. Code tabs    One code block, three languages. Scoped per block.
+   3. Scroll spy   Marks the tier-2 nav link of the concept on screen.
+   4. Checklist    prep-checklist.html. State persists per item in localStorage.
 
    Replaces the three inline <script> variants the pages used to carry. The
    prep checklist's old version toggled each box twice per click (an onclick
@@ -22,9 +18,10 @@
   /* ------------------------------------------------------------- 1 shell */
 
   if (window.HumeFinbiz) {
+    // No freshness indicator on these pages, so no sync ticker either.
     window.HumeFinbiz.init({
       storageKey: 'hf.shell.katas',
-      sync: { tickMs: 60000 }
+      sync: { tickMs: 0 }
     });
   }
 
@@ -36,23 +33,7 @@
     b.classList.add('is-current-parent');
   });
 
-  /* -------------------------------------------------------- 2 freshness */
-
-  function retitleSync() {
-    document.querySelectorAll('[data-hf-sync]').forEach(function (el) {
-      var iso = el.getAttribute('data-synced-at');
-      var d = iso ? new Date(iso) : null;
-      if (!d || isNaN(d.getTime())) return;
-      el.setAttribute('title', 'Content last revised ' + d.toLocaleDateString(undefined, {
-        year: 'numeric', month: 'long', day: 'numeric'
-      }));
-    });
-  }
-  retitleSync();
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) retitleSync(); });
-  setInterval(retitleSync, 60000);
-
-  /* -------------------------------------------------------- 3 code tabs */
+  /* -------------------------------------------------------- 2 code tabs */
 
   document.querySelectorAll('.code-block').forEach(function (block) {
     var tabs = block.querySelectorAll('.tab');
@@ -82,7 +63,7 @@
     });
   });
 
-  /* ------------------------------------------------------- 4 scroll spy */
+  /* ------------------------------------------------------- 3 scroll spy */
 
   var spyLinks = {};
   document.querySelectorAll('.hf-nav__link--t2[href^="#"]').forEach(function (a) {
@@ -115,7 +96,7 @@
     });
   }
 
-  /* -------------------------------------------------------- 5 checklist */
+  /* -------------------------------------------------------- 4 checklist */
 
   function store(key, val) {
     try {

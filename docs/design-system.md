@@ -31,7 +31,7 @@ The same ones `sc.humeint.africa` and `reports.fbserv.africa` follow:
 6. **Never edit `assets/hume-finbiz/*` or `assets/vendor/*`.** They are
    vendored. A gap goes in `assets/css/katas.css`, composed from tokens.
 
-`node tools/verify-design.js` enforces 1–3, the load order, the shell, the
+`node tools/verify-design.js` enforces 1–3, the load order, the sidebar toggle, the
 single font, the nav-tier limit, token-only diagrams and the vendored-file
 hashes (`tools/vendored.json`, taken from `sc.humeint.africa`). It cannot check
 visual regression or cross-browser rendering — those still need a person.
@@ -76,7 +76,7 @@ icons; tier 2 does not.
 | # | Element | Here |
 |---|---|---|
 | 1 | Sidebar toggle | As the system ships it. Collapse state persists. |
-| 2 | Freshness indicator | **When the content was last revised**, not a data sync. Stale after 180 days, error after a year — a study guide ages in months. `katas.js` rewrites the tooltip, which HumeFinbiz labels "Last successful sync". |
+| 2 | Freshness indicator | **Omitted, deliberately.** The first version showed when the content was last revised; removed at the owner's request on 2026-10-06. The site has no data feed, so nothing is lost. |
 | 3 | User menu | **Omitted, deliberately.** There is no user. The reports portal's sign-in page drops the shell controls for the same reason: a control that can do nothing is worse than none. Its slot holds previous / next page links. |
 
 ---
@@ -98,7 +98,7 @@ prefixed `.kt-`.
 
 | Old | HumeFinbiz |
 |---|---|
-| `.topnav` | `.hf-header` (toggle, title, crumbs, freshness, prev / next) |
+| `.topnav` | `.hf-header` (toggle, title, crumbs, prev / next) |
 | `.masthead` | `.kt-hero`: `.hf-eyebrow`, a thin display headline, `.hf-lede`, `.hf-stat` tiles |
 | Emphasis in headlines (yellow italic serif) | Semibold, upright — hierarchy from weight, not colour |
 | `.principle` (coloured top borders) | Flat card, hairline border |

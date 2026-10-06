@@ -13,7 +13,7 @@
    3  No inline style="" attributes in any page.
    4  No second font: nothing loads from Google Fonts or names another family.
    5  Stylesheet load order on every page.
-   6  Every page carries the shell: sidebar toggle and freshness indicator.
+   6  Every page carries the shell: sidebar toggle, and the scripts in order.
    7  No fourth navigation tier.
    8  Diagrams use tokens: no hex colours in SVG attributes.
    9  Vendored files are byte-identical to the system (hashes below).        */
@@ -62,7 +62,6 @@ for (const f of pages) {
   if (links.join('|') !== ORDER.join('|')) fail(5, `${f}: stylesheet order is ${links.join(' -> ')}`);
 
   if (!/data-hf-sidebar-toggle/.test(html)) fail(6, `${f}: no sidebar toggle`);
-  if (!/data-hf-sync/.test(html)) fail(6, `${f}: no freshness indicator`);
   if (!/hume-finbiz\.js[\s\S]*katas\.js/.test(html)) fail(6, `${f}: scripts missing or out of order`);
 
   if (/hf-nav__link--t4/.test(html)) fail(7, `${f}: fourth nav tier`);
