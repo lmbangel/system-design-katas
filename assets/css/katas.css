@@ -1,0 +1,896 @@
+/* Project layer for the HumeFinbiz design system.
+   System design katas · backend.systems
+
+   RULES (the same ones reports.fbserv.africa and sc.humeint.africa follow):
+     - Reference var(--hf-*) tokens only. No literal colours, radii or shadows.
+       The few --kt-* tokens below are geometry and are composed from --hf-*
+       wherever the system has a value for it.
+     - No !important.
+     - If a rule here is generic enough for another project, it belongs in the
+       design system, not here.
+     - Colour is for semantic status only. The brand colour is black.
+
+   THIS FILE LOADS LAST: bootstrap -> bootstrap-icons -> archivo ->
+   hume-finbiz -> katas. hume-finbiz.css re-points Bootstrap's own custom
+   properties, so reordering these silently un-themes every page.
+
+   STRUCTURE
+     00  Project tokens
+     01  Base
+     02  Page hero
+     03  Principles strip
+     04  Contents (on-page TOC)
+     05  Concept section: head, tags, difficulty
+     06  Concept section: diagram + explanation
+     07  Callouts: use / avoid, connects-to, reference
+     08  Code block
+     09  Dividers
+     10  Page-end navigation, footer
+     11  Overview page (index.html)
+     12  Prep checklist
+     13  Responsive, print, reduced motion
+
+   The kata class names (.pattern, .callout-box, .code-pane ...) are kept and
+   restyled rather than renamed: katas.js depends on several of them, and a
+   class a script depends on keeps its name and gets restyled. New components
+   are prefixed .kt-. */
+
+
+/* ==========================================================================
+   00  PROJECT TOKENS
+   ========================================================================== */
+
+:root {
+  /* A reading column. --hf-content-max (1600px) is sized for data grids;
+     long-form prose at that width is a line length nobody can follow. */
+  --kt-read-max:        1200px;
+  --kt-code-max-h:      480px;
+  --kt-num-size:        var(--hf-control-h-lg);
+  --kt-bar-w:           6px;
+  --kt-bar-h:           14px;
+  --kt-svg-fs-sm:       9px;     /* diagram footnotes, in viewBox units */
+
+  /* Syntax. Near-monochrome on purpose: weight and ink carry most of it, and
+     the two status hues used are there to separate literals from code, not to
+     decorate. Diagrams that render code use the same five. */
+  --kt-code-kw:         var(--hf-ink);
+  --kt-code-name:       var(--hf-ink);
+  --kt-code-type:       var(--hf-info-fg);
+  --kt-code-str:        var(--hf-success-fg);
+  --kt-code-num:        var(--hf-warning-fg);
+  --kt-code-op:         var(--hf-ink-secondary);
+  --kt-code-comment:    var(--hf-ink-muted);
+}
+
+
+/* ==========================================================================
+   01  BASE
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  /* The header is sticky; anchors must land below it, not under it. */
+  scroll-padding-top: calc(var(--hf-header-h) + var(--hf-sp-4));
+}
+
+.kt-page {
+  max-width: var(--kt-read-max);
+  margin: 0 auto;
+}
+
+/* Bootstrap paints <code> pink. In this system it is ink on an inset chip. */
+code {
+  font-family: var(--hf-font-mono);
+  font-size: var(--hf-fs-sm);
+  letter-spacing: 0;
+  color: var(--hf-ink);
+  background: var(--hf-surface-alt);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-xs);
+  padding: 0 var(--hf-sp-1);
+}
+
+strong { font-weight: var(--hf-fw-semibold); color: var(--hf-ink); }
+em     { font-style: italic; color: inherit; }
+
+/* The brand, made clickable. HumeFinbiz documents .hf-sidebar__brand as a
+   <div>; as an <a> it would arrive underlined. Same treatment, and the same
+   reason, as reports.fbserv.africa: from a deep page there must be a way home
+   that is where everybody reaches for it. */
+a.hf-sidebar__brand {
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--hf-dur-fast) var(--hf-ease);
+}
+a.hf-sidebar__brand:hover,
+a.hf-sidebar__brand:focus-visible {
+  background: var(--hf-surface-hover);
+  color: inherit;
+}
+
+/* .hf-header__title is styled for an <h1>; here it is a <div>, because the
+   page's own headline is the document's h1. */
+div.hf-header__title { display: block; }
+
+/* Header prev / next are links, not buttons. */
+a.hf-iconbtn { text-decoration: none; }
+
+
+/* ==========================================================================
+   02  PAGE HERO
+   Eyebrow, display headline, lede, then the page's numbers as stat tiles.
+   Hierarchy from weight, not size: the headline is thin and the emphasised
+   phrase in it is semibold, upright.
+   ========================================================================== */
+
+.kt-hero {
+  padding: var(--hf-sp-4) 0 var(--hf-sp-6);
+}
+
+.kt-hero__title {
+  font-size: var(--hf-fs-display);
+  font-weight: var(--hf-fw-thin);
+  line-height: var(--hf-lh-tight);
+  letter-spacing: var(--hf-ls-display);
+  margin: 0 0 var(--hf-sp-4);
+  max-width: 24ch;
+}
+.kt-hero__title em {
+  font-style: normal;
+  font-weight: var(--hf-fw-semibold);
+}
+
+.kt-hero .hf-lede { margin: 0 0 var(--hf-sp-6); }
+
+.kt-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--hf-sp-3);
+}
+.kt-facts .hf-stat__value { font-size: var(--hf-fs-h1); letter-spacing: var(--hf-ls-heading); }
+.kt-facts .hf-meta { margin: 0; }
+
+
+/* ==========================================================================
+   03  PRINCIPLES STRIP
+   ========================================================================== */
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--hf-sp-3);
+  margin: 0 0 var(--hf-sp-7);
+}
+
+.principle {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  padding: var(--hf-sp-4);
+}
+
+.principle .num {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  margin-bottom: var(--hf-sp-2);
+}
+
+.principle h4 {
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.48px;
+  line-height: var(--hf-lh-snug);
+  margin: 0 0 var(--hf-sp-2);
+}
+.principle h4 em { font-style: normal; text-decoration: underline; text-underline-offset: 3px; }
+
+.principle p {
+  font-size: var(--hf-fs-sm);
+  line-height: var(--hf-lh-body);
+  color: var(--hf-ink-secondary);
+  margin: 0;
+}
+
+
+/* ==========================================================================
+   04  CONTENTS
+   A card with a header and a list of rows -- the shape of a report index.
+   Two markups exist: <ol> (most pages) and .toc-grid (04).
+   ========================================================================== */
+
+.toc {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  margin: 0 0 var(--hf-sp-8);
+  overflow: hidden;
+}
+
+.toc h2,
+.toc h3 {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  background: var(--hf-surface-alt);
+  border-bottom: 1px solid var(--hf-hairline);
+  padding: var(--hf-sp-3) var(--hf-sp-4);
+  margin: 0;
+}
+
+.toc ol,
+.toc-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.toc li { border-top: 1px solid var(--hf-hairline-soft); margin-top: -1px; }
+
+.toc a,
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-sp-3);
+  padding: var(--hf-row-py) var(--hf-sp-4);
+  color: var(--hf-ink);
+  font-size: var(--hf-fs-sm);
+  text-decoration: none;
+  transition: background-color var(--hf-dur-fast) var(--hf-ease);
+}
+.toc-item { border-top: 1px solid var(--hf-hairline-soft); margin-top: -1px; }
+.toc a:hover,
+.toc-item:hover { background: var(--hf-surface-hover); color: var(--hf-ink); text-decoration: none; }
+
+.toc .n,
+.toc-item .num {
+  font-family: var(--hf-font-mono);
+  font-size: var(--hf-fs-xs);
+  color: var(--hf-ink-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+}
+.toc .name,
+.toc-item .name { flex: 1 1 auto; min-width: 0; }
+
+/* .tagmini and 04's inline <em> label are the same thing: an .hf-status. */
+.tagmini,
+.toc-item .name em {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  font-style: normal;
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border: 1px solid var(--hf-neutral-line);
+  border-radius: var(--hf-r-xs);
+  background: var(--hf-neutral-bg);
+  color: var(--hf-neutral-fg);
+  white-space: nowrap;
+  margin-left: var(--hf-sp-2);
+}
+/* "Advanced" is a real signal to a reader planning time: warning, not decor. */
+.tagmini.advanced { color: var(--hf-warning-fg); background: var(--hf-warning-bg); border-color: var(--hf-warning-line); }
+.tagmini.bonus    { color: var(--hf-info-fg);    background: var(--hf-info-bg);    border-color: var(--hf-info-line); }
+
+
+/* ==========================================================================
+   05  CONCEPT SECTION : HEAD
+   ========================================================================== */
+
+.pattern {
+  margin: var(--hf-sp-9) 0 0;
+  padding-top: var(--hf-sp-6);
+  border-top: 1px solid var(--hf-hairline);
+}
+
+.pattern-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--hf-sp-4);
+  align-items: start;
+  margin-bottom: var(--hf-sp-6);
+}
+
+/* The concept number as a solid mark -- the same black square as the
+   sidebar brand mark. */
+.pattern-num {
+  width: var(--kt-num-size);
+  height: var(--kt-num-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hf-ink);
+  color: var(--hf-on-primary);
+  font-size: var(--hf-fs-sm);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.pattern-title-wrap h2 {
+  font-size: var(--hf-fs-h1);
+  font-weight: var(--hf-fw-regular);
+  letter-spacing: var(--hf-ls-heading);
+  line-height: 1.25;
+  margin: 0 0 var(--hf-sp-2);
+}
+
+.pattern-tags { display: flex; flex-wrap: wrap; gap: var(--hf-sp-1); }
+
+/* Every tag variant (.hot .cool .warm .fresh .deep .pink) was a decorative
+   hue. They are categories, not states, so they all render neutral. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  line-height: 1.4;
+  padding: 3px 8px;
+  border: 1px solid var(--hf-neutral-line);
+  border-radius: var(--hf-r-xs);
+  background: var(--hf-neutral-bg);
+  color: var(--hf-neutral-fg);
+}
+
+.difficulty {
+  text-align: right;
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+}
+.difficulty .bars {
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+  margin-top: var(--hf-sp-2);
+}
+.difficulty .bar {
+  width: var(--kt-bar-w);
+  height: var(--kt-bar-h);
+  background: var(--hf-hairline);
+}
+.difficulty .bar.on { background: var(--hf-ink); }
+
+
+/* ==========================================================================
+   06  CONCEPT SECTION : DIAGRAM + EXPLANATION
+   ========================================================================== */
+
+.pattern-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--hf-sp-6);
+  margin-bottom: var(--hf-sp-6);
+  align-items: start;
+}
+
+.diagram-card {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  overflow: hidden;
+}
+/* A card header, without adding markup to 80-odd diagrams. */
+.diagram-card::before {
+  content: "Diagram";
+  display: block;
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  background: var(--hf-surface-alt);
+  border-bottom: 1px solid var(--hf-hairline-soft);
+  padding: var(--hf-sp-2) var(--hf-sp-4);
+}
+.diagram-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: var(--hf-sp-4);
+}
+
+/* Text classes the 04 diagrams use instead of presentation attributes.
+   Sizes are in the diagram's own viewBox units. Any CSS fill beats an SVG
+   fill attribute, so the default ink applies only where the element has no
+   fill of its own -- otherwise every status-coloured label would go black. */
+.svg-text    { font-family: var(--hf-font-mono); font-size: var(--hf-fs-xxs); }
+.svg-text-sm { font-size: var(--kt-svg-fs-sm); }
+.svg-label   { font-family: var(--hf-font); font-size: var(--hf-fs-xs); font-weight: var(--hf-fw-medium); }
+.svg-text:not([fill]),
+.svg-label:not([fill])   { fill: var(--hf-ink); }
+.svg-text-sm:not([fill]) { fill: var(--hf-ink-secondary); }
+
+.explanation h3 {
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.48px;
+  margin: 0 0 var(--hf-sp-3);
+}
+
+/* Long-form reading: the system's editorial size, not the 14px app default. */
+.explanation p {
+  font-size: var(--hf-fs-body-lg);
+  line-height: var(--hf-lh-loose);
+  color: var(--hf-ink-secondary);
+  margin: 0 0 var(--hf-sp-4);
+  max-width: 72ch;
+}
+
+
+/* ==========================================================================
+   07  CALLOUTS
+   Use / avoid are the one place in the prose where colour means something:
+   do this (success), don't do that (danger). They are .hf-alert in all but
+   name.
+   ========================================================================== */
+
+.callout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--hf-sp-3);
+  margin-top: var(--hf-sp-5);
+}
+
+.callout-box {
+  border: 1px solid var(--hf-hairline);
+  border-left-width: 3px;
+  border-radius: var(--hf-r-sm);
+  padding: var(--hf-sp-3) var(--hf-sp-4);
+  font-size: var(--hf-fs-sm);
+  color: var(--hf-ink);
+}
+.callout-box.use   { background: var(--hf-success-bg); border-color: var(--hf-success-line); border-left-color: var(--hf-success-fg); }
+.callout-box.avoid { background: var(--hf-danger-bg);  border-color: var(--hf-danger-line);  border-left-color: var(--hf-danger-fg); }
+
+.callout-box .label {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-sp-2);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-tight);
+  margin-bottom: var(--hf-sp-2);
+}
+.callout-box.use   .label .bi { color: var(--hf-success-fg); }
+.callout-box.avoid .label .bi { color: var(--hf-danger-fg); }
+
+.callout-box ul { margin: 0; padding-left: var(--hf-sp-5); line-height: var(--hf-lh-body); }
+.callout-box li { margin-bottom: var(--hf-sp-1); }
+.callout-box li:last-child { margin-bottom: 0; }
+
+/* Connects-to and real-world reference: a quiet inset with an ink rule. */
+.connects,
+.reference {
+  margin-top: var(--hf-sp-3);
+  padding: var(--hf-sp-3) var(--hf-sp-4);
+  background: var(--hf-canvas-soft);
+  border: 1px solid var(--hf-hairline-soft);
+  border-left: 3px solid var(--hf-ink);
+  border-radius: var(--hf-r-sm);
+  font-size: var(--hf-fs-sm);
+  color: var(--hf-ink-secondary);
+  line-height: var(--hf-lh-body);
+}
+.connects strong {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  margin-right: var(--hf-sp-2);
+}
+.reference .bi { color: var(--hf-ink); margin-right: var(--hf-sp-1); }
+
+
+/* ==========================================================================
+   08  CODE BLOCK
+   A card: tabs as .hf-tabs in the header, the source on a sunken pane.
+   ========================================================================== */
+
+.code-block {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  overflow: hidden;
+}
+
+.code-tabs {
+  display: flex;
+  gap: var(--hf-sp-5);
+  padding: 0 var(--hf-sp-4);
+  border-bottom: 1px solid var(--hf-hairline);
+  background: var(--hf-surface);
+  overflow-x: auto;
+}
+
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: var(--hf-sp-3) 0;
+  font-family: var(--hf-font);
+  font-size: var(--hf-fs-sm);
+  font-weight: var(--hf-fw-medium);
+  letter-spacing: var(--hf-ls-tight);
+  color: var(--hf-ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--hf-dur-fast) var(--hf-ease), border-color var(--hf-dur-fast) var(--hf-ease);
+}
+.tab:hover { color: var(--hf-ink); border-bottom-color: var(--hf-hairline); }
+.tab.active {
+  color: var(--hf-ink);
+  font-weight: var(--hf-fw-semibold);
+  border-bottom-color: var(--hf-ink);
+}
+.tab:focus-visible { box-shadow: var(--hf-focus-ring); }
+
+.code-pane {
+  display: none;
+  background: var(--hf-canvas-soft);
+  padding: var(--hf-sp-4);
+  font-family: var(--hf-font-mono);
+  font-size: var(--hf-fs-sm);
+  line-height: var(--hf-lh-loose);
+  letter-spacing: 0;
+  color: var(--hf-ink);
+  overflow: auto;
+  max-height: var(--kt-code-max-h);
+}
+.code-pane.active { display: block; }
+.code-pane pre { margin: 0; font: inherit; color: inherit; overflow: visible; }
+
+.code-pane .k   { color: var(--kt-code-kw); font-weight: var(--hf-fw-bold); }
+.code-pane .n   { color: var(--kt-code-name); }
+.code-pane .t   { color: var(--kt-code-type); }
+.code-pane .s   { color: var(--kt-code-str); }
+.code-pane .num { color: var(--kt-code-num); }
+.code-pane .o   { color: var(--kt-code-op); }
+.code-pane .c   { color: var(--kt-code-comment); font-style: italic; }
+
+
+/* ==========================================================================
+   09  DIVIDERS
+   All three become an .hf-section__head: a label and a title over a rule.
+   ========================================================================== */
+
+.section-divider {
+  margin: var(--hf-sp-9) 0 0;
+  padding-bottom: var(--hf-sp-3);
+  border-bottom: 1px solid var(--hf-hairline);
+}
+.section-divider span {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+}
+/* The section head carries the rule; the first concept under it does not. */
+.section-divider + .pattern { border-top: 0; margin-top: var(--hf-sp-4); }
+
+.bonus-divider {
+  margin: var(--hf-sp-10) 0 0;
+  padding-bottom: var(--hf-sp-3);
+  border-bottom: 2px solid var(--hf-ink);
+}
+.bonus-line { display: none; }
+.bonus-eyebrow {
+  display: block;
+  font-size: var(--hf-fs-xs);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.6px;
+  text-transform: uppercase;
+  color: var(--hf-ink-secondary);
+  margin-bottom: var(--hf-sp-1);
+}
+.bonus-title {
+  display: block;
+  font-size: var(--hf-fs-h2);
+  font-weight: var(--hf-fw-medium);
+  letter-spacing: -0.6px;
+  line-height: var(--hf-lh-snug);
+  color: var(--hf-ink);
+}
+.bonus-divider + .pattern { border-top: 0; margin-top: var(--hf-sp-4); }
+
+
+/* ==========================================================================
+   10  PAGE-END NAVIGATION, FOOTER
+   ========================================================================== */
+
+.pageend-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--hf-sp-3);
+  margin: var(--hf-sp-9) 0 0;
+}
+
+.pageend-nav a {
+  display: block;
+  padding: var(--hf-sp-4);
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  color: var(--hf-ink);
+  text-decoration: none;
+  transition: box-shadow var(--hf-dur) var(--hf-ease), border-color var(--hf-dur) var(--hf-ease);
+}
+.pageend-nav a:hover { box-shadow: var(--hf-e1); border-color: var(--hf-hairline); color: var(--hf-ink); }
+.pageend-nav a.next { text-align: right; }
+
+.pageend-nav .label {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  margin-bottom: var(--hf-sp-1);
+}
+.pageend-nav .title-line {
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-tight);
+}
+
+/* The page's closing line. Plain: a statement, a source line, the topics. */
+.kt-page > footer {
+  margin-top: var(--hf-sp-7);
+  padding-top: var(--hf-sp-5);
+  border-top: 1px solid var(--hf-hairline-soft);
+  font-size: var(--hf-fs-xs);
+  color: var(--hf-ink-muted);
+}
+.kt-page > footer p,
+.kt-page > footer div { margin: 0 0 var(--hf-sp-1); }
+.kt-page > footer .big {
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-tight);
+  color: var(--hf-ink);
+  margin-bottom: var(--hf-sp-2);
+}
+.kt-page > footer .colophon {
+  margin-top: var(--hf-sp-3);
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+}
+.kt-page > footer .colophon span { color: var(--hf-ink-faint); }
+
+
+/* ==========================================================================
+   11  OVERVIEW PAGE
+   Mirrors the reports.fbserv.africa landing: an eyebrow per group, a row of
+   cards, each with a title, a meta line, status chips and an OPEN button.
+   ========================================================================== */
+
+.kt-group { margin: var(--hf-sp-7) 0 0; }
+.kt-group > .hf-eyebrow { margin-bottom: var(--hf-sp-1); }
+.kt-group__sub { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); margin: 0 0 var(--hf-sp-3); }
+
+.kt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--hf-sp-3);
+}
+
+.kt-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hf-sp-2);
+  height: 100%;
+}
+.kt-card .card-body { display: flex; flex-direction: column; gap: var(--hf-sp-2); height: 100%; }
+.kt-card__title {
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.48px;
+  line-height: var(--hf-lh-snug);
+  margin: 0;
+}
+.kt-card__desc { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); margin: 0; flex: 1 1 auto; }
+.kt-card__chips { display: flex; flex-wrap: wrap; gap: var(--hf-sp-1); }
+.kt-card__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--hf-sp-3); margin-top: var(--hf-sp-2); }
+
+.kt-howto { margin: 0 0 var(--hf-sp-2); }
+.kt-howto p { margin: 0; font-size: var(--hf-fs-body-lg); line-height: var(--hf-lh-loose); color: var(--hf-ink-secondary); max-width: 80ch; }
+
+.kt-quote {
+  margin: var(--hf-sp-9) 0 0;
+  padding: var(--hf-sp-6) 0 0;
+  border-top: 1px solid var(--hf-hairline);
+}
+.kt-quote blockquote {
+  font-size: var(--hf-fs-h1);
+  font-weight: var(--hf-fw-thin);
+  letter-spacing: var(--hf-ls-heading);
+  line-height: 1.3;
+  margin: 0 0 var(--hf-sp-3);
+  max-width: 40ch;
+}
+.kt-quote p { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); margin: 0; }
+
+
+/* ==========================================================================
+   12  PREP CHECKLIST
+   Coverage is genuine status -- covered, partial, gap -- so it is the one
+   page where status colour carries the content.
+   ========================================================================== */
+
+.kt-coverage { margin: 0 0 var(--hf-sp-7); }
+.kt-coverage .hf-stat { border-top-width: 3px; }
+.kt-coverage .hf-stat--success { border-top-color: var(--hf-success-fg); }
+.kt-coverage .hf-stat--warning { border-top-color: var(--hf-warning-fg); }
+.kt-coverage .hf-stat--danger  { border-top-color: var(--hf-danger-fg); }
+
+/* A native <progress>, drawn as the system's 4px .progress bar. The value is
+   data, so it lives in the value attribute rather than an inline width. */
+.kt-meter {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin: var(--hf-sp-1) 0;
+  border: 0;
+  border-radius: var(--hf-r-full);
+  background: var(--hf-surface-alt);
+  color: var(--hf-ink);
+  overflow: hidden;
+}
+.kt-meter::-webkit-progress-bar   { background: var(--hf-surface-alt); border-radius: var(--hf-r-full); }
+.kt-meter::-webkit-progress-value { background: currentColor; border-radius: var(--hf-r-full); }
+.kt-meter::-moz-progress-bar      { background: currentColor; border-radius: var(--hf-r-full); }
+.hf-stat--success .kt-meter { color: var(--hf-success-fg); }
+.hf-stat--warning .kt-meter { color: var(--hf-warning-fg); }
+.hf-stat--danger  .kt-meter { color: var(--hf-danger-fg); }
+
+.checklist { margin: 0 0 var(--hf-sp-7); display: grid; gap: var(--hf-sp-4); }
+
+.check-section {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  overflow: hidden;
+}
+.check-section h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-sp-3);
+  font-size: var(--hf-fs-h3);
+  font-weight: var(--hf-fw-bold);
+  letter-spacing: -0.48px;
+  padding: var(--hf-sp-3) var(--hf-sp-4) 0;
+  margin: 0;
+}
+.check-section .sub {
+  font-size: var(--hf-fs-sm);
+  color: var(--hf-ink-secondary);
+  padding: var(--hf-sp-1) var(--hf-sp-4) var(--hf-sp-3);
+  border-bottom: 1px solid var(--hf-hairline-soft);
+}
+
+.check-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--hf-sp-3);
+  padding: var(--hf-sp-3) var(--hf-sp-4);
+  border-top: 1px solid var(--hf-hairline-soft);
+  align-items: start;
+}
+.check-section .sub + .check-item { border-top: 0; }
+.check-item.is-done .check-title { color: var(--hf-ink-muted); text-decoration: line-through; }
+
+/* A real control now: <button role="checkbox">. Same box as .form-check-input. */
+.check-box {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  padding: 0;
+  border: 1px solid var(--hf-hairline-strong);
+  border-radius: var(--hf-r-0);
+  background: var(--hf-canvas);
+  color: var(--hf-on-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--hf-fs-xs);
+  cursor: pointer;
+  transition: background-color var(--hf-dur-fast) var(--hf-ease), border-color var(--hf-dur-fast) var(--hf-ease);
+}
+.check-box:hover { border-color: var(--hf-ink); }
+.check-box.checked { background: var(--hf-ink); border-color: var(--hf-ink); }
+.check-box.checked::after { content: "\F633"; font-family: "bootstrap-icons"; line-height: 1; }
+
+.check-title  { font-size: var(--hf-fs-body); font-weight: var(--hf-fw-semibold); letter-spacing: var(--hf-ls-tight); margin: 0 0 var(--hf-sp-1); }
+.check-detail { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); margin: 0 0 var(--hf-sp-1); }
+.check-resource { font-size: var(--hf-fs-xs); color: var(--hf-ink-muted); }
+.check-resource .bi { color: var(--hf-ink); margin-right: var(--hf-sp-1); }
+
+.timeline {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-sm);
+  margin: 0 0 var(--hf-sp-7);
+}
+.week-block {
+  display: grid;
+  grid-template-columns: var(--kt-num-size) minmax(0, 1fr);
+  gap: var(--hf-sp-4);
+  padding: var(--hf-sp-4);
+  border-top: 1px solid var(--hf-hairline-soft);
+}
+.week-block:first-child { border-top: 0; }
+.week-num {
+  width: var(--kt-num-size);
+  height: var(--kt-num-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hf-ink);
+  color: var(--hf-on-primary);
+  font-size: var(--hf-fs-sm);
+  font-weight: var(--hf-fw-bold);
+}
+.week-focus { font-size: var(--hf-fs-h3); font-weight: var(--hf-fw-bold); letter-spacing: -0.48px; margin: 0 0 var(--hf-sp-2); }
+.week-tasks { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); line-height: var(--hf-lh-loose); }
+
+.kt-reminders { margin: 0 0 var(--hf-sp-2); }
+.kt-reminders dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--hf-sp-3) var(--hf-sp-5); }
+.kt-reminders dt { font-size: var(--hf-fs-xxs); font-weight: var(--hf-fw-semibold); letter-spacing: var(--hf-ls-caps); text-transform: uppercase; color: var(--hf-ink-muted); padding-top: 2px; }
+.kt-reminders dd { margin: 0; font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); line-height: var(--hf-lh-body); }
+
+.hf-section__head .hf-meta { margin: 0; }
+
+
+/* ==========================================================================
+   13  RESPONSIVE, PRINT, REDUCED MOTION
+   Breakpoints match HumeFinbiz (Bootstrap): lg 992, md 768.
+   ========================================================================== */
+
+@media (max-width: 991.98px) {
+  .pattern-body { grid-template-columns: minmax(0, 1fr); }
+  .pattern-head { grid-template-columns: auto minmax(0, 1fr); }
+  .difficulty   { grid-column: 2; text-align: left; }
+  .difficulty .bars { justify-content: flex-start; }
+}
+
+@media (max-width: 767.98px) {
+  .kt-hero__title { font-size: var(--hf-fs-h1); }
+  .callout { grid-template-columns: minmax(0, 1fr); }
+  .pageend-nav { grid-template-columns: minmax(0, 1fr); }
+  .pageend-nav a.next { text-align: left; }
+  .pattern { margin-top: var(--hf-sp-8); }
+  .toc ol, .toc-grid { grid-template-columns: minmax(0, 1fr); }
+  .kt-reminders dl { grid-template-columns: minmax(0, 1fr); gap: var(--hf-sp-1); }
+  .kt-reminders dd { margin-bottom: var(--hf-sp-3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+@media print {
+  .code-pane { display: block; max-height: none; }
+  .code-tabs { display: none; }
+  .pageend-nav { display: none; }
+  .pattern { break-inside: avoid-page; }
+}

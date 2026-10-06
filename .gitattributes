@@ -1,0 +1,4 @@
+# Vendored design-system files are byte-identical to sc.humeint.africa and are
+# hash-checked by tools/verify-design.js. Never let Git rewrite their line endings.
+assets/hume-finbiz/** -text
+assets/vendor/**      -text
