@@ -54,6 +54,8 @@
   --kt-bar-w:           6px;
   --kt-bar-h:           14px;
   --kt-svg-fs-sm:       9px;     /* diagram footnotes, in viewBox units */
+  --kt-cover-w:         128px;   /* book cover on the reading list */
+  --kt-cover-w-sm:      80px;
 
   /* Syntax. Near-monochrome on purpose: weight and ink carry most of it, and
      the two status hues used are there to separate literals from code, not to
@@ -629,6 +631,36 @@ a.hf-iconbtn { text-decoration: none; }
    pillars and to the study plan on the checklist. */
 .kt-books { display: grid; gap: var(--hf-sp-4); }
 
+/* Cover top-right, beside the title and the why; the facts span the card
+   below both. On a phone the cover shrinks and moves beside the title. */
+.kt-book .card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--kt-cover-w);
+  grid-template-areas:
+    "head  cover"
+    "desc  cover"
+    "facts facts";
+  column-gap: var(--hf-sp-6);
+  align-items: start;
+}
+.kt-book__head  { grid-area: head; }
+.kt-book__desc  { grid-area: desc; }
+.kt-book__facts { grid-area: facts; }
+
+/* Several covers are mostly white; a hairline and the system's lowest
+   elevation make each read as an object on the white card. */
+.kt-book__cover {
+  grid-area: cover;
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--hf-sp-4);
+  border: 1px solid var(--hf-hairline-soft);
+  border-radius: var(--hf-r-xs);
+  box-shadow: var(--hf-e1);
+  background: var(--hf-surface-alt);
+}
+
 .kt-book__head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--hf-sp-1); margin-bottom: var(--hf-sp-3); }
 .kt-book__head .hf-meta { margin: 0; }
 .kt-book__title {
@@ -833,6 +865,14 @@ a.hf-iconbtn { text-decoration: none; }
   .kt-book__facts, .kt-reminders dl { grid-template-columns: minmax(0, 1fr); gap: var(--hf-sp-1); }
   .kt-book__facts dd, .kt-reminders dd { margin-bottom: var(--hf-sp-3); }
   .kt-tier-row th .hf-meta { display: block; margin: var(--hf-sp-1) 0 0; }
+  .kt-book .card-body {
+    grid-template-columns: var(--kt-cover-w-sm) minmax(0, 1fr);
+    grid-template-areas:
+      "cover head"
+      "desc  desc"
+      "facts facts";
+    column-gap: var(--hf-sp-4);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
