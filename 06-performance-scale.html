@@ -99,7 +99,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">45 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
 
@@ -235,8 +235,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
-        <button class="tab py" data-target="c1-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c1-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c1-py">Python · redis-py</button>
+        <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Two-tier cache: local → Redis → DB. Each tier is 100–1000× slower.</span>
 <span class="k">type</span> <span class="t">ProductCache</span> <span class="k">struct</span> {
@@ -292,32 +292,36 @@
     <span class="k">await</span> <span class="n">_redis</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
     <span class="n">_local</span>[<span class="n">pid</span>] <span class="o">=</span> <span class="n">p</span>
     <span class="k">return</span> <span class="n">p</span></pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// Caffeine (local) + Redis (shared) + JPA (DB).</span>
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// lru-cache (local) + ioredis (shared) + pg (DB).</span>
+<span class="k">import</span> { <span class="t">LRUCache</span> } <span class="k">from</span> <span class="s">"lru-cache"</span>;
+<span class="k">import type</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">ProductCache</span> {
-    <span class="k">private final</span> <span class="t">Cache</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">Product</span><span class="o">&gt;</span> <span class="n">local</span> <span class="o">=</span> <span class="t">Caffeine</span>.<span class="n">newBuilder</span>()
-        .<span class="n">maximumSize</span>(<span class="num">2048</span>)
-        .<span class="n">expireAfterWrite</span>(<span class="t">Duration</span>.<span class="n">ofSeconds</span>(<span class="num">10</span>))
-        .<span class="n">build</span>();
+<span class="k">export class</span> <span class="t">ProductCache</span> {
+    <span class="k">private readonly</span> <span class="n">local</span> <span class="o">=</span> <span class="k">new</span> <span class="t">LRUCache</span>&lt;<span class="t">string</span>, <span class="t">Product</span>&gt;({
+        <span class="n">max</span>: <span class="num">2048</span>,
+        <span class="n">ttl</span>: <span class="num">10_000</span>,                      <span class="c">// 10 seconds</span>
+    });
 
-    <span class="k">private final</span> <span class="t">RedisTemplate</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">Product</span><span class="o">&gt;</span> <span class="n">redis</span>;
-    <span class="k">private final</span> <span class="t">ProductRepo</span> <span class="n">repo</span>;
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">redis</span>: <span class="t">Redis</span>, <span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
 
-    <span class="k">public</span> <span class="t">Product</span> <span class="n">get</span>(<span class="t">String</span> <span class="n">id</span>) {
-        <span class="c">// Tier 1: Caffeine — sub-µs</span>
-        <span class="t">Product</span> <span class="n">p</span> <span class="o">=</span> <span class="n">local</span>.<span class="n">getIfPresent</span>(<span class="n">id</span>);
-        <span class="k">if</span> (<span class="n">p</span> <span class="o">!=</span> <span class="k">null</span>) <span class="k">return</span> <span class="n">p</span>;
+    <span class="k">async</span> <span class="n">get</span>(<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">Product</span>&gt; {
+        <span class="c">// Tier 1: lru-cache — sub-µs</span>
+        <span class="k">let</span> <span class="n">p</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">local</span>.<span class="n">get</span>(<span class="n">id</span>);
+        <span class="k">if</span> (<span class="n">p</span>) <span class="k">return</span> <span class="n">p</span>;
 
         <span class="c">// Tier 2: Redis — ~0.5ms</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">get</span>(<span class="s">"product:"</span> <span class="o">+</span> <span class="n">id</span>);
-        <span class="k">if</span> (<span class="n">p</span> <span class="o">!=</span> <span class="k">null</span>) { <span class="n">local</span>.<span class="n">put</span>(<span class="n">id</span>, <span class="n">p</span>); <span class="k">return</span> <span class="n">p</span>; }
+        <span class="k">const</span> <span class="n">raw</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="s">"product:"</span> <span class="o">+</span> <span class="n">id</span>);
+        <span class="k">if</span> (<span class="n">raw</span>) { <span class="n">p</span> <span class="o">=</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">raw</span>) <span class="k">as</span> <span class="t">Product</span>; <span class="k">this</span>.<span class="n">local</span>.<span class="n">set</span>(<span class="n">id</span>, <span class="n">p</span>); <span class="k">return</span> <span class="n">p</span>; }
 
         <span class="c">// Tier 3: DB — ~2ms+</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>).<span class="n">orElseThrow</span>();
-        <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">set</span>(<span class="s">"product:"</span> <span class="o">+</span> <span class="n">id</span>, <span class="n">p</span>,
-            <span class="t">Duration</span>.<span class="n">ofMinutes</span>(<span class="num">5</span>));
-        <span class="n">local</span>.<span class="n">put</span>(<span class="n">id</span>, <span class="n">p</span>);
+        <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">Product</span>&gt;(
+            <span class="s">"SELECT * FROM products WHERE id = $1"</span>, [<span class="n">id</span>]);
+        <span class="k">if</span> (<span class="o">!</span><span class="n">rows</span>[<span class="num">0</span>]) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`product ${id} not found`</span>);
+        <span class="n">p</span> <span class="o">=</span> <span class="n">rows</span>[<span class="num">0</span>];
+        <span class="k">await this</span>.<span class="n">redis</span>.<span class="n">set</span>(<span class="s">"product:"</span> <span class="o">+</span> <span class="n">id</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">p</span>),
+            <span class="s">"EX"</span>, <span class="num">300</span>);                       <span class="c">// 5 minutes</span>
+        <span class="k">this</span>.<span class="n">local</span>.<span class="n">set</span>(<span class="n">id</span>, <span class="n">p</span>);
         <span class="k">return</span> <span class="n">p</span>;
     }
 }</pre></div>
@@ -370,13 +374,13 @@
       <div class="explanation">
         <h3>The story</h3>
         <p>A <strong>flame graph</strong> is a visualisation of stack-trace samples. Width is proportional to time spent — the widest bars are the hot path. Reading one: the x-axis isn't time, it's alphabetical. Height is stack depth. A "plateau" (wide bar at the top) means a function consuming CPU/wall-time. A tall skinny tower means deep recursion that's actually fast.</p>
-        <p><strong>CPU profiles</strong> show compute-bound bottlenecks. <strong>Wall-clock profiles</strong> (or "off-CPU" profiles) show time spent waiting for I/O, locks, or network. In Go, <code>pprof</code> gives you both. In Java, <code>async-profiler</code> is the gold standard. In Python, <code>py-spy</code> attaches to a running process without restart. The senior move: run continuous profiling in production (Pyroscope, Datadog Continuous Profiler) and compare flame graphs before/after a release.</p>
+        <p><strong>CPU profiles</strong> show compute-bound bottlenecks. <strong>Wall-clock profiles</strong> (or "off-CPU" profiles) show time spent waiting for I/O, locks, or network. In Go, <code>pprof</code> gives you both. In Node.js, <code>node --cpu-prof</code> writes a CPU profile and <code>0x</code> turns it into a flame graph. In Python, <code>py-spy</code> attaches to a running process without restart. The senior move: run continuous profiling in production (Pyroscope, Datadog Continuous Profiler) and compare flame graphs before/after a release.</p>
         <div class="callout">
           <div class="callout-box use">
             <div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div>
             <ul>
               <li>Go: <code>pprof</code> → CPU + alloc + goroutine profiles</li>
-              <li>Java: <code>async-profiler</code> → flame graph + allocation</li>
+              <li>Node.js: <code>--cpu-prof</code> / <code>0x</code> → flame graph</li>
               <li>Python: <code>py-spy</code> → attach to running PID</li>
             </ul>
           </div>
@@ -395,8 +399,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
-        <button class="tab py" data-target="c2-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c2-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c2-py">Python · py-spy</button>
+        <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// pprof — expose profiles in production. 2 lines.</span>
 <span class="k">import</span> <span class="n">_</span> <span class="s">"net/http/pprof"</span>       <span class="c">// registers /debug/pprof/</span>
@@ -438,29 +442,37 @@
         <span class="n">print</span>(<span class="n">s</span>.<span class="n">getvalue</span>())
         <span class="k">return</span> <span class="n">result</span>
     <span class="k">return</span> <span class="n">wrapper</span></pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// async-profiler: attach to running JVM, no restart.</span>
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// 0x / clinic.js: profile a running Node app, no code changes.</span>
 <span class="c">//</span>
-<span class="c">// 1. Record 30-second CPU profile → flame graph:</span>
-<span class="c">//   ./asprof -d 30 -f profile.html &lt;pid&gt;</span>
+<span class="c">// 1. Record CPU profile → flame graph:</span>
+<span class="c">//   npx 0x -- node dist/server.js          (Ctrl-C after ~30s)</span>
 <span class="c">//</span>
 <span class="c">// 2. Record allocation profile (find GC pressure):</span>
-<span class="c">//   ./asprof -d 30 -e alloc -f alloc.html &lt;pid&gt;</span>
+<span class="c">//   node --heap-prof dist/server.js        → *.heapprofile</span>
 <span class="c">//</span>
-<span class="c">// 3. Lock contention:</span>
-<span class="c">//   ./asprof -d 30 -e lock -f lock.html &lt;pid&gt;</span>
+<span class="c">// 3. Event-loop blocking (Node's version of lock contention):</span>
+<span class="c">//   npx clinic doctor -- node dist/server.js</span>
 <span class="c">//</span>
-<span class="c">// In Spring Boot, expose JFR (Java Flight Recorder) via Actuator:</span>
+<span class="c">// In production, record a CPU profile on demand via node:inspector:</span>
+<span class="k">import</span> { <span class="t">Session</span> } <span class="k">from</span> <span class="s">"node:inspector/promises"</span>;
+<span class="k">import</span> <span class="n">express</span> <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="c">// application.yml:</span>
-<span class="c">//   management.endpoints.web.exposure.include: jfr</span>
+<span class="k">const</span> <span class="n">admin</span> <span class="o">=</span> <span class="n">express</span>();                     <span class="c">// internal port — never expose publicly</span>
+<span class="n">admin</span>.<span class="n">post</span>(<span class="s">"/debug/cpu-profile"</span>, <span class="k">async</span> (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">session</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Session</span>();
+    <span class="n">session</span>.<span class="n">connect</span>();
+    <span class="k">await</span> <span class="n">session</span>.<span class="n">post</span>(<span class="s">"Profiler.enable"</span>);
+    <span class="k">await</span> <span class="n">session</span>.<span class="n">post</span>(<span class="s">"Profiler.start"</span>);
+    <span class="k">await new</span> <span class="t">Promise</span>((<span class="n">r</span>) <span class="o">=&gt;</span> <span class="n">setTimeout</span>(<span class="n">r</span>, <span class="num">30_000</span>));   <span class="c">// 30-second recording</span>
+    <span class="k">const</span> { <span class="n">profile</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">session</span>.<span class="n">post</span>(<span class="s">"Profiler.stop"</span>);
+    <span class="n">session</span>.<span class="n">disconnect</span>();
+    <span class="n">res</span>.<span class="n">attachment</span>(<span class="s">"profile.cpuprofile"</span>).<span class="n">json</span>(<span class="n">profile</span>);
+});
+<span class="n">admin</span>.<span class="n">listen</span>(<span class="num">6060</span>);
 
-<span class="c">// Trigger a 30-second recording:</span>
-<span class="c">//   curl http://localhost:8080/actuator/jfr \</span>
-<span class="c">//        -d duration=30s -o recording.jfr</span>
-<span class="c">//</span>
-<span class="c">// Open in JDK Mission Control → flame graph view.</span>
-<span class="c">//</span>
-<span class="c">// Continuous profiling: Pyroscope agent or Datadog dd-trace-java</span>
+<span class="c">// curl -X POST localhost:6060/debug/cpu-profile -o p.cpuprofile</span>
+<span class="c">// Open in Chrome DevTools → Performance → flame chart.</span>
+<span class="c">// Continuous profiling: Pyroscope (@pyroscope/nodejs) or Datadog dd-trace</span>
 <span class="c">// with profiling enabled — compare flame graphs between releases.</span></pre></div>
     </div>
   </section>
@@ -556,8 +568,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c3-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c3-py">Python · SQLAlchemy</button>
+        <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Fix: one JOIN query instead of N+1 separate queries.</span>
 <span class="k">func</span> (<span class="n">r</span> <span class="o">*</span><span class="t">OrderRepo</span>) <span class="n">ListWithUsers</span>(<span class="n">ctx</span> <span class="t">context.Context</span>) ([]<span class="t">OrderWithUser</span>, <span class="t">error</span>) {
@@ -604,28 +616,32 @@
 <span class="n">_count</span> <span class="o">=</span> <span class="num">0</span>
 <span class="o">@</span><span class="n">event</span>.<span class="n">listens_for</span>(<span class="n">engine</span>, <span class="s">"before_cursor_execute"</span>)
 <span class="k">def</span> <span class="n">_inc</span>(<span class="o">*</span><span class="n">a</span>): <span class="k">global</span> <span class="n">_count</span>; <span class="n">_count</span> <span class="o">+=</span> <span class="num">1</span></pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// JPA: @EntityGraph for JOIN fetch, @BatchSize for IN().</span>
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// pg: JOIN for list views, DataLoader to batch lazy lookups into one IN().</span>
+<span class="k">import</span> <span class="t">DataLoader</span> <span class="k">from</span> <span class="s">"dataloader"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Entity</span>
-<span class="k">public class</span> <span class="t">Order</span> {
-    <span class="o">@</span><span class="t">ManyToOne</span>(<span class="n">fetch</span> <span class="o">=</span> <span class="t">FetchType</span>.<span class="n">LAZY</span>)  <span class="c">// lazy by default ← N+1 risk</span>
-    <span class="k">private</span> <span class="t">User</span> <span class="n">user</span>;
+<span class="c">// N+1 risk: one query for the orders, then one per order for its user</span>
+<span class="k">for</span> (<span class="k">const</span> <span class="n">o</span> <span class="k">of</span> <span class="n">orders</span>) <span class="n">o</span>.<span class="n">user</span> <span class="o">=</span> <span class="k">await</span> <span class="n">getUser</span>(<span class="n">db</span>, <span class="n">o</span>.<span class="n">userId</span>);   <span class="c">// ← N queries</span>
+
+<span class="c">// Fix 1: JOIN — single query</span>
+<span class="k">export async function</span> <span class="n">findTop100WithUsers</span>(<span class="n">db</span>: <span class="t">Pool</span>): <span class="t">Promise</span>&lt;<span class="t">OrderWithUser</span>[]&gt; {
+    <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">OrderWithUser</span>&gt;(<span class="s">`
+        SELECT o.*, u.name AS user_name, u.email AS user_email
+          FROM orders o JOIN users u ON u.id = o.user_id
+         ORDER BY o.created_at DESC LIMIT 100`</span>);
+    <span class="k">return</span> <span class="n">rows</span>;
 }
 
-<span class="c">// Fix 1: @EntityGraph — single JOIN query</span>
-<span class="k">public interface</span> <span class="t">OrderRepo</span> <span class="k">extends</span> <span class="t">JpaRepository</span><span class="o">&lt;</span><span class="t">Order</span>, <span class="t">Long</span><span class="o">&gt;</span> {
+<span class="c">// Fix 2: DataLoader — batches every load() in one tick into one IN()</span>
+<span class="k">export const</span> <span class="n">userLoader</span> <span class="o">=</span> (<span class="n">db</span>: <span class="t">Pool</span>) <span class="o">=&gt;</span> <span class="k">new</span> <span class="t">DataLoader</span>&lt;<span class="t">number</span>, <span class="t">User</span>&gt;(<span class="k">async</span> (<span class="n">ids</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">User</span>&gt;(
+        <span class="s">"SELECT * FROM users WHERE id = ANY($1)"</span>, [<span class="n">ids</span>]);
+    <span class="k">const</span> <span class="n">byId</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Map</span>(<span class="n">rows</span>.<span class="n">map</span>((<span class="n">u</span>) <span class="o">=&gt;</span> [<span class="n">u</span>.<span class="n">id</span>, <span class="n">u</span>]));
+    <span class="k">return</span> <span class="n">ids</span>.<span class="n">map</span>((<span class="n">id</span>) <span class="o">=&gt;</span> <span class="n">byId</span>.<span class="n">get</span>(<span class="n">id</span>) <span class="o">??</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`user ${id} not found`</span>));
+});
 
-    <span class="o">@</span><span class="t">EntityGraph</span>(<span class="n">attributePaths</span> <span class="o">=</span> <span class="s">"user"</span>)
-    <span class="t">List</span><span class="o">&lt;</span><span class="t">Order</span><span class="o">&gt;</span> <span class="n">findTop100ByOrderByCreatedAtDesc</span>();
-}
-
-<span class="c">// Fix 2: @BatchSize — Hibernate auto-batches lazy loads</span>
-<span class="o">@</span><span class="t">Entity</span>
-<span class="o">@</span><span class="t">BatchSize</span>(<span class="n">size</span> <span class="o">=</span> <span class="num">100</span>)        <span class="c">// loads up to 100 users in one IN()</span>
-<span class="k">public class</span> <span class="t">User</span> { <span class="o">...</span> }
-
-<span class="c">// Dev guard: spring.jpa.properties.hibernate.generate_statistics=true</span>
-<span class="c">// Logs query count per session — spot N+1 in dev before it ships.</span></pre></div>
+<span class="c">// Dev guard: count pool.query calls per request (AsyncLocalStorage) and</span>
+<span class="c">// warn above 10 — spot N+1 in dev before it ships.</span></pre></div>
     </div>
   </section>
 
@@ -731,8 +747,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
-        <button class="tab py" data-target="c4-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c4-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c4-py">Python · redis-py</button>
+        <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Cache-aside with stampede protection via singleflight.</span>
 <span class="k">import</span> <span class="s">"golang.org/x/sync/singleflight"</span>
@@ -791,36 +807,33 @@
         <span class="n">p</span> <span class="o">=</span> <span class="n">dict</span>(<span class="n">p</span>)
         <span class="k">await</span> <span class="n">_redis</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
         <span class="k">return</span> <span class="n">p</span></pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c">// Spring @Cacheable — cache-aside in one annotation.</span>
+      <div class="code-pane" id="c4-ts"><pre><span class="c">// A small higher-order helper does cache-aside.</span>
+<span class="k">import</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">ProductService</span> {
-    <span class="k">private final</span> <span class="t">ProductRepo</span> <span class="n">repo</span>;
+<span class="k">const</span> <span class="n">redis</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Redis</span>(<span class="n">process</span>.<span class="n">env</span>.<span class="n">REDIS_URL</span><span class="o">!</span>);
+<span class="k">const</span> <span class="n">TTL_SECONDS</span> <span class="o">=</span> <span class="num">5</span> <span class="o">*</span> <span class="num">60</span>;                   <span class="c">// entry TTL: 5 minutes</span>
 
-    <span class="c">// cache-aside: check cache → miss → load → backfill</span>
-    <span class="o">@</span><span class="t">Cacheable</span>(<span class="n">value</span> <span class="o">=</span> <span class="s">"products"</span>, <span class="n">key</span> <span class="o">=</span> <span class="s">"#id"</span>)
-    <span class="k">public</span> <span class="t">Product</span> <span class="n">get</span>(<span class="t">String</span> <span class="n">id</span>) {
-        <span class="k">return</span> <span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>).<span class="n">orElseThrow</span>();
-    }
-
-    <span class="c">// On write: evict the cache entry</span>
-    <span class="o">@</span><span class="t">CacheEvict</span>(<span class="n">value</span> <span class="o">=</span> <span class="s">"products"</span>, <span class="n">key</span> <span class="o">=</span> <span class="s">"#product.id"</span>)
-    <span class="k">public</span> <span class="t">Product</span> <span class="n">update</span>(<span class="t">Product</span> <span class="n">product</span>) {
-        <span class="k">return</span> <span class="n">repo</span>.<span class="n">save</span>(<span class="n">product</span>);
-    }
+<span class="c">// cache-aside: check cache → miss → load → backfill</span>
+<span class="k">function</span> <span class="n">cacheable</span>&lt;<span class="t">T</span>&gt;(<span class="n">name</span>: <span class="t">string</span>, <span class="n">load</span>: (<span class="n">id</span>: <span class="t">string</span>) <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="t">T</span>&gt;) {
+    <span class="k">return async</span> (<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">T</span>&gt; <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">hit</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">get</span>(<span class="s">`${name}:${id}`</span>);
+        <span class="k">if</span> (<span class="n">hit</span>) <span class="k">return</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">hit</span>) <span class="k">as</span> <span class="t">T</span>;
+        <span class="k">const</span> <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="n">load</span>(<span class="n">id</span>);
+        <span class="k">await</span> <span class="n">redis</span>.<span class="n">set</span>(<span class="s">`${name}:${id}`</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">value</span>), <span class="s">"EX"</span>, <span class="n">TTL_SECONDS</span>);
+        <span class="k">return</span> <span class="n">value</span>;
+    };
 }
 
-<span class="c">// Redis cache config with Caffeine L1 + Redis L2</span>
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="o">@</span><span class="t">EnableCaching</span>
-<span class="k">public class</span> <span class="t">CacheConfig</span> {
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">CacheManager</span> <span class="n">cacheManager</span>(<span class="t">RedisConnectionFactory</span> <span class="n">cf</span>) {
-        <span class="k">return</span> <span class="t">RedisCacheManager</span>.<span class="n">builder</span>(<span class="n">cf</span>)
-            .<span class="n">cacheDefaults</span>(<span class="t">RedisCacheConfiguration</span>
-                .<span class="n">defaultCacheConfig</span>()
-                .<span class="n">entryTtl</span>(<span class="t">Duration</span>.<span class="n">ofMinutes</span>(<span class="num">5</span>)))
-            .<span class="n">build</span>();
+<span class="k">export class</span> <span class="t">ProductService</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">repo</span>: <span class="t">ProductRepo</span>) {}
+
+    <span class="k">readonly</span> <span class="n">get</span> <span class="o">=</span> <span class="n">cacheable</span>(<span class="s">"products"</span>, (<span class="n">id</span>) <span class="o">=&gt;</span> <span class="k">this</span>.<span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>));
+
+    <span class="c">// On write: evict the cache entry</span>
+    <span class="k">async</span> <span class="n">update</span>(<span class="n">product</span>: <span class="t">Product</span>): <span class="t">Promise</span>&lt;<span class="t">Product</span>&gt; {
+        <span class="k">const</span> <span class="n">saved</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">repo</span>.<span class="n">save</span>(<span class="n">product</span>);
+        <span class="k">await</span> <span class="n">redis</span>.<span class="n">del</span>(<span class="s">`products:${product.id}`</span>);
+        <span class="k">return</span> <span class="n">saved</span>;
     }
 }</pre></div>
     </div>
@@ -895,7 +908,7 @@
           <div class="callout-box use">
             <div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div>
             <ul>
-              <li>HikariCP (Java), pgxpool (Go), asyncpg (Python)</li>
+              <li>pgxpool (Go), asyncpg (Python), pg Pool (Node.js)</li>
               <li>PgBouncer between app and Postgres in multi-pod setups</li>
               <li>Monitor pool saturation as a golden signal</li>
             </ul>
@@ -915,8 +928,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
-        <button class="tab py" data-target="c5-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c5-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c5-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// pgxpool — bounded pool with health checks.</span>
 <span class="k">import</span> <span class="s">"github.com/jackc/pgx/v5/pgxpool"</span>
@@ -958,23 +971,27 @@
     <span class="k">async with</span> <span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">conn</span>:
         <span class="k">return</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetchrow</span>(
             <span class="s">"SELECT * FROM orders WHERE id = $1"</span>, <span class="n">order_id</span>)</pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// HikariCP — the fastest JVM pool. Spring Boot default.</span>
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// pg.Pool — node-postgres' built-in pool, the usual Node choice.</span>
+<span class="k">import</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> { <span class="t">Gauge</span> } <span class="k">from</span> <span class="s">"prom-client"</span>;
 
-<span class="c">// application.yml:</span>
-<span class="c">//   spring.datasource.hikari:</span>
-<span class="c">//     maximum-pool-size: 20</span>
-<span class="c">//     minimum-idle: 4</span>
-<span class="c">//     connection-timeout: 2000    # fail fast: 2 seconds</span>
-<span class="c">//     max-lifetime: 1800000       # 30 minutes</span>
-<span class="c">//     idle-timeout: 300000        # 5 minutes</span>
-<span class="c">//     leak-detection-threshold: 30000  # warn if conn held > 30s</span>
+<span class="k">export const</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Pool</span>({
+    <span class="n">connectionString</span>: <span class="n">process</span>.<span class="n">env</span>.<span class="n">DATABASE_URL</span>,
+    <span class="n">max</span>: <span class="num">20</span>,                          <span class="c">// maximum pool size</span>
+    <span class="n">min</span>: <span class="num">4</span>,                           <span class="c">// keep warm</span>
+    <span class="n">connectionTimeoutMillis</span>: <span class="num">2000</span>,    <span class="c">// fail fast: 2 seconds</span>
+    <span class="n">maxLifetimeSeconds</span>: <span class="num">1800</span>,         <span class="c">// 30 minutes</span>
+    <span class="n">idleTimeoutMillis</span>: <span class="num">300_000</span>,       <span class="c">// 5 minutes</span>
+});  <span class="c">// no leak detection: always client.release() in a finally block</span>
 
-<span class="c">// Monitor via Micrometer (auto-registered):</span>
-<span class="c">//   hikaricp_connections_active</span>
-<span class="c">//   hikaricp_connections_idle</span>
-<span class="c">//   hikaricp_connections_pending</span>
-<span class="c">//</span>
-<span class="c">// Alert on pending > 0 for 30s → pool too small or query too slow.</span></pre></div>
+<span class="c">// Monitor via prom-client (read on every scrape):</span>
+<span class="k">new</span> <span class="t">Gauge</span>({ <span class="n">name</span>: <span class="s">"pg_pool_active"</span>, <span class="n">help</span>: <span class="s">"checked-out connections"</span>,
+    <span class="n">collect</span>() { <span class="k">this</span>.<span class="n">set</span>(<span class="n">pool</span>.<span class="n">totalCount</span> <span class="o">-</span> <span class="n">pool</span>.<span class="n">idleCount</span>); } });
+<span class="k">new</span> <span class="t">Gauge</span>({ <span class="n">name</span>: <span class="s">"pg_pool_idle"</span>, <span class="n">help</span>: <span class="s">"idle connections"</span>,
+    <span class="n">collect</span>() { <span class="k">this</span>.<span class="n">set</span>(<span class="n">pool</span>.<span class="n">idleCount</span>); } });
+<span class="k">new</span> <span class="t">Gauge</span>({ <span class="n">name</span>: <span class="s">"pg_pool_pending"</span>, <span class="n">help</span>: <span class="s">"callers waiting for a connection"</span>,
+    <span class="n">collect</span>() { <span class="k">this</span>.<span class="n">set</span>(<span class="n">pool</span>.<span class="n">waitingCount</span>); } });
+<span class="c">// Alert on pending &gt; 0 for 30s → pool too small or query too slow.</span></pre></div>
     </div>
   </section>
 
@@ -1033,8 +1050,8 @@
           <g font-family="var(--hf-font-mono)" font-size="9">
             <text x="140" y="235" text-anchor="end" fill="var(--hf-info-fg)">Go goroutines</text>
             <text x="155" y="235" fill="var(--hf-success-fg)">async but feels sync · best of both</text>
-            <text x="140" y="255" text-anchor="end" fill="var(--hf-ink)">Java virtual threads</text>
-            <text x="155" y="255" fill="var(--hf-success-fg)">Loom (Java 21) · same idea as goroutines</text>
+            <text x="140" y="255" text-anchor="end" fill="var(--hf-ink)">Node.js event loop</text>
+            <text x="155" y="255" fill="var(--hf-success-fg)">one thread · never block it with CPU work</text>
             <text x="140" y="275" text-anchor="end" fill="var(--hf-ink-secondary)">Python asyncio</text>
             <text x="155" y="275" fill="var(--hf-ink-secondary)">true event loop · must use async libraries</text>
             <text x="140" y="295" text-anchor="end" fill="var(--hf-danger-fg)">Thread-per-req</text>
@@ -1046,13 +1063,13 @@
       <div class="explanation">
         <h3>The story</h3>
         <p><strong>Synchronous I/O</strong> blocks the thread while waiting for a response. One thread per request, each thread owns ~1MB of stack. At 10,000 concurrent connections, that's 10GB just for stacks. <strong>Asynchronous I/O</strong> (event loop) registers a callback or future and yields the thread to handle other work. One thread can manage thousands of connections because it's never idle — it just switches between ready I/O.</p>
-        <p>The choice depends on your language: <strong>Go</strong> gives you goroutines — lightweight green threads multiplexed onto OS threads. You write blocking-looking code but the runtime makes it non-blocking. <strong>Java 21</strong> virtual threads (Loom) do the same. <strong>Python</strong> asyncio is a true event loop — you must use <code>async/await</code> throughout and avoid blocking calls. <strong>Thread-per-request</strong> is fine below ~1,000 concurrent connections — don't over-engineer if you're not at scale.</p>
+        <p>The choice depends on your language: <strong>Go</strong> gives you goroutines — lightweight green threads multiplexed onto OS threads. You write blocking-looking code but the runtime makes it non-blocking. <strong>Node.js</strong> is an event loop on one thread: every I/O call is asynchronous, so concurrency is cheap, but one CPU-heavy function stalls every request — move that work to <code>worker_threads</code>. <strong>Python</strong> asyncio is a true event loop — you must use <code>async/await</code> throughout and avoid blocking calls. <strong>Thread-per-request</strong> is fine below ~1,000 concurrent connections — don't over-engineer if you're not at scale.</p>
         <div class="callout">
           <div class="callout-box use">
             <div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div>
             <ul>
               <li>Go: goroutines by default — no choice needed</li>
-              <li>Java 21+: virtual threads for I/O-bound services</li>
+              <li>Node.js: async I/O by default; <code>worker_threads</code> for CPU-bound work</li>
               <li>Python: asyncio + uvicorn for I/O-heavy APIs</li>
             </ul>
           </div>
@@ -1072,7 +1089,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c6-go">Go</button>
         <button class="tab py" data-target="c6-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c6-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c6-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Go: goroutines = async that looks like sync.</span>
 <span class="c">// No async/await — the runtime multiplexes for you.</span>
@@ -1112,26 +1129,24 @@
 <span class="c"># ⚠️ NEVER do this in an async handler:</span>
 <span class="c">#   import requests   ← blocks the event loop!</span>
 <span class="c">#   requests.get(...) ← use httpx.AsyncClient instead</span></pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// Java 21 virtual threads: async that looks like sync.</span>
-<span class="c">// Spring Boot 3.2+ supports virtual threads natively.</span>
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// Node: one event loop — async/await is async that reads like sync.</span>
+<span class="c">// Built in: no thread pool or virtual-thread flag to turn on.</span>
 
-<span class="c">// application.yml:</span>
-<span class="c">//   spring.threads.virtual.enabled: true</span>
+<span class="c">// Every request handler runs on the event loop. You write awaited</span>
+<span class="c">// DB/HTTP calls, and while one is pending the loop serves other</span>
+<span class="c">// requests. Only CPU-heavy work blocks it → move that to worker_threads.</span>
 
-<span class="c">// That's it. Every request handler now runs on a virtual thread.</span>
-<span class="c">// You write blocking JDBC/HTTP code, but the JVM multiplexes</span>
-<span class="c">// onto a small pool of carrier threads automatically.</span>
-
-<span class="o">@</span><span class="t">GetMapping</span>(<span class="s">"/products/{id}"</span>)
-<span class="k">public</span> <span class="t">ProductPage</span> <span class="n">get</span>(<span class="o">@</span><span class="t">PathVariable</span> <span class="t">String</span> <span class="n">id</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-    <span class="c">// Fan-out with StructuredTaskScope (Java 21 preview)</span>
-    <span class="k">try</span> (<span class="k">var</span> <span class="n">scope</span> <span class="o">=</span> <span class="k">new</span> <span class="t">StructuredTaskScope.ShutdownOnFailure</span>()) {
-        <span class="k">var</span> <span class="n">product</span> <span class="o">=</span> <span class="n">scope</span>.<span class="n">fork</span>(() <span class="o">-&gt;</span> <span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>));
-        <span class="k">var</span> <span class="n">reviews</span> <span class="o">=</span> <span class="n">scope</span>.<span class="n">fork</span>(() <span class="o">-&gt;</span> <span class="n">reviewClient</span>.<span class="n">fetch</span>(<span class="n">id</span>));
-        <span class="n">scope</span>.<span class="n">join</span>().<span class="n">throwIfFailed</span>();
-        <span class="k">return</span> <span class="k">new</span> <span class="t">ProductPage</span>(<span class="n">product</span>.<span class="n">get</span>(), <span class="n">reviews</span>.<span class="n">get</span>());
-    }
-}</pre></div>
+<span class="n">app</span>.<span class="n">get</span>(<span class="s">"/products/:id"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> { <span class="n">id</span> } <span class="o">=</span> <span class="n">req</span>.<span class="n">params</span>;
+    <span class="c">// Fan-out with Promise.all; like ShutdownOnFailure, abort the sibling</span>
+    <span class="k">const</span> <span class="n">ac</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AbortController</span>();
+    <span class="k">const</span> [<span class="n">product</span>, <span class="n">reviews</span>] <span class="o">=</span> <span class="k">await</span> <span class="t">Promise</span>.<span class="n">all</span>([
+        <span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>, <span class="n">ac</span>.<span class="n">signal</span>),
+        <span class="n">reviewClient</span>.<span class="n">fetch</span>(<span class="n">id</span>, <span class="n">ac</span>.<span class="n">signal</span>),
+    ]).<span class="n">catch</span>((<span class="n">err</span>: <span class="t">unknown</span>) <span class="o">=&gt;</span> { <span class="n">ac</span>.<span class="n">abort</span>(); <span class="k">throw</span> <span class="n">err</span>; });
+    <span class="k">const</span> <span class="n">page</span>: <span class="t">ProductPage</span> <span class="o">=</span> { <span class="n">product</span>, <span class="n">reviews</span> };
+    <span class="n">res</span>.<span class="n">json</span>(<span class="n">page</span>);       <span class="c">// Express 5 sends a rejection to the error handler</span>
+});</pre></div>
     </div>
   </section>
 
@@ -1247,8 +1262,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
-        <button class="tab py" data-target="c7-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c7-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c7-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Batch inserter: flush on size or interval.</span>
 <span class="k">type</span> <span class="t">BatchInserter</span> <span class="k">struct</span> {
@@ -1317,33 +1332,34 @@
         <span class="k">await</span> <span class="n">self</span>.<span class="n">db</span>.<span class="n">copy_records_to_table</span>(
             <span class="s">"events"</span>, <span class="n">records</span><span class="o">=</span>[(<span class="n">e</span>.<span class="n">id</span>, <span class="n">e</span>.<span class="n">type</span>, <span class="n">e</span>.<span class="n">data</span>) <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">batch</span>],
             <span class="n">columns</span><span class="o">=</span>[<span class="s">"id"</span>, <span class="s">"type"</span>, <span class="s">"data"</span>])</pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// Spring Batch or manual buffer + scheduled flush.</span>
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// Manual buffer, flushed on a setInterval timer.</span>
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">EventBatcher</span> {
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
-    <span class="k">private final</span> <span class="t">List</span><span class="o">&lt;</span><span class="t">Event</span><span class="o">&gt;</span> <span class="n">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CopyOnWriteArrayList</span><span class="o">&lt;&gt;</span>();
+<span class="k">export class</span> <span class="t">EventBatcher</span> {
+    <span class="k">private</span> <span class="n">buf</span>: <span class="t">Event</span>[] <span class="o">=</span> [];
+    <span class="k">private readonly</span> <span class="n">timer</span> <span class="o">=</span> <span class="n">setInterval</span>(() <span class="o">=&gt;</span> <span class="k">this</span>.<span class="n">kick</span>(), <span class="num">100</span>);   <span class="c">// every 100ms</span>
 
-    <span class="k">public void</span> <span class="n">add</span>(<span class="t">Event</span> <span class="n">e</span>) {
-        <span class="n">buf</span>.<span class="n">add</span>(<span class="n">e</span>);
-        <span class="k">if</span> (<span class="n">buf</span>.<span class="n">size</span>() <span class="o">&gt;=</span> <span class="num">500</span>) <span class="n">flush</span>();
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
+
+    <span class="n">add</span>(<span class="n">e</span>: <span class="t">Event</span>): <span class="k">void</span> {
+        <span class="k">this</span>.<span class="n">buf</span>.<span class="n">push</span>(<span class="n">e</span>);
+        <span class="k">if</span> (<span class="k">this</span>.<span class="n">buf</span>.<span class="n">length</span> <span class="o">&gt;=</span> <span class="num">500</span>) <span class="k">this</span>.<span class="n">kick</span>();
     }
 
-    <span class="o">@</span><span class="t">Scheduled</span>(<span class="n">fixedRate</span> <span class="o">=</span> <span class="num">100</span>)     <span class="c">// every 100ms</span>
-    <span class="k">public synchronized void</span> <span class="n">flush</span>() {
-        <span class="k">if</span> (<span class="n">buf</span>.<span class="n">isEmpty</span>()) <span class="k">return</span>;
-        <span class="t">List</span><span class="o">&lt;</span><span class="t">Event</span><span class="o">&gt;</span> <span class="n">batch</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ArrayList</span><span class="o">&lt;&gt;</span>(<span class="n">buf</span>);
-        <span class="n">buf</span>.<span class="n">clear</span>();
-        <span class="n">jdbc</span>.<span class="n">batchUpdate</span>(
-            <span class="s">"INSERT INTO events (id, type, data) VALUES (?, ?, ?)"</span>,
-            <span class="k">new</span> <span class="t">BatchPreparedStatementSetter</span>() {
-                <span class="k">public void</span> <span class="n">setValues</span>(<span class="t">PreparedStatement</span> <span class="n">ps</span>, <span class="k">int</span> <span class="n">i</span>) <span class="k">throws</span> <span class="t">SQLException</span> {
-                    <span class="n">ps</span>.<span class="n">setString</span>(<span class="num">1</span>, <span class="n">batch</span>.<span class="n">get</span>(<span class="n">i</span>).<span class="n">id</span>());
-                    <span class="n">ps</span>.<span class="n">setString</span>(<span class="num">2</span>, <span class="n">batch</span>.<span class="n">get</span>(<span class="n">i</span>).<span class="n">type</span>());
-                    <span class="n">ps</span>.<span class="n">setString</span>(<span class="num">3</span>, <span class="n">batch</span>.<span class="n">get</span>(<span class="n">i</span>).<span class="n">data</span>());
-                }
-                <span class="k">public int</span> <span class="n">getBatchSize</span>() { <span class="k">return</span> <span class="n">batch</span>.<span class="n">size</span>(); }
-            });
+    <span class="k">private</span> <span class="n">kick</span>(): <span class="k">void</span> {
+        <span class="k">this</span>.<span class="n">flush</span>().<span class="n">catch</span>((<span class="n">err</span>) <span class="o">=&gt;</span> <span class="n">log</span>.<span class="n">error</span>({ <span class="n">err</span> }, <span class="s">"event flush failed"</span>));
+    }
+
+    <span class="c">// Single-threaded: swapping the buffer is atomic, no lock needed</span>
+    <span class="k">async</span> <span class="n">flush</span>(): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">if</span> (<span class="k">this</span>.<span class="n">buf</span>.<span class="n">length</span> <span class="o">===</span> <span class="num">0</span>) <span class="k">return</span>;
+        <span class="k">const</span> <span class="n">batch</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">buf</span>;
+        <span class="k">this</span>.<span class="n">buf</span> <span class="o">=</span> [];
+        <span class="c">// One multi-row INSERT: unnest() turns three arrays into rows</span>
+        <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>(
+            <span class="s">`INSERT INTO events (id, type, data)
+             SELECT * FROM unnest($1::text[], $2::text[], $3::text[])`</span>,
+            [<span class="n">batch</span>.<span class="n">map</span>((<span class="n">e</span>) <span class="o">=&gt;</span> <span class="n">e</span>.<span class="n">id</span>), <span class="n">batch</span>.<span class="n">map</span>((<span class="n">e</span>) <span class="o">=&gt;</span> <span class="n">e</span>.<span class="n">type</span>), <span class="n">batch</span>.<span class="n">map</span>((<span class="n">e</span>) <span class="o">=&gt;</span> <span class="n">e</span>.<span class="n">data</span>)]);
     }
 }</pre></div>
     </div>
@@ -1422,7 +1438,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c8-go">Go</button>
         <button class="tab py" data-target="c8-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c8-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c8-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// CDN-aware Cache-Control headers.</span>
 <span class="k">func</span> <span class="n">listProducts</span>(<span class="n">w</span> <span class="t">http.ResponseWriter</span>, <span class="n">r</span> <span class="o">*</span><span class="t">http.Request</span>) {
@@ -1452,19 +1468,19 @@
 <span class="c"># Purge via Cloudflare API on product update:</span>
 <span class="c"># httpx.post("https://api.cloudflare.com/.../purge_cache",</span>
 <span class="c">#            json={"tags": ["products"]})</span></pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring — CDN-friendly headers via ResponseEntity.</span>
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// Express — CDN-friendly headers set on the response.</span>
 
-<span class="o">@</span><span class="t">GetMapping</span>(<span class="s">"/v1/products"</span>)
-<span class="k">public</span> <span class="t">ResponseEntity</span><span class="o">&lt;</span><span class="t">List</span><span class="o">&lt;</span><span class="t">Product</span><span class="o">&gt;&gt;</span> <span class="n">list</span>() {
-    <span class="k">return</span> <span class="t">ResponseEntity</span>.<span class="n">ok</span>()
-        .<span class="n">cacheControl</span>(<span class="t">CacheControl</span>
-            .<span class="n">maxAge</span>(<span class="t">Duration</span>.<span class="n">ofSeconds</span>(<span class="num">60</span>))
-            .<span class="n">sMaxAge</span>(<span class="t">Duration</span>.<span class="n">ofSeconds</span>(<span class="num">300</span>))
-            .<span class="n">cachePublic</span>()
-            .<span class="n">staleWhileRevalidate</span>(<span class="t">Duration</span>.<span class="n">ofSeconds</span>(<span class="num">600</span>)))
-        .<span class="n">header</span>(<span class="s">"Surrogate-Key"</span>, <span class="s">"products"</span>)
-        .<span class="n">body</span>(<span class="n">svc</span>.<span class="n">listAll</span>());
-}</pre></div>
+<span class="n">app</span>.<span class="n">get</span>(<span class="s">"/v1/products"</span>, <span class="k">async</span> (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="n">res</span>.<span class="n">set</span>(<span class="s">"Cache-Control"</span>, [
+        <span class="s">"public"</span>,
+        <span class="s">"max-age=60"</span>,
+        <span class="s">"s-maxage=300"</span>,
+        <span class="s">"stale-while-revalidate=600"</span>,
+    ].<span class="n">join</span>(<span class="s">", "</span>));
+    <span class="c">// Surrogate key for targeted purging: purge all products at once</span>
+    <span class="n">res</span>.<span class="n">set</span>(<span class="s">"Surrogate-Key"</span>, <span class="s">"products"</span>);
+    <span class="n">res</span>.<span class="n">json</span>(<span class="k">await</span> <span class="n">svc</span>.<span class="n">listAll</span>());
+});</pre></div>
     </div>
   </section>
 
@@ -1557,8 +1573,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c9-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c9-py">Python · redis-py</button>
+        <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Hot-key mitigation: split a hot key into N replicas.</span>
 <span class="k">const</span> <span class="n">hotKeyReplicas</span> <span class="o">=</span> <span class="num">8</span>
@@ -1592,27 +1608,27 @@
         <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">range</span>(<span class="n">HOT_KEY_REPLICAS</span>):
             <span class="n">p</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"{key}:{i}"</span>, <span class="n">val</span>, <span class="n">ex</span><span class="o">=</span><span class="n">ttl</span>)
         <span class="k">await</span> <span class="n">p</span>.<span class="n">execute</span>()</pre></div>
-      <div class="code-pane" id="c9-java"><pre><span class="c">// Spring + Lettuce pipeline for hot-key fan-out.</span>
+      <div class="code-pane" id="c9-ts"><pre><span class="c">// ioredis pipeline for hot-key fan-out.</span>
+<span class="k">import type</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">HotKeyCache</span> {
-    <span class="k">private static final int</span> <span class="n">REPLICAS</span> <span class="o">=</span> <span class="num">8</span>;
-    <span class="k">private final</span> <span class="t">StringRedisTemplate</span> <span class="n">redis</span>;
-    <span class="k">private final</span> <span class="t">ThreadLocalRandom</span> <span class="n">rng</span> <span class="o">=</span> <span class="t">ThreadLocalRandom</span>.<span class="n">current</span>();
+<span class="k">export class</span> <span class="t">HotKeyCache</span> {
+    <span class="k">private static readonly</span> <span class="n">REPLICAS</span> <span class="o">=</span> <span class="num">8</span>;
 
-    <span class="k">public</span> <span class="t">String</span> <span class="n">get</span>(<span class="t">String</span> <span class="n">key</span>) {
-        <span class="k">int</span> <span class="n">shard</span> <span class="o">=</span> <span class="n">rng</span>.<span class="n">nextInt</span>(<span class="n">REPLICAS</span>);
-        <span class="k">return</span> <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">get</span>(<span class="n">key</span> <span class="o">+</span> <span class="s">":"</span> <span class="o">+</span> <span class="n">shard</span>);
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">redis</span>: <span class="t">Redis</span>) {}
+
+    <span class="n">get</span>(<span class="n">key</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">string</span> | <span class="k">null</span>&gt; {
+        <span class="c">// Read from a random replica to spread load</span>
+        <span class="k">const</span> <span class="n">shard</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">floor</span>(<span class="t">Math</span>.<span class="n">random</span>() <span class="o">*</span> <span class="t">HotKeyCache</span>.<span class="n">REPLICAS</span>);
+        <span class="k">return this</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="s">`${key}:${shard}`</span>);
     }
 
-    <span class="k">public void</span> <span class="n">set</span>(<span class="t">String</span> <span class="n">key</span>, <span class="t">String</span> <span class="n">val</span>, <span class="t">Duration</span> <span class="n">ttl</span>) {
-        <span class="n">redis</span>.<span class="n">executePipelined</span>((<span class="t">RedisCallback</span><span class="o">&lt;</span><span class="t">Void</span><span class="o">&gt;</span>) <span class="n">conn</span> <span class="o">-&gt;</span> {
-            <span class="k">for</span> (<span class="k">int</span> <span class="n">i</span> <span class="o">=</span> <span class="num">0</span>; <span class="n">i</span> <span class="o">&lt;</span> <span class="n">REPLICAS</span>; <span class="n">i</span><span class="o">++</span>)
-                <span class="n">conn</span>.<span class="n">stringCommands</span>().<span class="n">set</span>(
-                    (<span class="n">key</span> <span class="o">+</span> <span class="s">":"</span> <span class="o">+</span> <span class="n">i</span>).<span class="n">getBytes</span>(),
-                    <span class="n">val</span>.<span class="n">getBytes</span>());
-            <span class="k">return</span> <span class="k">null</span>;
-        });
+    <span class="k">async</span> <span class="n">set</span>(<span class="n">key</span>: <span class="t">string</span>, <span class="n">val</span>: <span class="t">string</span>, <span class="n">ttlSeconds</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="c">// Write to ALL replicas in one round-trip</span>
+        <span class="k">const</span> <span class="n">pipe</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">redis</span>.<span class="n">pipeline</span>();
+        <span class="k">for</span> (<span class="k">let</span> <span class="n">i</span> <span class="o">=</span> <span class="num">0</span>; <span class="n">i</span> <span class="o">&lt;</span> <span class="t">HotKeyCache</span>.<span class="n">REPLICAS</span>; <span class="n">i</span><span class="o">++</span>) {
+            <span class="n">pipe</span>.<span class="n">set</span>(<span class="s">`${key}:${i}`</span>, <span class="n">val</span>, <span class="s">"EX"</span>, <span class="n">ttlSeconds</span>);
+        }
+        <span class="k">await</span> <span class="n">pipe</span>.<span class="n">exec</span>();
     }
 }</pre></div>
     </div>
@@ -1704,7 +1720,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c10-go">k6 (JS)</button>
         <button class="tab py" data-target="c10-py">Locust (Python)</button>
-        <button class="tab java" data-target="c10-java">Gatling (Scala)</button>
+        <button class="tab yaml" data-target="c10-yaml">Artillery (Node)</button>
       </div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// k6 — ramp-up load test with SLO thresholds.</span>
 <span class="k">import</span> <span class="n">http</span> <span class="k">from</span> <span class="s">'k6/http'</span>;
@@ -1749,28 +1765,33 @@
 
 <span class="c"># Run: locust -f locustfile.py --host https://api.example.com</span>
 <span class="c"># Web UI at localhost:8089 — ramp users, watch the curve live.</span></pre></div>
-      <div class="code-pane" id="c10-java"><pre><span class="c">// Gatling — Scala DSL for load tests.</span>
-<span class="k">class</span> <span class="t">ProductSimulation</span> <span class="k">extends</span> <span class="t">Simulation</span> {
+      <div class="code-pane" id="c10-yaml"><pre><span class="c"># Artillery — YAML load tests, run by Node.</span>
+<span class="n">config</span>:
+  <span class="n">target</span>: <span class="s">"https://api.example.com"</span>
+  <span class="n">phases</span>:
+    - <span class="n">duration</span>: <span class="num">300</span>              <span class="c"># 5min ramp</span>
+      <span class="n">arrivalRate</span>: <span class="num">10</span>
+      <span class="n">rampTo</span>: <span class="num">500</span>
+    - <span class="n">duration</span>: <span class="num">300</span>              <span class="c"># 5min steady</span>
+      <span class="n">arrivalRate</span>: <span class="num">500</span>
+    - <span class="n">duration</span>: <span class="num">300</span>              <span class="c"># push to cliff</span>
+      <span class="n">arrivalRate</span>: <span class="num">500</span>
+      <span class="n">rampTo</span>: <span class="num">2000</span>
+  <span class="n">plugins</span>:
+    <span class="n">expect</span>:
+      <span class="n">reportFailuresAsErrors</span>: <span class="k">true</span>   <span class="c"># non-200 counts as an error</span>
+  <span class="n">ensure</span>:
+    <span class="n">p99</span>: <span class="num">200</span>                     <span class="c"># p99 &lt; 200ms</span>
+    <span class="n">maxErrorRate</span>: <span class="num">0.1</span>            <span class="c"># &lt; 0.1% errors</span>
 
-  <span class="k">val</span> <span class="n">httpConf</span> <span class="o">=</span> <span class="n">http</span>.<span class="n">baseUrl</span>(<span class="s">"https://api.example.com"</span>)
-
-  <span class="k">val</span> <span class="n">browse</span> <span class="o">=</span> <span class="n">scenario</span>(<span class="s">"Browse"</span>)
-    .<span class="n">exec</span>(<span class="n">http</span>(<span class="s">"list products"</span>).<span class="n">get</span>(<span class="s">"/v1/products"</span>)
-      .<span class="n">check</span>(<span class="n">status</span>.<span class="n">is</span>(<span class="num">200</span>)))
-    .<span class="n">pause</span>(<span class="num">1</span>, <span class="num">3</span>)     <span class="c">// 1-3 second think time</span>
-
-  <span class="n">setUp</span>(
-    <span class="n">browse</span>.<span class="n">inject</span>(
-      <span class="n">rampUsersPerSec</span>(<span class="num">10</span>).<span class="n">to</span>(<span class="num">500</span>).<span class="n">during</span>(<span class="num">300</span>),  <span class="c">// 5min ramp</span>
-      <span class="n">constantUsersPerSec</span>(<span class="num">500</span>).<span class="n">during</span>(<span class="num">300</span>),    <span class="c">// 5min steady</span>
-      <span class="n">rampUsersPerSec</span>(<span class="num">500</span>).<span class="n">to</span>(<span class="num">2000</span>).<span class="n">during</span>(<span class="num">300</span>), <span class="c">// push to cliff</span>
-    )
-  ).<span class="n">protocols</span>(<span class="n">httpConf</span>)
-   .<span class="n">assertions</span>(
-     <span class="n">global</span>.<span class="n">responseTime</span>.<span class="n">percentile3</span>.<span class="n">lt</span>(<span class="num">200</span>),  <span class="c">// p99 &lt; 200ms</span>
-     <span class="n">global</span>.<span class="n">failedRequests</span>.<span class="n">percent</span>.<span class="n">lt</span>(<span class="num">0.1</span>),    <span class="c">// &lt; 0.1% errors</span>
-   )
-}</pre></div>
+<span class="n">scenarios</span>:
+  - <span class="n">name</span>: <span class="s">"Browse"</span>
+    <span class="n">flow</span>:
+      - <span class="n">get</span>:
+          <span class="n">url</span>: <span class="s">"/v1/products"</span>
+          <span class="n">expect</span>:
+            - <span class="n">statusCode</span>: <span class="num">200</span>
+      - <span class="n">think</span>: <span class="num">2</span>                 <span class="c"># 2s think time (Gatling: random 1-3s)</span></pre></div>
     </div>
   </section>
 

@@ -97,7 +97,7 @@
       <header class="kt-hero">
         <span class="hf-eyebrow">Tier two · Pillar 04</span>
         <h1 class="kt-hero__title">Microservices <em>design patterns</em>.</h1>
-        <p class="hf-lede">A practical reference for the <em>twelve patterns</em> you'll actually reach for when building distributed systems — with diagrams, trade-offs, and battle-tested implementations in <em>Go</em>, <em>Python</em>, and <em>Java</em>.</p>
+        <p class="hf-lede">A practical reference for the <em>twelve patterns</em> you'll actually reach for when building distributed systems — with diagrams, trade-offs, and battle-tested implementations in <em>Go</em>, <em>Python</em>, and <em>TypeScript</em>.</p>
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Patterns</span><span class="hf-stat__value">12</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Implementations</span><span class="hf-stat__value">~36</span></div>
@@ -237,7 +237,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="saga-go">Go</button>
         <button class="tab py" data-target="saga-py">Python · FastAPI</button>
-        <button class="tab java" data-target="saga-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="saga-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="saga-go"><pre><span class="c">// Orchestrated saga: each step has an action and a compensation.</span>
 <span class="k">type</span> <span class="t">Step</span> <span class="k">struct</span> {
@@ -310,50 +310,50 @@
     ])
     <span class="k">return</span> {<span class="s">"status"</span>: <span class="s">"ok"</span>}</pre></div>
 
-      <div class="code-pane" id="saga-java"><pre><span class="c">// SagaStep.java</span>
-<span class="k">public interface</span> <span class="t">SagaStep</span> {
-    <span class="t">String</span> <span class="n">name</span>();
-    <span class="k">void</span> <span class="n">execute</span>();
-    <span class="k">void</span> <span class="n">compensate</span>();
+      <div class="code-pane" id="saga-ts"><pre><span class="c">// sagaStep.ts</span>
+<span class="k">export interface</span> <span class="t">SagaStep</span> {
+    <span class="n">name</span>: <span class="t">string</span>;
+    <span class="n">execute</span>(): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;;
+    <span class="n">compensate</span>(): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;;
 }
 
-<span class="c">// SagaOrchestrator.java</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">SagaOrchestrator</span> {
-    <span class="k">private static final</span> <span class="t">Logger</span> <span class="n">log</span> <span class="o">=</span> <span class="t">LoggerFactory</span>.<span class="n">getLogger</span>(<span class="t">SagaOrchestrator</span>.<span class="k">class</span>);
+<span class="c">// sagaOrchestrator.ts — a plain class, no container needed</span>
+<span class="k">import</span> <span class="n">pino</span> <span class="k">from</span> <span class="s">"pino"</span>;
 
-    <span class="k">public void</span> <span class="n">run</span>(<span class="t">List</span>&lt;<span class="t">SagaStep</span>&gt; <span class="n">steps</span>) {
-        <span class="t">List</span>&lt;<span class="t">SagaStep</span>&gt; <span class="n">done</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+<span class="k">const</span> <span class="n">log</span> <span class="o">=</span> <span class="n">pino</span>({ <span class="n">name</span>: <span class="s">"saga-orchestrator"</span> });
+
+<span class="k">export class</span> <span class="t">SagaOrchestrator</span> {
+    <span class="k">async</span> <span class="n">run</span>(<span class="n">steps</span>: <span class="t">SagaStep</span>[]): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">const</span> <span class="n">done</span>: <span class="t">SagaStep</span>[] <span class="o">=</span> [];
         <span class="k">try</span> {
-            <span class="k">for</span> (<span class="t">SagaStep</span> <span class="n">s</span> : <span class="n">steps</span>) {
-                <span class="n">s</span>.<span class="n">execute</span>();
-                <span class="n">done</span>.<span class="n">add</span>(<span class="n">s</span>);
+            <span class="k">for</span> (<span class="k">const</span> <span class="n">s</span> <span class="k">of</span> <span class="n">steps</span>) {
+                <span class="k">await</span> <span class="n">s</span>.<span class="n">execute</span>();
+                <span class="n">done</span>.<span class="n">push</span>(<span class="n">s</span>);
             }
-        } <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">e</span>) {
-            <span class="n">log</span>.<span class="n">warn</span>(<span class="s">"saga failed, compensating"</span>, <span class="n">e</span>);
-            <span class="t">Collections</span>.<span class="n">reverse</span>(<span class="n">done</span>);
-            <span class="k">for</span> (<span class="t">SagaStep</span> <span class="n">s</span> : <span class="n">done</span>) {
-                <span class="k">try</span> { <span class="n">s</span>.<span class="n">compensate</span>(); }
-                <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">ce</span>) {
-                    <span class="n">log</span>.<span class="n">error</span>(<span class="s">"compensation {} failed"</span>, <span class="n">s</span>.<span class="n">name</span>(), <span class="n">ce</span>);
+        } <span class="k">catch</span> (<span class="n">e</span>) {
+            <span class="n">log</span>.<span class="n">warn</span>({ <span class="n">err</span>: <span class="n">e</span> }, <span class="s">"saga failed, compensating"</span>);
+            <span class="k">for</span> (<span class="k">const</span> <span class="n">s</span> <span class="k">of</span> <span class="n">done</span>.<span class="n">reverse</span>()) {
+                <span class="k">try</span> { <span class="k">await</span> <span class="n">s</span>.<span class="n">compensate</span>(); }
+                <span class="k">catch</span> (<span class="n">ce</span>) {
+                    <span class="n">log</span>.<span class="n">error</span>({ <span class="n">err</span>: <span class="n">ce</span> }, <span class="s">`compensation ${s.name} failed`</span>);
                     <span class="c">// enqueue for retry — durable store</span>
                 }
             }
-            <span class="k">throw new</span> <span class="t">SagaFailedException</span>(<span class="n">e</span>);
+            <span class="k">throw new</span> <span class="t">SagaFailedError</span>(<span class="n">e</span>);
         }
     }
 }
 
 <span class="c">// Usage</span>
-<span class="o">@</span><span class="t">PostMapping</span>(<span class="s">"/checkout"</span>)
-<span class="k">public</span> <span class="t">ResponseEntity</span>&lt;?&gt; <span class="n">checkout</span>(<span class="o">@</span><span class="t">RequestBody</span> <span class="t">CheckoutDto</span> <span class="n">dto</span>) {
-    <span class="n">orchestrator</span>.<span class="n">run</span>(<span class="t">List</span>.<span class="n">of</span>(
+<span class="n">app</span>.<span class="n">post</span>(<span class="s">"/checkout"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">dto</span> <span class="o">=</span> <span class="t">CheckoutDto</span>.<span class="n">parse</span>(<span class="n">req</span>.<span class="n">body</span>);
+    <span class="k">await</span> <span class="n">orchestrator</span>.<span class="n">run</span>([
         <span class="k">new</span> <span class="t">CreateOrderStep</span>(<span class="n">dto</span>),
         <span class="k">new</span> <span class="t">ChargeCardStep</span>(<span class="n">dto</span>),
-        <span class="k">new</span> <span class="t">ReserveStockStep</span>(<span class="n">dto</span>)
-    ));
-    <span class="k">return</span> <span class="t">ResponseEntity</span>.<span class="n">ok</span>().<span class="n">build</span>();
-}</pre></div>
+        <span class="k">new</span> <span class="t">ReserveStockStep</span>(<span class="n">dto</span>),
+    ]);
+    <span class="n">res</span>.<span class="n">sendStatus</span>(<span class="num">200</span>);
+});</pre></div>
     </div>
   </section>
 
@@ -456,7 +456,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="cb-go">Go</button>
         <button class="tab py" data-target="cb-py">Python · FastAPI</button>
-        <button class="tab java" data-target="cb-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="cb-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="cb-go"><pre><span class="c">// Minimal circuit breaker. In production prefer sony/gobreaker.</span>
 <span class="k">type</span> <span class="t">State</span> <span class="t">int</span>
@@ -542,36 +542,35 @@
     <span class="k">except</span> <span class="t">RuntimeError</span>:
         <span class="k">return</span> {<span class="s">"sym"</span>: <span class="n">sym</span>, <span class="s">"price"</span>: <span class="t">None</span>, <span class="s">"cached"</span>: <span class="t">True</span>}  <span class="c"># fallback</span></pre></div>
 
-      <div class="code-pane" id="cb-java"><pre><span class="c">// Resilience4j — the canonical choice for Spring Boot</span>
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">CircuitBreakerConfig</span> {
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">CircuitBreakerRegistry</span> <span class="n">registry</span>() {
-        <span class="t">CircuitBreakerConfig</span> <span class="n">cfg</span> <span class="o">=</span> <span class="t">CircuitBreakerConfig</span>.<span class="n">custom</span>()
-            .<span class="n">failureRateThreshold</span>(<span class="num">50</span>)            <span class="c">// % of failures to trip</span>
-            .<span class="n">slidingWindowSize</span>(<span class="num">20</span>)
-            .<span class="n">waitDurationInOpenState</span>(<span class="t">Duration</span>.<span class="n">ofSeconds</span>(<span class="num">10</span>))
-            .<span class="n">permittedNumberOfCallsInHalfOpenState</span>(<span class="num">3</span>)
-            .<span class="n">build</span>();
-        <span class="k">return</span> <span class="t">CircuitBreakerRegistry</span>.<span class="n">of</span>(<span class="n">cfg</span>);
-    }
+      <div class="code-pane" id="cb-ts"><pre><span class="c">// opossum — the canonical circuit breaker for Node.js</span>
+<span class="k">import</span> <span class="t">CircuitBreaker</span> <span class="k">from</span> <span class="s">"opossum"</span>;
+
+<span class="k">const</span> <span class="n">options</span>: <span class="t">CircuitBreaker</span>.<span class="t">Options</span> <span class="o">=</span> {
+    <span class="n">errorThresholdPercentage</span>: <span class="num">50</span>,   <span class="c">// % of failures to trip</span>
+    <span class="n">volumeThreshold</span>: <span class="num">20</span>,            <span class="c">// min calls in the window before it can trip</span>
+    <span class="n">rollingCountTimeout</span>: <span class="num">10_000</span>,    <span class="c">// sliding window, time-based</span>
+    <span class="n">resetTimeout</span>: <span class="num">10_000</span>,           <span class="c">// stay open 10s, then half-open</span>
+    <span class="n">timeout</span>: <span class="num">2000</span>,                  <span class="c">// a slow call counts as a failure</span>
+};
+
+<span class="k">async function</span> <span class="n">getQuote</span>(<span class="t">symbol</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">Quote</span>&gt; {
+    <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">`${PRICES_URL}/quote/${encodeURIComponent(symbol)}`</span>, {
+        <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">2000</span>),
+    });
+    <span class="k">if</span> (<span class="o">!</span><span class="n">res</span>.<span class="n">ok</span>) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`prices returned ${res.status}`</span>);
+    <span class="k">return</span> <span class="n">res</span>.<span class="n">json</span>() <span class="k">as</span> <span class="t">Promise</span>&lt;<span class="t">Quote</span>&gt;;
 }
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">PriceClient</span> {
+<span class="c">// Half-open lets a trial call through; success closes, failure re-opens.</span>
+<span class="k">export const</span> <span class="n">priceBreaker</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CircuitBreaker</span>(<span class="n">getQuote</span>, <span class="n">options</span>);
 
-    <span class="o">@</span><span class="t">CircuitBreaker</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"prices"</span>, <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">"cachedQuote"</span>)
-    <span class="k">public</span> <span class="t">Quote</span> <span class="n">getQuote</span>(<span class="t">String</span> <span class="n">symbol</span>) {
-        <span class="k">return</span> <span class="n">restClient</span>.<span class="n">get</span>()
-            .<span class="n">uri</span>(<span class="s">"/quote/{s}"</span>, <span class="n">symbol</span>)
-            .<span class="n">retrieve</span>().<span class="n">body</span>(<span class="t">Quote</span>.<span class="k">class</span>);
-    }
+<span class="c">// Same args + the error. Called when breaker is open or call fails.</span>
+<span class="n">priceBreaker</span>.<span class="n">fallback</span>((<span class="t">symbol</span>: <span class="t">string</span>, <span class="n">err</span>: <span class="t">Error</span>) <span class="o">=&gt;</span>
+    <span class="n">cache</span>.<span class="n">get</span>(<span class="t">symbol</span>) <span class="o">??</span> <span class="n">unknownQuote</span>(<span class="t">symbol</span>));
 
-    <span class="c">// Same signature + Throwable. Called when breaker is open or call fails.</span>
-    <span class="k">public</span> <span class="t">Quote</span> <span class="n">cachedQuote</span>(<span class="t">String</span> <span class="n">symbol</span>, <span class="t">Throwable</span> <span class="n">t</span>) {
-        <span class="k">return</span> <span class="n">cache</span>.<span class="n">getOrDefault</span>(<span class="n">symbol</span>, <span class="t">Quote</span>.<span class="n">unknown</span>(<span class="n">symbol</span>));
-    }
-}</pre></div>
+<span class="c">// Usage</span>
+<span class="k">export const</span> <span class="n">getQuoteSafe</span> <span class="o">=</span> (<span class="t">symbol</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">Quote</span>&gt; <span class="o">=&gt;</span>
+    <span class="n">priceBreaker</span>.<span class="n">fire</span>(<span class="t">symbol</span>);</pre></div>
     </div>
   </section>
 
@@ -674,7 +673,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="rt-go">Go</button>
         <button class="tab py" data-target="rt-py">Python · FastAPI</button>
-        <button class="tab java" data-target="rt-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="rt-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="rt-go"><pre><span class="k">func</span> <span class="n">RetryWithBackoff</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">maxAttempts</span> <span class="t">int</span>, <span class="n">fn</span> <span class="k">func</span>() <span class="t">error</span>) <span class="t">error</span> {
     <span class="n">base</span> := <span class="num">100</span> * <span class="n">time</span>.<span class="t">Millisecond</span>
@@ -744,42 +743,39 @@
 <span class="k">async def</span> <span class="n">quote</span>(<span class="n">sym</span>: <span class="t">str</span>):
     <span class="k">return</span> <span class="k">await</span> <span class="n">fetch_quote</span>(<span class="n">sym</span>)</pre></div>
 
-      <div class="code-pane" id="rt-java"><pre><span class="c">// Resilience4j Retry annotation — declarative, jitter built-in</span>
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">RetryConfig</span> {
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">RetryRegistry</span> <span class="n">retryRegistry</span>() {
-        <span class="t">RetryConfig</span> <span class="n">cfg</span> <span class="o">=</span> <span class="t">RetryConfig</span>.<span class="n">custom</span>()
-            .<span class="n">maxAttempts</span>(<span class="num">5</span>)
-            .<span class="n">intervalFunction</span>(
-                <span class="t">IntervalFunction</span>.<span class="n">ofExponentialRandomBackoff</span>(
-                    <span class="t">Duration</span>.<span class="n">ofMillis</span>(<span class="num">100</span>), <span class="num">2.0</span>, <span class="num">0.5</span>)) <span class="c">// jitter factor</span>
-            .<span class="n">retryOnException</span>(<span class="n">e</span> <span class="o">-&gt;</span>
-                <span class="n">e</span> <span class="k">instanceof</span> <span class="t">IOException</span>
-                || (<span class="n">e</span> <span class="k">instanceof</span> <span class="t">HttpServerErrorException</span>))
-            .<span class="n">build</span>();
-        <span class="k">return</span> <span class="t">RetryRegistry</span>.<span class="n">of</span>(<span class="n">cfg</span>);
+      <div class="code-pane" id="rt-ts"><pre><span class="c">// p-retry — exponential backoff, jitter built-in</span>
+<span class="k">import</span> <span class="n">pRetry</span>, { <span class="t">AbortError</span> } <span class="k">from</span> <span class="s">"p-retry"</span>;
+
+<span class="k">const</span> <span class="n">retryOptions</span> <span class="o">=</span> {
+    <span class="n">retries</span>: <span class="num">4</span>,          <span class="c">// 5 attempts in total</span>
+    <span class="n">minTimeout</span>: <span class="num">100</span>,     <span class="c">// first backoff 100 ms ...</span>
+    <span class="n">factor</span>: <span class="num">2</span>,           <span class="c">// ... then doubles</span>
+    <span class="n">randomize</span>: <span class="k">true</span>,     <span class="c">// jitter: each delay × random 1–2</span>
+};
+
+<span class="k">class</span> <span class="t">HttpServerError</span> <span class="k">extends</span> <span class="t">Error</span> {}
+
+<span class="k">export async function</span> <span class="n">getQuote</span>(<span class="t">symbol</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">Quote</span>&gt; {
+    <span class="k">try</span> {
+        <span class="k">return await</span> <span class="n">pRetry</span>(<span class="k">async</span> () <span class="o">=&gt;</span> {
+            <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">`${PRICES_URL}/api/quote/${symbol}`</span>, {
+                <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">2000</span>),
+            });
+            <span class="c">// 5xx and network errors throw → retried</span>
+            <span class="k">if</span> (<span class="n">res</span>.<span class="n">status</span> <span class="o">&gt;=</span> <span class="num">500</span>) <span class="k">throw new</span> <span class="t">HttpServerError</span>(<span class="s">`upstream ${res.status}`</span>);
+            <span class="c">// 4xx won't fix itself → AbortError stops retrying</span>
+            <span class="k">if</span> (<span class="o">!</span><span class="n">res</span>.<span class="n">ok</span>) <span class="k">throw new</span> <span class="t">AbortError</span>(<span class="s">`client error ${res.status}`</span>);
+            <span class="k">return</span> (<span class="k">await</span> <span class="n">res</span>.<span class="n">json</span>()) <span class="k">as</span> <span class="t">Quote</span>;
+        }, <span class="n">retryOptions</span>);
+    } <span class="k">catch</span> (<span class="n">err</span>) {
+        <span class="c">// fallback once retries are exhausted</span>
+        <span class="k">throw new</span> <span class="t">HttpError</span>(<span class="num">503</span>, <span class="s">"prices unavailable"</span>, { <span class="n">cause</span>: <span class="n">err</span> });
     }
 }
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">PriceClient</span> {
-
-    <span class="o">@</span><span class="t">Retry</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"prices"</span>, <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">"unavailable"</span>)
-    <span class="k">public</span> <span class="t">Quote</span> <span class="n">getQuote</span>(<span class="t">String</span> <span class="n">symbol</span>) {
-        <span class="k">return</span> <span class="n">restClient</span>.<span class="n">get</span>()
-            .<span class="n">uri</span>(<span class="s">"/api/quote/{s}"</span>, <span class="n">symbol</span>)
-            .<span class="n">retrieve</span>()
-            .<span class="n">body</span>(<span class="t">Quote</span>.<span class="k">class</span>);
-    }
-
-    <span class="k">public</span> <span class="t">Quote</span> <span class="n">unavailable</span>(<span class="t">String</span> <span class="n">symbol</span>, <span class="t">Throwable</span> <span class="n">t</span>) {
-        <span class="k">throw new</span> <span class="t">ResponseStatusException</span>(<span class="t">HttpStatus</span>.<span class="n">SERVICE_UNAVAILABLE</span>);
-    }
-}
-
-<span class="c">// Pair @Retry with @CircuitBreaker — they compose naturally.</span>
-<span class="c">// Order matters: CB outside, Retry inside, so opens stop retries.</span></pre></div>
+<span class="c">// Pair retry with a circuit breaker — they compose naturally.</span>
+<span class="c">// Order matters: breaker outside, retry inside, so opens stop retries:</span>
+<span class="c">//     new CircuitBreaker(getQuote, breakerOptions)</span></pre></div>
     </div>
   </section>
 
@@ -895,7 +891,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="gw-go">Go</button>
         <button class="tab py" data-target="gw-py">Python · FastAPI</button>
-        <button class="tab java" data-target="gw-java">Java · Spring Cloud Gateway</button>
+        <button class="tab ts" data-target="gw-ts">TypeScript · http-proxy-middleware</button>
       </div>
       <div class="code-pane active" id="gw-go"><pre><span class="c">// Tiny reverse-proxy gateway with auth + rate limit middleware</span>
 <span class="k">type</span> <span class="t">Route</span> <span class="k">struct</span> {
@@ -976,47 +972,49 @@
     <span class="k">return</span> <span class="n">Response</span>(<span class="n">r</span>.<span class="n">content</span>, <span class="n">status_code</span><span class="o">=</span><span class="n">r</span>.<span class="n">status_code</span>,
                     <span class="n">headers</span><span class="o">=</span><span class="k">dict</span>(<span class="n">r</span>.<span class="n">headers</span>))</pre></div>
 
-      <div class="code-pane" id="gw-java"><pre><span class="c">// Spring Cloud Gateway — declarative routes via application.yml or DSL</span>
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">GatewayConfig</span> {
+      <div class="code-pane" id="gw-ts"><pre><span class="c">// Express + http-proxy-middleware — routes and filters as ordered middleware</span>
+<span class="k">import</span> <span class="n">express</span>, { <span class="k">type</span> <span class="t">Request</span>, <span class="k">type</span> <span class="t">Response</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="n">createProxyMiddleware</span> } <span class="k">from</span> <span class="s">"http-proxy-middleware"</span>;
+<span class="k">import</span> { <span class="n">rateLimit</span> } <span class="k">from</span> <span class="s">"express-rate-limit"</span>;
+<span class="k">import</span> { <span class="t">RedisStore</span>, <span class="k">type</span> <span class="t">RedisReply</span> } <span class="k">from</span> <span class="s">"rate-limit-redis"</span>;
+<span class="k">import</span> <span class="t">CircuitBreaker</span> <span class="k">from</span> <span class="s">"opossum"</span>;
+<span class="k">import</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">RouteLocator</span> <span class="n">routes</span>(<span class="t">RouteLocatorBuilder</span> <span class="n">b</span>) {
-        <span class="k">return</span> <span class="n">b</span>.<span class="n">routes</span>()
-            .<span class="n">route</span>(<span class="s">"orders"</span>, <span class="n">r</span> <span class="o">-&gt;</span> <span class="n">r</span>.<span class="n">path</span>(<span class="s">"/orders/**"</span>)
-                .<span class="n">filters</span>(<span class="n">f</span> <span class="o">-&gt;</span> <span class="n">f</span>
-                    .<span class="n">stripPrefix</span>(<span class="num">1</span>)
-                    .<span class="n">requestRateLimiter</span>(<span class="n">c</span> <span class="o">-&gt;</span> <span class="n">c</span>.<span class="n">setRateLimiter</span>(<span class="n">redisRateLimiter</span>()))
-                    .<span class="n">circuitBreaker</span>(<span class="n">c</span> <span class="o">-&gt;</span> <span class="n">c</span>.<span class="n">setName</span>(<span class="s">"orders-cb"</span>))
-                    .<span class="n">addRequestHeader</span>(<span class="s">"X-Gateway"</span>, <span class="s">"v1"</span>))
-                .<span class="n">uri</span>(<span class="s">"http://orders-service"</span>))
+<span class="k">const</span> <span class="n">app</span> <span class="o">=</span> <span class="n">express</span>();
+<span class="k">const</span> <span class="n">redis</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Redis</span>(<span class="s">"redis://redis:6379"</span>);
 
-            .<span class="n">route</span>(<span class="s">"users"</span>, <span class="n">r</span> <span class="o">-&gt;</span> <span class="n">r</span>.<span class="n">path</span>(<span class="s">"/users/**"</span>)
-                .<span class="n">filters</span>(<span class="n">f</span> <span class="o">-&gt;</span> <span class="n">f</span>.<span class="n">stripPrefix</span>(<span class="num">1</span>))
-                .<span class="n">uri</span>(<span class="s">"http://users-service"</span>))
-            .<span class="n">build</span>();
+<span class="c">// JWT auth — global middleware, registered first so it runs before all routes</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>, <span class="n">next</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">token</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">get</span>(<span class="s">"Authorization"</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">token</span> <span class="o">||</span> <span class="o">!</span>(<span class="k">await</span> <span class="n">jwtService</span>.<span class="n">verify</span>(<span class="n">token</span>))) {
+        <span class="n">res</span>.<span class="n">sendStatus</span>(<span class="num">401</span>);
+        <span class="k">return</span>;
     }
+    <span class="n">next</span>();
+});
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">RedisRateLimiter</span> <span class="n">redisRateLimiter</span>() {
-        <span class="k">return new</span> <span class="t">RedisRateLimiter</span>(<span class="num">100</span>, <span class="num">200</span>); <span class="c">// 100 req/s, burst 200</span>
-    }
-}
+<span class="c">// Mounted on "/orders", so the prefix is stripped before proxying</span>
+<span class="k">const</span> <span class="n">ordersProxy</span> <span class="o">=</span> <span class="n">createProxyMiddleware</span>&lt;<span class="t">Request</span>, <span class="t">Response</span>&gt;({
+    <span class="n">target</span>: <span class="s">"http://orders-service"</span>,
+    <span class="n">headers</span>: { <span class="s">"X-Gateway"</span>: <span class="s">"v1"</span> },
+});
+<span class="k">const</span> <span class="n">ordersCb</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CircuitBreaker</span>((<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>) <span class="o">=&gt;</span>
+    <span class="k">new</span> <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;((<span class="n">resolve</span>, <span class="n">reject</span>) <span class="o">=&gt;</span> {
+        <span class="n">res</span>.<span class="n">on</span>(<span class="s">"finish"</span>, () <span class="o">=&gt;</span> (<span class="n">res</span>.<span class="n">statusCode</span> <span class="o">&gt;=</span> <span class="num">500</span> <span class="o">?</span> <span class="n">reject</span>(<span class="k">new</span> <span class="t">Error</span>(<span class="s">"5xx"</span>)) : <span class="n">resolve</span>()));
+        <span class="n">ordersProxy</span>(<span class="n">req</span>, <span class="n">res</span>, <span class="n">reject</span>);
+    }), { <span class="n">name</span>: <span class="s">"orders-cb"</span> });
 
-<span class="c">// JWT auth — global filter that runs before all routes</span>
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">JwtAuthFilter</span> <span class="k">implements</span> <span class="t">GlobalFilter</span>, <span class="t">Ordered</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public</span> <span class="t">Mono</span>&lt;<span class="t">Void</span>&gt; <span class="n">filter</span>(<span class="t">ServerWebExchange</span> <span class="n">ex</span>, <span class="t">GatewayFilterChain</span> <span class="n">c</span>) {
-        <span class="t">String</span> <span class="n">token</span> <span class="o">=</span> <span class="n">ex</span>.<span class="n">getRequest</span>().<span class="n">getHeaders</span>().<span class="n">getFirst</span>(<span class="s">"Authorization"</span>);
-        <span class="k">if</span> (<span class="n">token</span> <span class="o">==</span> <span class="k">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">jwtService</span>.<span class="n">verify</span>(<span class="n">token</span>)) {
-            <span class="n">ex</span>.<span class="n">getResponse</span>().<span class="n">setStatusCode</span>(<span class="t">HttpStatus</span>.<span class="n">UNAUTHORIZED</span>);
-            <span class="k">return</span> <span class="n">ex</span>.<span class="n">getResponse</span>().<span class="n">setComplete</span>();
-        }
-        <span class="k">return</span> <span class="n">c</span>.<span class="n">filter</span>(<span class="n">ex</span>);
-    }
-    <span class="o">@</span><span class="t">Override</span> <span class="k">public int</span> <span class="n">getOrder</span>() { <span class="k">return</span> <span class="o">-</span><span class="num">100</span>; }
-}</pre></div>
+<span class="n">app</span>.<span class="n">use</span>(<span class="s">"/orders"</span>,
+    <span class="n">rateLimit</span>({ <span class="n">windowMs</span>: <span class="num">1000</span>, <span class="n">limit</span>: <span class="num">100</span>,     <span class="c">// 100 req/s per client</span>
+        <span class="n">store</span>: <span class="k">new</span> <span class="t">RedisStore</span>({ <span class="n">sendCommand</span>: (<span class="n">cmd</span>: <span class="t">string</span>, <span class="o">...</span><span class="n">args</span>: <span class="t">string</span>[]) <span class="o">=&gt;</span>
+            <span class="n">redis</span>.<span class="n">call</span>(<span class="n">cmd</span>, <span class="o">...</span><span class="n">args</span>) <span class="k">as</span> <span class="t">Promise</span>&lt;<span class="t">RedisReply</span>&gt; }) }),
+    (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> <span class="n">ordersCb</span>.<span class="n">fire</span>(<span class="n">req</span>, <span class="n">res</span>).<span class="n">catch</span>(() <span class="o">=&gt;</span> {
+        <span class="k">if</span> (<span class="o">!</span><span class="n">res</span>.<span class="n">headersSent</span>) <span class="n">res</span>.<span class="n">sendStatus</span>(<span class="num">503</span>);   <span class="c">// breaker open</span>
+    }));
+
+<span class="n">app</span>.<span class="n">use</span>(<span class="s">"/users"</span>, <span class="n">createProxyMiddleware</span>({ <span class="n">target</span>: <span class="s">"http://users-service"</span> }));
+
+<span class="n">app</span>.<span class="n">listen</span>(<span class="num">8080</span>);</pre></div>
     </div>
   </section>
 
@@ -1113,7 +1111,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="id-go">Go</button>
         <button class="tab py" data-target="id-py">Python · FastAPI</button>
-        <button class="tab java" data-target="id-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="id-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="id-go"><pre><span class="c">// Idempotency middleware — stores request hash + response in Redis</span>
 <span class="k">type</span> <span class="t">CachedResp</span> <span class="k">struct</span> {
@@ -1191,51 +1189,52 @@
     }))
     <span class="k">return</span> <span class="n">JSONResponse</span>(<span class="n">json</span>.<span class="n">loads</span>(<span class="n">resp_body</span>), <span class="n">status_code</span><span class="o">=</span><span class="n">response</span>.<span class="n">status_code</span>)</pre></div>
 
-      <div class="code-pane" id="id-java"><pre><span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">IdempotencyFilter</span> <span class="k">implements</span> <span class="t">Filter</span> {
+      <div class="code-pane" id="id-ts"><pre><span class="k">import</span> <span class="n">express</span>, { <span class="k">type</span> <span class="t">Request</span>, <span class="k">type</span> <span class="t">Response</span>, <span class="k">type</span> <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="n">createHash</span> } <span class="k">from</span> <span class="s">"node:crypto"</span>;
+<span class="k">import</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
-    <span class="k">private final</span> <span class="t">StringRedisTemplate</span> <span class="n">redis</span>;
-    <span class="k">private final</span> <span class="t">ObjectMapper</span> <span class="n">mapper</span>;
-    <span class="k">private static final</span> <span class="t">Duration</span> <span class="n">TTL</span> <span class="o">=</span> <span class="t">Duration</span>.<span class="n">ofHours</span>(<span class="num">24</span>);
+<span class="k">const</span> <span class="n">redis</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Redis</span>(<span class="s">"redis://redis:6379"</span>);
+<span class="k">const</span> <span class="n">TTL_SECONDS</span> <span class="o">=</span> <span class="num">24</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">60</span>;
 
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public void</span> <span class="n">doFilter</span>(<span class="t">ServletRequest</span> <span class="n">req</span>, <span class="t">ServletResponse</span> <span class="n">res</span>, <span class="t">FilterChain</span> <span class="n">chain</span>)
-            <span class="k">throws</span> <span class="t">IOException</span>, <span class="t">ServletException</span> {
+<span class="k">type</span> <span class="t">CachedResponse</span> <span class="o">=</span> { <span class="n">hash</span>: <span class="t">string</span>; <span class="n">status</span>: <span class="t">number</span>; <span class="n">body</span>: <span class="t">string</span> };
+<span class="k">type</span> <span class="t">RawRequest</span> <span class="o">=</span> <span class="t">Request</span> <span class="o">&amp;</span> { <span class="n">rawBody</span><span class="o">?</span>: <span class="t">Buffer</span> };
 
-        <span class="t">HttpServletRequest</span>  <span class="n">httpReq</span> <span class="o">=</span> (<span class="t">HttpServletRequest</span>) <span class="n">req</span>;
-        <span class="t">HttpServletResponse</span> <span class="n">httpRes</span> <span class="o">=</span> (<span class="t">HttpServletResponse</span>) <span class="n">res</span>;
+<span class="c">// Keep the raw bytes so the hash covers exactly what the client sent</span>
+<span class="k">export const</span> <span class="n">jsonWithRawBody</span> <span class="o">=</span> <span class="n">express</span>.<span class="n">json</span>({
+    <span class="n">verify</span>: (<span class="n">req</span>, <span class="n">_res</span>, <span class="n">buf</span>) <span class="o">=&gt;</span> { (<span class="n">req</span> <span class="k">as</span> <span class="t">RawRequest</span>).<span class="n">rawBody</span> <span class="o">=</span> <span class="n">buf</span>; },
+});
 
-        <span class="t">String</span> <span class="n">key</span> <span class="o">=</span> <span class="n">httpReq</span>.<span class="n">getHeader</span>(<span class="s">"Idempotency-Key"</span>);
-        <span class="k">if</span> (<span class="n">key</span> <span class="o">==</span> <span class="k">null</span> <span class="o">||</span> <span class="o">!</span><span class="s">"POST"</span>.<span class="n">equalsIgnoreCase</span>(<span class="n">httpReq</span>.<span class="n">getMethod</span>())) {
-            <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>); <span class="k">return</span>;
-        }
-
-        <span class="t">CachedRequestWrapper</span> <span class="n">wrapped</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CachedRequestWrapper</span>(<span class="n">httpReq</span>);
-        <span class="t">String</span> <span class="n">bodyHash</span> <span class="o">=</span> <span class="n">DigestUtils</span>.<span class="n">sha256Hex</span>(<span class="n">wrapped</span>.<span class="n">getCachedBody</span>());
-
-        <span class="t">String</span> <span class="n">cached</span> <span class="o">=</span> <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">get</span>(<span class="s">"idem:"</span> <span class="o">+</span> <span class="n">key</span>);
-        <span class="k">if</span> (<span class="n">cached</span> <span class="o">!=</span> <span class="k">null</span>) {
-            <span class="t">CachedResponse</span> <span class="n">cr</span> <span class="o">=</span> <span class="n">mapper</span>.<span class="n">readValue</span>(<span class="n">cached</span>, <span class="t">CachedResponse</span>.<span class="k">class</span>);
-            <span class="k">if</span> (<span class="o">!</span><span class="n">cr</span>.<span class="n">hash</span>().<span class="n">equals</span>(<span class="n">bodyHash</span>)) {
-                <span class="n">httpRes</span>.<span class="n">sendError</span>(<span class="num">422</span>, <span class="s">"key reused with different body"</span>); <span class="k">return</span>;
-            }
-            <span class="n">httpRes</span>.<span class="n">setStatus</span>(<span class="n">cr</span>.<span class="n">status</span>());
-            <span class="n">httpRes</span>.<span class="n">getWriter</span>().<span class="n">write</span>(<span class="n">cr</span>.<span class="n">body</span>());
-            <span class="k">return</span>;
-        }
-
-        <span class="t">ContentCachingResponseWrapper</span> <span class="n">resWrap</span> <span class="o">=</span>
-            <span class="k">new</span> <span class="t">ContentCachingResponseWrapper</span>(<span class="n">httpRes</span>);
-        <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">wrapped</span>, <span class="n">resWrap</span>);
-
-        <span class="t">String</span> <span class="n">body</span> <span class="o">=</span> <span class="k">new</span> <span class="t">String</span>(<span class="n">resWrap</span>.<span class="n">getContentAsByteArray</span>());
-        <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">set</span>(<span class="s">"idem:"</span> <span class="o">+</span> <span class="n">key</span>,
-            <span class="n">mapper</span>.<span class="n">writeValueAsString</span>(
-                <span class="k">new</span> <span class="t">CachedResponse</span>(<span class="n">bodyHash</span>, <span class="n">resWrap</span>.<span class="n">getStatus</span>(), <span class="n">body</span>)),
-            <span class="n">TTL</span>);
-        <span class="n">resWrap</span>.<span class="n">copyBodyToResponse</span>();
+<span class="k">export async function</span> <span class="n">idempotency</span>(<span class="n">req</span>: <span class="t">RawRequest</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>) {
+    <span class="k">const</span> <span class="n">key</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">get</span>(<span class="s">"Idempotency-Key"</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">key</span> <span class="o">||</span> <span class="n">req</span>.<span class="n">method</span> <span class="o">!==</span> <span class="s">"POST"</span>) {
+        <span class="n">next</span>(); <span class="k">return</span>;
     }
-}</pre></div>
+
+    <span class="k">const</span> <span class="n">bodyHash</span> <span class="o">=</span> <span class="n">createHash</span>(<span class="s">"sha256"</span>).<span class="n">update</span>(<span class="n">req</span>.<span class="n">rawBody</span> <span class="o">??</span> <span class="s">""</span>).<span class="n">digest</span>(<span class="s">"hex"</span>);
+
+    <span class="k">const</span> <span class="n">cached</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">get</span>(<span class="s">`idem:${key}`</span>);
+    <span class="k">if</span> (<span class="n">cached</span> <span class="o">!==</span> <span class="k">null</span>) {
+        <span class="k">const</span> <span class="n">cr</span>: <span class="t">CachedResponse</span> <span class="o">=</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">cached</span>);
+        <span class="k">if</span> (<span class="n">cr</span>.<span class="n">hash</span> <span class="o">!==</span> <span class="n">bodyHash</span>) {
+            <span class="n">res</span>.<span class="n">status</span>(<span class="num">422</span>).<span class="n">send</span>(<span class="s">"key reused with different body"</span>); <span class="k">return</span>;
+        }
+        <span class="n">res</span>.<span class="n">status</span>(<span class="n">cr</span>.<span class="n">status</span>).<span class="n">type</span>(<span class="s">"json"</span>).<span class="n">send</span>(<span class="n">cr</span>.<span class="n">body</span>);
+        <span class="k">return</span>;
+    }
+
+    <span class="c">// Wrap res.send to capture whatever the handler responds with</span>
+    <span class="k">const</span> <span class="n">send</span> <span class="o">=</span> <span class="n">res</span>.<span class="n">send</span>.<span class="n">bind</span>(<span class="n">res</span>);
+    <span class="n">res</span>.<span class="n">send</span> <span class="o">=</span> (<span class="n">body</span><span class="o">?</span>: <span class="t">unknown</span>) <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">text</span> <span class="o">=</span> <span class="k">typeof</span> <span class="n">body</span> <span class="o">===</span> <span class="s">"string"</span> <span class="o">?</span> <span class="n">body</span> : <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">body</span>);
+        <span class="k">const</span> <span class="n">entry</span>: <span class="t">CachedResponse</span> <span class="o">=</span> { <span class="n">hash</span>: <span class="n">bodyHash</span>, <span class="n">status</span>: <span class="n">res</span>.<span class="n">statusCode</span>, <span class="n">body</span>: <span class="n">text</span> };
+        <span class="n">redis</span>.<span class="n">set</span>(<span class="s">`idem:${key}`</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">entry</span>), <span class="s">"EX"</span>, <span class="n">TTL_SECONDS</span>)
+            .<span class="n">catch</span>((<span class="n">err</span>) <span class="o">=&gt;</span> <span class="n">console</span>.<span class="n">error</span>(<span class="s">"idempotency cache write failed"</span>, <span class="n">err</span>));
+        <span class="k">return</span> <span class="n">send</span>(<span class="n">body</span>);
+    };
+    <span class="n">next</span>();
+}
+
+<span class="c">// app.post("/payments", jsonWithRawBody, idempotency, createPayment);</span></pre></div>
     </div>
   </section>
 
@@ -1337,7 +1336,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="ev-go">Go · Kafka</button>
         <button class="tab py" data-target="ev-py">Python · FastAPI + RabbitMQ</button>
-        <button class="tab java" data-target="ev-java">Java · Spring Kafka</button>
+        <button class="tab ts" data-target="ev-ts">TypeScript · KafkaJS</button>
       </div>
       <div class="code-pane active" id="ev-go"><pre><span class="c">// Producer</span>
 <span class="k">type</span> <span class="t">OrderPlaced</span> <span class="k">struct</span> {
@@ -1426,48 +1425,53 @@
                 <span class="n">event</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">msg</span>.<span class="n">body</span>)
                 <span class="k">await</span> <span class="n">reserve_stock</span>(<span class="n">event</span>[<span class="s">"order_id"</span>])</pre></div>
 
-      <div class="code-pane" id="ev-java"><pre><span class="c">// Producer</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrderEventPublisher</span> {
-    <span class="k">private final</span> <span class="t">KafkaTemplate</span>&lt;<span class="t">String</span>, <span class="t">Object</span>&gt; <span class="n">kafka</span>;
+      <div class="code-pane" id="ev-ts"><pre><span class="k">import</span> { <span class="t">Kafka</span> } <span class="k">from</span> <span class="s">"kafkajs"</span>;
+<span class="k">import</span> { <span class="n">randomUUID</span> } <span class="k">from</span> <span class="s">"node:crypto"</span>;
+<span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">"node:async_hooks"</span>;
 
-    <span class="k">public void</span> <span class="n">publish</span>(<span class="t">Order</span> <span class="n">order</span>) {
-        <span class="t">OrderPlaced</span> <span class="n">event</span> <span class="o">=</span> <span class="k">new</span> <span class="t">OrderPlaced</span>(
-            <span class="t">UUID</span>.<span class="n">randomUUID</span>().<span class="n">toString</span>(),
-            <span class="t">Instant</span>.<span class="n">now</span>(),
-            <span class="n">order</span>.<span class="n">id</span>(), <span class="n">order</span>.<span class="n">userId</span>(), <span class="n">order</span>.<span class="n">totalCents</span>()
-        );
-        <span class="t">ProducerRecord</span>&lt;<span class="t">String</span>, <span class="t">Object</span>&gt; <span class="n">rec</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ProducerRecord</span>&lt;&gt;(
-            <span class="s">"orders.placed"</span>, <span class="n">order</span>.<span class="n">id</span>(), <span class="n">event</span>);
-        <span class="n">rec</span>.<span class="n">headers</span>().<span class="n">add</span>(<span class="s">"trace-id"</span>, <span class="t">MDC</span>.<span class="n">get</span>(<span class="s">"traceId"</span>).<span class="n">getBytes</span>());
-        <span class="n">kafka</span>.<span class="n">send</span>(<span class="n">rec</span>);
-    }
+<span class="k">const</span> <span class="n">kafka</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Kafka</span>({ <span class="n">clientId</span>: <span class="s">"orders"</span>, <span class="n">brokers</span>: [<span class="s">"kafka:9092"</span>] });
+<span class="k">const</span> <span class="n">mdc</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AsyncLocalStorage</span>&lt;{ <span class="n">traceId</span>: <span class="t">string</span> }&gt;();   <span class="c">// Node's MDC</span>
+
+<span class="c">// Producer</span>
+<span class="k">const</span> <span class="n">producer</span> <span class="o">=</span> <span class="n">kafka</span>.<span class="n">producer</span>();
+
+<span class="k">export async function</span> <span class="n">publish</span>(<span class="n">order</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">const</span> <span class="n">event</span>: <span class="t">OrderPlaced</span> <span class="o">=</span> {
+        <span class="n">eventId</span>: <span class="n">randomUUID</span>(),
+        <span class="n">occurredAt</span>: <span class="k">new</span> <span class="t">Date</span>().<span class="n">toISOString</span>(),
+        <span class="n">orderId</span>: <span class="n">order</span>.<span class="n">id</span>, <span class="n">userId</span>: <span class="n">order</span>.<span class="n">userId</span>, <span class="n">totalCents</span>: <span class="n">order</span>.<span class="n">totalCents</span>,
+    };
+    <span class="k">await</span> <span class="n">producer</span>.<span class="n">send</span>({
+        <span class="n">topic</span>: <span class="s">"orders.placed"</span>,
+        <span class="n">messages</span>: [{
+            <span class="n">key</span>: <span class="n">order</span>.<span class="n">id</span>,
+            <span class="n">value</span>: <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">event</span>),
+            <span class="n">headers</span>: { <span class="s">"trace-id"</span>: <span class="n">mdc</span>.<span class="n">getStore</span>()<span class="o">?.</span><span class="n">traceId</span> <span class="o">??</span> <span class="s">""</span> },
+        }],
+    });
 }
 
 <span class="c">// Consumer</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">InventoryConsumer</span> {
+<span class="k">const</span> <span class="n">consumer</span> <span class="o">=</span> <span class="n">kafka</span>.<span class="n">consumer</span>({ <span class="n">groupId</span>: <span class="s">"inventory-svc"</span> });
+<span class="k">await</span> <span class="n">consumer</span>.<span class="n">connect</span>();
+<span class="k">await</span> <span class="n">consumer</span>.<span class="n">subscribe</span>({ <span class="n">topic</span>: <span class="s">"orders.placed"</span> });
 
-    <span class="o">@</span><span class="t">KafkaListener</span>(
-        <span class="n">topics</span> <span class="o">=</span> <span class="s">"orders.placed"</span>,
-        <span class="n">groupId</span> <span class="o">=</span> <span class="s">"inventory-svc"</span>,
-        <span class="n">containerFactory</span> <span class="o">=</span> <span class="s">"kafkaListenerContainerFactory"</span>
-    )
-    <span class="k">public void</span> <span class="n">handle</span>(<span class="o">@</span><span class="t">Payload</span> <span class="t">OrderPlaced</span> <span class="n">event</span>,
-                       <span class="o">@</span><span class="t">Header</span>(<span class="s">"trace-id"</span>) <span class="t">String</span> <span class="n">traceId</span>,
-                       <span class="t">Acknowledgment</span> <span class="n">ack</span>) {
-        <span class="t">MDC</span>.<span class="n">put</span>(<span class="s">"traceId"</span>, <span class="n">traceId</span>);
-        <span class="k">try</span> {
-            <span class="n">inventoryService</span>.<span class="n">reserve</span>(<span class="n">event</span>.<span class="n">orderId</span>());
-            <span class="n">ack</span>.<span class="n">acknowledge</span>();   <span class="c">// commit offset only on success</span>
-        } <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">e</span>) {
-            <span class="c">// Spring's DefaultErrorHandler will retry then route to DLT</span>
-            <span class="k">throw</span> <span class="n">e</span>;
-        } <span class="k">finally</span> {
-            <span class="t">MDC</span>.<span class="n">clear</span>();
-        }
-    }
-}</pre></div>
+<span class="k">await</span> <span class="n">consumer</span>.<span class="n">run</span>({
+    <span class="n">autoCommit</span>: <span class="k">false</span>,
+    <span class="n">eachMessage</span>: <span class="k">async</span> ({ <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">message</span> }) <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">traceId</span> <span class="o">=</span> <span class="n">message</span>.<span class="n">headers</span><span class="o">?.</span>[<span class="s">"trace-id"</span>]<span class="o">?.</span><span class="n">toString</span>() <span class="o">??</span> <span class="s">""</span>;
+        <span class="c">// Context lives only for this callback — no MDC.clear() needed</span>
+        <span class="k">await</span> <span class="n">mdc</span>.<span class="n">run</span>({ <span class="n">traceId</span> }, <span class="k">async</span> () <span class="o">=&gt;</span> {
+            <span class="k">const</span> <span class="n">event</span>: <span class="t">OrderPlaced</span> <span class="o">=</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">message</span>.<span class="n">value</span><span class="o">!</span>.<span class="n">toString</span>());
+            <span class="k">await</span> <span class="n">inventoryService</span>.<span class="n">reserve</span>(<span class="n">event</span>.<span class="n">orderId</span>);
+            <span class="c">// commit offset only on success</span>
+            <span class="k">const</span> <span class="n">next</span> <span class="o">=</span> (<span class="t">Number</span>(<span class="n">message</span>.<span class="n">offset</span>) <span class="o">+</span> <span class="num">1</span>).<span class="n">toString</span>();
+            <span class="k">await</span> <span class="n">consumer</span>.<span class="n">commitOffsets</span>([{ <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">offset</span>: <span class="n">next</span> }]);
+        });
+        <span class="c">// A throw here makes KafkaJS retry with backoff; after N tries,</span>
+        <span class="c">// publish to a dead-letter topic yourself (KafkaJS has no DLT).</span>
+    },
+});</pre></div>
     </div>
   </section>
 
@@ -1579,7 +1583,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="bh-go">Go</button>
         <button class="tab py" data-target="bh-py">Python · FastAPI</button>
-        <button class="tab java" data-target="bh-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="bh-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="bh-go"><pre><span class="c">// One bounded HTTP client per downstream — separate connection pools.</span>
 <span class="c">// Plus a semaphore to cap in-flight calls per dependency.</span>
@@ -1659,48 +1663,47 @@
     <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">analytics</span>.<span class="n">request</span>(<span class="s">"POST"</span>, <span class="s">"/event"</span>, <span class="n">json</span><span class="o">=</span><span class="n">cart</span>))
     <span class="k">return</span> <span class="n">r</span>.<span class="n">json</span>()</pre></div>
 
-      <div class="code-pane" id="bh-java"><pre><span class="c">// Resilience4j Bulkhead — semaphore or thread-pool flavor</span>
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">BulkheadConfig</span> {
+      <div class="code-pane" id="bh-ts"><pre><span class="c">// opossum's `capacity` is a semaphore bulkhead — calls over the limit are rejected</span>
+<span class="k">import</span> <span class="t">CircuitBreaker</span> <span class="k">from</span> <span class="s">"opossum"</span>;
+<span class="k">import</span> <span class="n">pino</span> <span class="k">from</span> <span class="s">"pino"</span>;
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">BulkheadRegistry</span> <span class="n">bulkheadRegistry</span>() {
-        <span class="t">BulkheadConfig</span> <span class="n">cfg</span> <span class="o">=</span> <span class="t">BulkheadConfig</span>.<span class="n">custom</span>()
-            .<span class="n">maxConcurrentCalls</span>(<span class="num">20</span>)
-            .<span class="n">maxWaitDuration</span>(<span class="t">Duration</span>.<span class="n">ofMillis</span>(<span class="num">50</span>))   <span class="c">// fail fast when full</span>
-            .<span class="n">build</span>();
-        <span class="k">return</span> <span class="t">BulkheadRegistry</span>.<span class="n">of</span>(<span class="n">cfg</span>);
+<span class="k">const</span> <span class="n">log</span> <span class="o">=</span> <span class="n">pino</span>();
+
+<span class="c">// Payments: at most 20 concurrent calls. No wait queue,</span>
+<span class="c">// so the 21st fails fast instead of piling up.</span>
+<span class="k">const</span> <span class="n">paymentsBulkhead</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CircuitBreaker</span>(
+    (<span class="n">cart</span>: <span class="t">Cart</span>) <span class="o">=&gt;</span> <span class="n">paymentsClient</span>.<span class="n">charge</span>(<span class="n">cart</span>),
+    { <span class="n">name</span>: <span class="s">"payments"</span>, <span class="n">capacity</span>: <span class="num">20</span>, <span class="n">timeout</span>: <span class="num">3000</span> },
+);
+
+<span class="c">// Smaller, separate pool for non-critical analytics</span>
+<span class="k">const</span> <span class="n">analyticsBulkhead</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CircuitBreaker</span>(
+    (<span class="n">cart</span>: <span class="t">Cart</span>) <span class="o">=&gt;</span> <span class="n">analyticsClient</span>.<span class="n">trackPurchase</span>(<span class="n">cart</span>),
+    { <span class="n">name</span>: <span class="s">"analytics"</span>, <span class="n">capacity</span>: <span class="num">5</span>, <span class="n">timeout</span>: <span class="num">1000</span> },
+);
+
+<span class="c">// Full or failing → fallback runs instead: silently shed load</span>
+<span class="n">analyticsBulkhead</span>.<span class="n">fallback</span>(() <span class="o">=&gt;</span> <span class="n">log</span>.<span class="n">debug</span>(<span class="s">"analytics dropped, pool full"</span>));
+
+<span class="k">export class</span> <span class="t">CheckoutService</span> {
+    <span class="c">// Rejects with code ESEMLOCKED when all 20 slots are busy</span>
+    <span class="n">charge</span>(<span class="n">cart</span>: <span class="t">Cart</span>): <span class="t">Promise</span>&lt;<span class="t">ChargeResult</span>&gt; {
+        <span class="k">return</span> <span class="n">paymentsBulkhead</span>.<span class="n">fire</span>(<span class="n">cart</span>);
     }
 
-    <span class="c">// Smaller, separate pool for non-critical analytics</span>
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">Bulkhead</span> <span class="n">analyticsBulkhead</span>(<span class="t">BulkheadRegistry</span> <span class="n">r</span>) {
-        <span class="k">return</span> <span class="n">r</span>.<span class="n">bulkhead</span>(<span class="s">"analytics"</span>,
-            <span class="t">BulkheadConfig</span>.<span class="n">custom</span>()
-                .<span class="n">maxConcurrentCalls</span>(<span class="num">5</span>)
-                .<span class="n">maxWaitDuration</span>(<span class="t">Duration</span>.<span class="n">ZERO</span>)  <span class="c">// drop immediately</span>
-                .<span class="n">build</span>());
+    <span class="c">// Not awaited: runs alongside the request, can't starve payments</span>
+    <span class="n">trackPurchase</span>(<span class="n">cart</span>: <span class="t">Cart</span>): <span class="k">void</span> {
+        <span class="k">void</span> <span class="n">analyticsBulkhead</span>.<span class="n">fire</span>(<span class="n">cart</span>);
     }
 }
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">CheckoutService</span> {
-
-    <span class="o">@</span><span class="t">Bulkhead</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"payments"</span>, <span class="n">type</span> <span class="o">=</span> <span class="t">Bulkhead</span>.<span class="t">Type</span>.<span class="t">SEMAPHORE</span>)
-    <span class="k">public</span> <span class="t">ChargeResult</span> <span class="n">charge</span>(<span class="t">Cart</span> <span class="n">cart</span>) {
-        <span class="k">return</span> <span class="n">paymentsClient</span>.<span class="n">charge</span>(<span class="n">cart</span>);
-    }
-
-    <span class="o">@</span><span class="t">Bulkhead</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"analytics"</span>, <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">"dropAnalytics"</span>)
-    <span class="o">@</span><span class="t">Async</span>
-    <span class="k">public void</span> <span class="n">trackPurchase</span>(<span class="t">Cart</span> <span class="n">cart</span>) {
-        <span class="n">analyticsClient</span>.<span class="n">trackPurchase</span>(<span class="n">cart</span>);
-    }
-
-    <span class="k">public void</span> <span class="n">dropAnalytics</span>(<span class="t">Cart</span> <span class="n">cart</span>, <span class="t">Throwable</span> <span class="n">t</span>) {
-        <span class="n">log</span>.<span class="n">debug</span>(<span class="s">"analytics dropped, queue full"</span>);  <span class="c">// silently shed load</span>
-    }
-}</pre></div>
+<span class="c">// Usage</span>
+<span class="n">app</span>.<span class="n">post</span>(<span class="s">"/checkout"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">cart</span> <span class="o">=</span> <span class="t">CartSchema</span>.<span class="n">parse</span>(<span class="n">req</span>.<span class="n">body</span>);
+    <span class="k">const</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">checkout</span>.<span class="n">charge</span>(<span class="n">cart</span>);   <span class="c">// critical path</span>
+    <span class="n">checkout</span>.<span class="n">trackPurchase</span>(<span class="n">cart</span>);                 <span class="c">// best-effort</span>
+    <span class="n">res</span>.<span class="n">json</span>(<span class="n">result</span>);
+});</pre></div>
     </div>
   </section>
 
@@ -1798,7 +1801,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="sd-go">Go</button>
         <button class="tab py" data-target="sd-py">Python · FastAPI</button>
-        <button class="tab java" data-target="sd-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="sd-ts">TypeScript · Node.js</button>
       </div>
 
       <div class="code-pane active" id="sd-go"><pre><span class="c">// Register on startup, look up by name — Consul</span>
@@ -1868,48 +1871,51 @@
         <span class="n">r</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span>.<span class="n">post</span>(<span class="n">f</span><span class="s">"{base}/orders"</span>, <span class="n">json</span><span class="o">=</span><span class="n">cart</span>)
         <span class="k">return</span> <span class="n">r</span>.<span class="n">json</span>()</pre></div>
 
-      <div class="code-pane" id="sd-java"><pre><span class="c">// Spring Cloud + Eureka — discovery as boring as a @Bean</span>
-<span class="o">@</span><span class="t">SpringBootApplication</span>
-<span class="o">@</span><span class="t">EnableDiscoveryClient</span>     <span class="c">// auto-registers with Eureka on startup</span>
-<span class="k">public class</span> <span class="t">CheckoutApplication</span> {
-    <span class="k">public static void</span> <span class="n">main</span>(<span class="t">String</span>[] <span class="n">args</span>) {
-        <span class="t">SpringApplication</span>.<span class="n">run</span>(<span class="t">CheckoutApplication</span>.<span class="k">class</span>, <span class="n">args</span>);
-    }
+      <div class="code-pane" id="sd-ts"><pre><span class="c">// consul — register on startup, resolve by logical name, round-robin instances</span>
+<span class="k">import</span> <span class="t">Consul</span> <span class="k">from</span> <span class="s">"consul"</span>;
+<span class="k">import</span> { <span class="n">hostname</span> } <span class="k">from</span> <span class="s">"node:os"</span>;
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="o">@</span><span class="t">LoadBalanced</span>             <span class="c">// resolves by service name, round-robins instances</span>
-    <span class="k">public</span> <span class="t">RestClient.Builder</span> <span class="n">restClientBuilder</span>() {
-        <span class="k">return</span> <span class="t">RestClient</span>.<span class="n">builder</span>();
-    }
+<span class="k">const</span> <span class="n">consul</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Consul</span>({ <span class="n">host</span>: <span class="s">"consul"</span> });
+
+<span class="c">// Called once on startup; Consul health-checks us and evicts us if we die</span>
+<span class="k">export async function</span> <span class="n">register</span>(<span class="n">port</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">await</span> <span class="n">consul</span>.<span class="n">agent</span>.<span class="n">service</span>.<span class="n">register</span>({
+        <span class="n">name</span>: <span class="s">"checkout"</span>,
+        <span class="n">id</span>: <span class="s">`checkout-${hostname()}`</span>,
+        <span class="n">address</span>: <span class="n">localIp</span>(),
+        <span class="n">port</span>,
+        <span class="n">check</span>: {
+            <span class="n">http</span>: <span class="s">`http://${localIp()}:${port}/health`</span>,
+            <span class="n">interval</span>: <span class="s">"5s"</span>,                          <span class="c">// like a lease renewal</span>
+            <span class="n">deregistercriticalserviceafter</span>: <span class="s">"1m"</span>,    <span class="c">// expire dead instances</span>
+        },
+    });
 }
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">CheckoutService</span> {
-    <span class="k">private final</span> <span class="t">RestClient</span> <span class="n">rest</span>;
+<span class="c">// Client-side load balancing: only passing instances, round-robin</span>
+<span class="k">const</span> <span class="n">cursor</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Map</span>&lt;<span class="t">string</span>, <span class="t">number</span>&gt;();
 
-    <span class="k">public</span> <span class="t">CheckoutService</span>(<span class="t">RestClient.Builder</span> <span class="n">b</span>) {
-        <span class="k">this</span>.<span class="n">rest</span> <span class="o">=</span> <span class="n">b</span>.<span class="n">build</span>();
-    }
-
-    <span class="k">public</span> <span class="t">OrderResult</span> <span class="n">checkout</span>(<span class="t">Cart</span> <span class="n">cart</span>) {
-        <span class="c">// "orders" is the logical name registered in Eureka,</span>
-        <span class="c">// not a hostname — the LB resolves to a live instance.</span>
-        <span class="k">return</span> <span class="n">rest</span>.<span class="n">post</span>()
-            .<span class="n">uri</span>(<span class="s">"http://orders/orders"</span>)
-            .<span class="n">body</span>(<span class="n">cart</span>)
-            .<span class="n">retrieve</span>()
-            .<span class="n">body</span>(<span class="t">OrderResult</span>.<span class="k">class</span>);
-    }
+<span class="k">async function</span> <span class="n">resolve</span>(<span class="n">name</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">string</span>&gt; {
+    <span class="k">const</span> <span class="n">nodes</span> <span class="o">=</span> <span class="k">await</span> <span class="n">consul</span>.<span class="n">health</span>.<span class="n">service</span>({ <span class="n">service</span>: <span class="n">name</span>, <span class="n">passing</span>: <span class="k">true</span> });
+    <span class="k">if</span> (<span class="n">nodes</span>.<span class="n">length</span> <span class="o">===</span> <span class="num">0</span>) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`no healthy ${name}`</span>);
+    <span class="k">const</span> <span class="n">i</span> <span class="o">=</span> (<span class="n">cursor</span>.<span class="n">get</span>(<span class="n">name</span>) <span class="o">??</span> <span class="num">0</span>) <span class="o">%</span> <span class="n">nodes</span>.<span class="n">length</span>;
+    <span class="n">cursor</span>.<span class="n">set</span>(<span class="n">name</span>, <span class="n">i</span> <span class="o">+</span> <span class="num">1</span>);
+    <span class="k">const</span> { <span class="n">Address</span>, <span class="n">Port</span> } <span class="o">=</span> <span class="n">nodes</span>[<span class="n">i</span>].<span class="n">Service</span>;
+    <span class="k">return</span> <span class="s">`http://${Address}:${Port}`</span>;
 }
 
-<span class="c">// application.yml
-// eureka:
-//   client:
-//     service-url:
-//       defaultZone: http://eureka:8761/eureka/
-//   instance:
-//     lease-renewal-interval-in-seconds: 5
-//     lease-expiration-duration-in-seconds: 15</span></pre></div>
+<span class="k">export async function</span> <span class="n">checkout</span>(<span class="n">cart</span>: <span class="t">Cart</span>): <span class="t">Promise</span>&lt;<span class="t">OrderResult</span>&gt; {
+    <span class="c">// "orders" is the logical name registered in Consul,</span>
+    <span class="c">// not a hostname — resolve() picks a live instance.</span>
+    <span class="k">const</span> <span class="n">base</span> <span class="o">=</span> <span class="k">await</span> <span class="n">resolve</span>(<span class="s">"orders"</span>);
+    <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">`${base}/orders`</span>, {
+        <span class="n">method</span>: <span class="s">"POST"</span>,
+        <span class="n">headers</span>: { <span class="s">"content-type"</span>: <span class="s">"application/json"</span> },
+        <span class="n">body</span>: <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">cart</span>),
+        <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">2000</span>),
+    });
+    <span class="k">return</span> <span class="n">res</span>.<span class="n">json</span>() <span class="k">as</span> <span class="t">Promise</span>&lt;<span class="t">OrderResult</span>&gt;;
+}</pre></div>
     </div>
   </section>
 
@@ -2029,7 +2035,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="cqrs-go">Go</button>
         <button class="tab py" data-target="cqrs-py">Python · FastAPI</button>
-        <button class="tab java" data-target="cqrs-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="cqrs-ts">TypeScript · Node.js</button>
       </div>
 
       <div class="code-pane active" id="cqrs-go"><pre><span class="c">// Two handlers, two stores. Same domain, different shapes.</span>
@@ -2109,50 +2115,53 @@
         <span class="n">upsert</span><span class="o">=</span><span class="k">True</span>,
     )</pre></div>
 
-      <div class="code-pane" id="cqrs-java"><pre><span class="c">// Spring Boot — two controllers, two repositories, one event bus</span>
+      <div class="code-pane" id="cqrs-ts"><pre><span class="c">// Express — two routers, two stores, one in-process event bus</span>
+<span class="k">import</span> { <span class="t">Router</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="t">EventEmitter</span> } <span class="k">from</span> <span class="s">"node:events"</span>;
+<span class="k">import</span> { <span class="n">z</span> } <span class="k">from</span> <span class="s">"zod"</span>;
 
-<span class="o">@</span><span class="t">RestController</span>
-<span class="o">@</span><span class="t">RequestMapping</span>(<span class="s">"/orders"</span>)
-<span class="k">public class</span> <span class="t">OrderCommandController</span> {
+<span class="k">export const</span> <span class="n">events</span> <span class="o">=</span> <span class="k">new</span> <span class="t">EventEmitter</span>();
 
-    <span class="k">private final</span> <span class="t">OrderWriteRepo</span> <span class="n">writeRepo</span>;
-    <span class="k">private final</span> <span class="t">DomainEventPublisher</span> <span class="n">events</span>;
+<span class="k">const</span> <span class="t">CreateOrder</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">object</span>({
+    <span class="n">customerId</span>: <span class="n">z</span>.<span class="n">string</span>(),
+    <span class="n">items</span>: <span class="n">z</span>.<span class="n">array</span>(<span class="n">z</span>.<span class="n">object</span>({ <span class="n">sku</span>: <span class="n">z</span>.<span class="n">string</span>(), <span class="n">qty</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>().<span class="n">positive</span>() })),
+});
 
-    <span class="o">@</span><span class="t">PostMapping</span>
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="k">public</span> <span class="t">OrderId</span> <span class="n">create</span>(<span class="o">@</span><span class="t">RequestBody</span> <span class="t">CreateOrder</span> <span class="n">cmd</span>) {
-        <span class="t">Order</span> <span class="n">o</span> <span class="o">=</span> <span class="t">Order</span>.<span class="n">place</span>(<span class="n">cmd</span>.<span class="n">customerId</span>(), <span class="n">cmd</span>.<span class="n">items</span>());
-        <span class="n">writeRepo</span>.<span class="n">save</span>(<span class="n">o</span>);
-        <span class="n">events</span>.<span class="n">publish</span>(<span class="k">new</span> <span class="t">OrderCreated</span>(<span class="n">o</span>.<span class="n">id</span>(), <span class="n">o</span>.<span class="n">customerId</span>(), <span class="n">o</span>.<span class="n">total</span>()));
-        <span class="k">return</span> <span class="n">o</span>.<span class="n">id</span>();
+<span class="c">// --- COMMAND SIDE — writes go to Postgres in one transaction ---</span>
+<span class="k">export const</span> <span class="n">orderCommands</span> <span class="o">=</span> <span class="t">Router</span>();
+
+<span class="n">orderCommands</span>.<span class="n">post</span>(<span class="s">"/orders"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">cmd</span> <span class="o">=</span> <span class="t">CreateOrder</span>.<span class="n">parse</span>(<span class="n">req</span>.<span class="n">body</span>);
+    <span class="k">const</span> <span class="n">o</span> <span class="o">=</span> <span class="t">Order</span>.<span class="n">place</span>(<span class="n">cmd</span>.<span class="n">customerId</span>, <span class="n">cmd</span>.<span class="n">items</span>);
+    <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">connect</span>();
+    <span class="k">try</span> {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);
+        <span class="k">await</span> <span class="n">writeRepo</span>.<span class="n">save</span>(<span class="n">client</span>, <span class="n">o</span>);
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+    } <span class="k">catch</span> (<span class="n">e</span>) {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+        <span class="k">throw</span> <span class="n">e</span>;
+    } <span class="k">finally</span> {
+        <span class="n">client</span>.<span class="n">release</span>();
     }
-}
+    <span class="n">events</span>.<span class="n">emit</span>(<span class="s">"OrderCreated"</span>, { <span class="n">id</span>: <span class="n">o</span>.<span class="n">id</span>, <span class="n">customerId</span>: <span class="n">o</span>.<span class="n">customerId</span>, <span class="n">total</span>: <span class="n">o</span>.<span class="n">total</span> });
+    <span class="n">res</span>.<span class="n">status</span>(<span class="num">201</span>).<span class="n">json</span>({ <span class="n">id</span>: <span class="n">o</span>.<span class="n">id</span> });
+});
 
-<span class="o">@</span><span class="t">RestController</span>
-<span class="o">@</span><span class="t">RequestMapping</span>(<span class="s">"/orders"</span>)
-<span class="k">public class</span> <span class="t">OrderQueryController</span> {
+<span class="c">// --- QUERY SIDE — reads a denormalized view (Mongo / Elastic / Redis) ---</span>
+<span class="k">export const</span> <span class="n">orderQueries</span> <span class="o">=</span> <span class="t">Router</span>();
 
-    <span class="k">private final</span> <span class="t">OrderViewRepo</span> <span class="n">viewRepo</span>;   <span class="c">// Mongo / Elastic / Redis</span>
+<span class="n">orderQueries</span>.<span class="n">get</span>(<span class="s">"/orders/:id"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">view</span> <span class="o">=</span> <span class="k">await</span> <span class="n">viewRepo</span>.<span class="n">findById</span>(<span class="n">req</span>.<span class="n">params</span>.<span class="n">id</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">view</span>) <span class="k">throw new</span> <span class="t">NotFoundError</span>(<span class="n">req</span>.<span class="n">params</span>.<span class="n">id</span>);
+    <span class="n">res</span>.<span class="n">json</span>(<span class="n">view</span>);
+});
 
-    <span class="o">@</span><span class="t">GetMapping</span>(<span class="s">"/{id}"</span>)
-    <span class="k">public</span> <span class="t">OrderView</span> <span class="n">get</span>(<span class="o">@</span><span class="t">PathVariable</span> <span class="t">String</span> <span class="n">id</span>) {
-        <span class="k">return</span> <span class="n">viewRepo</span>.<span class="n">findById</span>(<span class="n">id</span>)
-            .<span class="n">orElseThrow</span>(() <span class="o">-&gt;</span> <span class="k">new</span> <span class="t">NotFoundException</span>(<span class="n">id</span>));
-    }
-}
-
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">OrderProjector</span> {
-
-    <span class="k">private final</span> <span class="t">OrderViewRepo</span> <span class="n">viewRepo</span>;
-    <span class="k">private final</span> <span class="t">CustomerClient</span> <span class="n">customers</span>;
-
-    <span class="o">@</span><span class="t">EventListener</span>
-    <span class="k">public void</span> <span class="n">on</span>(<span class="t">OrderCreated</span> <span class="n">e</span>) {
-        <span class="t">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">customers</span>.<span class="n">name</span>(<span class="n">e</span>.<span class="n">customerId</span>());
-        <span class="n">viewRepo</span>.<span class="n">save</span>(<span class="k">new</span> <span class="t">OrderView</span>(<span class="n">e</span>.<span class="n">id</span>(), <span class="n">name</span>, <span class="n">e</span>.<span class="n">total</span>()));
-    }
-}</pre></div>
+<span class="c">// --- PROJECTOR — keeps the read store in sync ---</span>
+<span class="n">events</span>.<span class="n">on</span>(<span class="s">"OrderCreated"</span>, <span class="k">async</span> (<span class="n">e</span>: <span class="t">OrderCreated</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">name</span> <span class="o">=</span> <span class="k">await</span> <span class="n">customers</span>.<span class="n">name</span>(<span class="n">e</span>.<span class="n">customerId</span>);
+    <span class="k">await</span> <span class="n">viewRepo</span>.<span class="n">save</span>({ <span class="n">id</span>: <span class="n">e</span>.<span class="n">id</span>, <span class="n">customerName</span>: <span class="n">name</span>, <span class="n">total</span>: <span class="n">e</span>.<span class="n">total</span> });
+});</pre></div>
     </div>
   </section>
 
@@ -2262,7 +2271,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="ob-go">Go</button>
         <button class="tab py" data-target="ob-py">Python · FastAPI</button>
-        <button class="tab java" data-target="ob-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="ob-ts">TypeScript · Node.js</button>
       </div>
 
       <div class="code-pane active" id="ob-go"><pre><span class="c">// Same TX writes business row AND outbox row. Relay publishes later.</span>
@@ -2347,50 +2356,51 @@
                 )
         <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>(<span class="num">0.5</span>)</pre></div>
 
-      <div class="code-pane" id="ob-java"><pre><span class="c">// Spring + JPA — entity for the outbox, scheduled relay</span>
+      <div class="code-pane" id="ob-ts"><pre><span class="c">// pg + kafkajs — outbox row in the same transaction, polling relay</span>
+<span class="k">import</span> { <span class="t">Pool</span>, <span class="k">type</span> <span class="t">PoolClient</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> { <span class="n">randomUUID</span> } <span class="k">from</span> <span class="s">"node:crypto"</span>;
+<span class="k">import</span> { <span class="n">setTimeout</span> <span class="k">as</span> <span class="n">sleep</span> } <span class="k">from</span> <span class="s">"node:timers/promises"</span>;
 
-<span class="o">@</span><span class="t">Entity</span>
-<span class="o">@</span><span class="t">Table</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"outbox"</span>)
-<span class="k">public class</span> <span class="t">OutboxEvent</span> {
-    <span class="o">@</span><span class="t">Id</span> <span class="k">private</span> <span class="t">UUID</span> <span class="n">id</span>;
-    <span class="k">private</span> <span class="t">String</span> <span class="n">topic</span>;
-    <span class="o">@</span><span class="t">Lob</span> <span class="k">private</span> <span class="t">String</span> <span class="n">payload</span>;
-    <span class="k">private</span> <span class="t">Instant</span> <span class="n">createdAt</span> <span class="o">=</span> <span class="t">Instant</span>.<span class="n">now</span>();
-    <span class="k">private</span> <span class="t">Instant</span> <span class="n">sentAt</span>;
-    <span class="c">// ... getters/setters</span>
-}
+<span class="k">const</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Pool</span>();
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrderService</span> {
-
-    <span class="k">private final</span> <span class="t">OrderRepo</span> <span class="n">orders</span>;
-    <span class="k">private final</span> <span class="t">OutboxRepo</span> <span class="n">outbox</span>;
-    <span class="k">private final</span> <span class="t">ObjectMapper</span> <span class="n">json</span>;
-
-    <span class="o">@</span><span class="t">Transactional</span>          <span class="c">// one tx covers BOTH saves</span>
-    <span class="k">public void</span> <span class="n">place</span>(<span class="t">Order</span> <span class="n">o</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="n">orders</span>.<span class="n">save</span>(<span class="n">o</span>);
-        <span class="t">OutboxEvent</span> <span class="n">e</span> <span class="o">=</span> <span class="k">new</span> <span class="t">OutboxEvent</span>();
-        <span class="n">e</span>.<span class="n">setId</span>(<span class="t">UUID</span>.<span class="n">randomUUID</span>());
-        <span class="n">e</span>.<span class="n">setTopic</span>(<span class="s">"order.created"</span>);
-        <span class="n">e</span>.<span class="n">setPayload</span>(<span class="n">json</span>.<span class="n">writeValueAsString</span>(<span class="n">o</span>));
-        <span class="n">outbox</span>.<span class="n">save</span>(<span class="n">e</span>);
+<span class="k">async function</span> <span class="n">inTransaction</span>&lt;<span class="t">T</span>&gt;(<span class="n">fn</span>: (<span class="n">c</span>: <span class="t">PoolClient</span>) <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="t">T</span>&gt;): <span class="t">Promise</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="n">c</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">connect</span>();
+    <span class="k">try</span> {
+        <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);
+        <span class="k">const</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fn</span>(<span class="n">c</span>);
+        <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+        <span class="k">return</span> <span class="n">result</span>;
+    } <span class="k">catch</span> (<span class="n">e</span>) {
+        <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+        <span class="k">throw</span> <span class="n">e</span>;
+    } <span class="k">finally</span> {
+        <span class="n">c</span>.<span class="n">release</span>();
     }
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">OutboxRelay</span> {
-    <span class="k">private final</span> <span class="t">OutboxRepo</span> <span class="n">repo</span>;
-    <span class="k">private final</span> <span class="t">KafkaTemplate</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">String</span><span class="o">&gt;</span> <span class="n">kafka</span>;
+<span class="c">// One transaction covers BOTH inserts</span>
+<span class="k">export async function</span> <span class="n">place</span>(<span class="n">o</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">await</span> <span class="n">inTransaction</span>(<span class="k">async</span> (<span class="n">c</span>) <span class="o">=&gt;</span> {
+        <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"INSERT INTO orders(id, customer_id, total) VALUES($1, $2, $3)"</span>,
+            [<span class="n">o</span>.<span class="n">id</span>, <span class="n">o</span>.<span class="n">customerId</span>, <span class="n">o</span>.<span class="n">total</span>]);
+        <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"INSERT INTO outbox(id, topic, payload, created_at) VALUES($1, $2, $3, NOW())"</span>,
+            [<span class="n">randomUUID</span>(), <span class="s">"order.created"</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">o</span>)]);
+    });
+}
 
-    <span class="o">@</span><span class="t">Scheduled</span>(<span class="n">fixedDelay</span> <span class="o">=</span> <span class="num">500</span>)
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="k">public void</span> <span class="n">drain</span>() {
-        <span class="n">repo</span>.<span class="n">findUnsent</span>(<span class="t">PageRequest</span>.<span class="n">of</span>(<span class="num">0</span>, <span class="num">100</span>)).<span class="n">forEach</span>(<span class="n">e</span> <span class="o">-&gt;</span> {
-            <span class="n">kafka</span>.<span class="n">send</span>(<span class="n">e</span>.<span class="n">getTopic</span>(), <span class="n">e</span>.<span class="n">getPayload</span>()).<span class="n">join</span>();
-            <span class="n">e</span>.<span class="n">setSentAt</span>(<span class="t">Instant</span>.<span class="n">now</span>());
-            <span class="n">repo</span>.<span class="n">save</span>(<span class="n">e</span>);
-        });
+<span class="c">// Relay: drain 100 unsent rows, wait 500 ms after each run (fixed delay)</span>
+<span class="k">export async function</span> <span class="n">relay</span>(): <span class="t">Promise</span>&lt;<span class="t">never</span>&gt; {
+    <span class="k">for</span> (;;) {
+        <span class="k">await</span> <span class="n">inTransaction</span>(<span class="k">async</span> (<span class="n">c</span>) <span class="o">=&gt;</span> {
+            <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>&lt;<span class="t">OutboxRow</span>&gt;(
+                <span class="s">`SELECT id, topic, payload FROM outbox WHERE sent_at IS NULL
+                 ORDER BY created_at LIMIT 100 FOR UPDATE SKIP LOCKED`</span>);
+            <span class="k">for</span> (<span class="k">const</span> <span class="n">e</span> <span class="k">of</span> <span class="n">rows</span>) {
+                <span class="k">await</span> <span class="n">producer</span>.<span class="n">send</span>({ <span class="n">topic</span>: <span class="n">e</span>.<span class="n">topic</span>, <span class="n">messages</span>: [{ <span class="n">value</span>: <span class="n">e</span>.<span class="n">payload</span> }] });
+                <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"UPDATE outbox SET sent_at = NOW() WHERE id = $1"</span>, [<span class="n">e</span>.<span class="n">id</span>]);
+            }
+        }).<span class="n">catch</span>((<span class="n">err</span>) <span class="o">=&gt;</span> <span class="n">log</span>.<span class="n">error</span>({ <span class="n">err</span> }, <span class="s">"outbox relay failed"</span>));
+        <span class="k">await</span> <span class="n">sleep</span>(<span class="num">500</span>);
     }
 }
 
@@ -2500,7 +2510,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="sc-go">Go</button>
         <button class="tab py" data-target="sc-py">Python · FastAPI</button>
-        <button class="tab java" data-target="sc-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="sc-ts">TypeScript · Node.js</button>
       </div>
 
       <div class="code-pane active" id="sc-go"><pre><span class="c">// The app stays simple — just localhost. The sidecar (Envoy) does the rest.</span>
@@ -2575,25 +2585,23 @@
 #       ports: [{ containerPort: 15001 }]
 #       # Envoy handles: mTLS, retries, circuit breaking, tracing, metrics</span></pre></div>
 
-      <div class="code-pane" id="sc-java"><pre><span class="c">// Spring Boot — RestClient calls "http://payments", sidecar does the rest.</span>
+      <div class="code-pane" id="sc-ts"><pre><span class="c">// Express — fetch calls "http://payments", sidecar does the rest.</span>
+<span class="k">import</span> <span class="n">express</span> <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="o">@</span><span class="t">RestController</span>
-<span class="k">public class</span> <span class="t">CheckoutController</span> {
+<span class="k">const</span> <span class="n">app</span> <span class="o">=</span> <span class="n">express</span>();
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">express</span>.<span class="n">json</span>());
 
-    <span class="k">private final</span> <span class="t">RestClient</span> <span class="n">client</span> <span class="o">=</span> <span class="t">RestClient</span>.<span class="n">create</span>();
-
-    <span class="o">@</span><span class="t">PostMapping</span>(<span class="s">"/checkout"</span>)
-    <span class="k">public</span> <span class="t">ResponseEntity</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">checkout</span>(<span class="o">@</span><span class="t">RequestBody</span> <span class="t">Cart</span> <span class="n">cart</span>) {
-        <span class="c">// No TLS context. No retry interceptor. No tracing setup.</span>
-        <span class="c">// The Envoy sidecar in this pod handles all of it.</span>
-        <span class="t">String</span> <span class="n">body</span> <span class="o">=</span> <span class="n">client</span>.<span class="n">post</span>()
-            .<span class="n">uri</span>(<span class="s">"http://payments/charge"</span>)
-            .<span class="n">body</span>(<span class="n">cart</span>)
-            .<span class="n">retrieve</span>()
-            .<span class="n">body</span>(<span class="t">String</span>.<span class="k">class</span>);
-        <span class="k">return</span> <span class="t">ResponseEntity</span>.<span class="n">ok</span>(<span class="n">body</span>);
-    }
-}
+<span class="n">app</span>.<span class="n">post</span>(<span class="s">"/checkout"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="c">// No TLS context. No retry wrapper. No tracing setup.</span>
+    <span class="c">// The Envoy sidecar in this pod handles all of it.</span>
+    <span class="k">const</span> <span class="n">upstream</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">"http://payments/charge"</span>, {
+        <span class="n">method</span>: <span class="s">"POST"</span>,
+        <span class="n">headers</span>: { <span class="s">"content-type"</span>: <span class="s">"application/json"</span> },
+        <span class="n">body</span>: <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">req</span>.<span class="n">body</span> <span class="k">as</span> <span class="t">Cart</span>),
+        <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">5000</span>),
+    });
+    <span class="n">res</span>.<span class="n">status</span>(<span class="n">upstream</span>.<span class="n">status</span>).<span class="n">type</span>(<span class="s">"json"</span>).<span class="n">send</span>(<span class="k">await</span> <span class="n">upstream</span>.<span class="n">text</span>());
+});
 
 <span class="c">/*
   The cross-cutting concerns are configured in the mesh, not the app:
@@ -2724,7 +2732,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="sf-go">Go</button>
         <button class="tab py" data-target="sf-py">Python · FastAPI</button>
-        <button class="tab java" data-target="sf-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="sf-ts">TypeScript · Node.js</button>
       </div>
 
       <div class="code-pane active" id="sf-go"><pre><span class="c">// Reverse-proxy facade — route extracted paths to the new service,</span>
@@ -2799,35 +2807,32 @@
 <span class="c"># As more capabilities move out, EXTRACTED grows. Eventually the legacy
 # branch is dead code and the monolith can be retired.</span></pre></div>
 
-      <div class="code-pane" id="sf-java"><pre><span class="c">// Spring Cloud Gateway — declarative routing for the strangler facade.</span>
+      <div class="code-pane" id="sf-ts"><pre><span class="c">// http-proxy-middleware — ordered routing for the strangler facade.</span>
+<span class="k">import</span> <span class="n">express</span> <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="n">createProxyMiddleware</span> } <span class="k">from</span> <span class="s">"http-proxy-middleware"</span>;
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">StranglerRoutes</span> {
+<span class="k">const</span> <span class="n">app</span> <span class="o">=</span> <span class="n">express</span>();
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">RouteLocator</span> <span class="n">routes</span>(<span class="t">RouteLocatorBuilder</span> <span class="n">b</span>) {
-        <span class="k">return</span> <span class="n">b</span>.<span class="n">routes</span>()
-            <span class="c">// Extracted: orders capability now lives in its own service</span>
-            .<span class="n">route</span>(<span class="s">"orders-new"</span>, <span class="n">r</span> <span class="o">-&gt;</span> <span class="n">r</span>
-                .<span class="n">path</span>(<span class="s">"/orders/**"</span>, <span class="s">"/api/v1/orders/**"</span>)
-                .<span class="n">uri</span>(<span class="s">"http://orders-svc:8080"</span>))
+<span class="c">// Extracted: orders capability now lives in its own service</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">createProxyMiddleware</span>({
+    <span class="n">pathFilter</span>: [<span class="s">"/orders/**"</span>, <span class="s">"/api/v1/orders/**"</span>],
+    <span class="n">target</span>: <span class="s">"http://orders-svc:8080"</span>,
+}));
 
-            <span class="c">// Extracted: inventory just moved last sprint</span>
-            .<span class="n">route</span>(<span class="s">"inventory-new"</span>, <span class="n">r</span> <span class="o">-&gt;</span> <span class="n">r</span>
-                .<span class="n">path</span>(<span class="s">"/inventory/**"</span>)
-                .<span class="n">uri</span>(<span class="s">"http://inventory-svc:8080"</span>))
+<span class="c">// Extracted: inventory just moved last sprint</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">createProxyMiddleware</span>({
+    <span class="n">pathFilter</span>: <span class="s">"/inventory/**"</span>,
+    <span class="n">target</span>: <span class="s">"http://inventory-svc:8080"</span>,
+}));
 
-            <span class="c">// Catch-all — everything we haven't peeled off yet still goes to the monolith</span>
-            .<span class="n">route</span>(<span class="s">"legacy"</span>, <span class="n">r</span> <span class="o">-&gt;</span> <span class="n">r</span>
-                .<span class="n">path</span>(<span class="s">"/**"</span>)
-                .<span class="n">uri</span>(<span class="s">"http://legacy:8080"</span>))
-            .<span class="n">build</span>();
-    }
-}
+<span class="c">// Catch-all — everything we haven't peeled off yet still goes to the monolith</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">createProxyMiddleware</span>({ <span class="n">target</span>: <span class="s">"http://legacy:8080"</span> }));
+
+<span class="n">app</span>.<span class="n">listen</span>(<span class="num">8080</span>);
 
 <span class="c">/*
   Migration roadmap:
-   1. Stand up the gateway in front of the monolith — every route goes to legacy.
+   1. Stand up the facade in front of the monolith — every route goes to legacy.
    2. Pick the most isolated capability. Extract its data and behavior.
    3. Add a route that points to the new service.
    4. Run shadow traffic, compare responses, build confidence.

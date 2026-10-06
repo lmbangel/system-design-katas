@@ -99,7 +99,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">45 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
   <section class="principles">
@@ -136,7 +136,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python · FastAPI</button><button class="tab java" data-target="c1-java">Java · Spring Boot</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python · FastAPI</button><button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button></div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Application-layer middleware stack — each is a ring of defence.</span>
 <span class="k">func</span> <span class="n">main</span>() {
     <span class="n">r</span> <span class="o">:=</span> <span class="n">chi</span>.<span class="n">NewRouter</span>()
@@ -159,18 +159,19 @@
     <span class="n">body</span>: <span class="t">OrderCreate</span>,                              <span class="c"># ring 5</span>
     <span class="n">user</span>: <span class="t">User</span> <span class="o">=</span> <span class="n">Depends</span>(<span class="n">require_role</span>(<span class="s">"buyer"</span>)),  <span class="c"># ring 4</span>
 ): ...</pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// Spring Security filter chain = defence in depth.</span>
-<span class="o">@</span><span class="t">Bean</span>
-<span class="k">public</span> <span class="t">SecurityFilterChain</span> <span class="n">chain</span>(<span class="t">HttpSecurity</span> <span class="n">http</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-    <span class="k">return</span> <span class="n">http</span>
-        .<span class="n">addFilterBefore</span>(<span class="n">rateLimiter</span>, <span class="t">UsernamePasswordFilter</span>.<span class="k">class</span>)
-        .<span class="n">csrf</span>(<span class="t">Customizer</span>.<span class="n">withDefaults</span>())
-        .<span class="n">oauth2ResourceServer</span>(<span class="n">c</span> <span class="o">-&gt;</span> <span class="n">c</span>.<span class="n">jwt</span>(<span class="t">Customizer</span>.<span class="n">withDefaults</span>()))
-        .<span class="n">authorizeHttpRequests</span>(<span class="n">a</span> <span class="o">-&gt;</span> <span class="n">a</span>
-            .<span class="n">requestMatchers</span>(<span class="s">"/health"</span>).<span class="n">permitAll</span>()
-            .<span class="n">anyRequest</span>().<span class="n">authenticated</span>())
-        .<span class="n">build</span>();
-}</pre></div>
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// Express middleware chain = defence in depth.</span>
+<span class="k">import</span> { <span class="n">createRemoteJWKSet</span>, <span class="n">jwtVerify</span> } <span class="k">from</span> <span class="s">"jose"</span>;
+<span class="k">const</span> <span class="n">jwks</span> <span class="o">=</span> <span class="n">createRemoteJWKSet</span>(<span class="k">new</span> <span class="t">URL</span>(<span class="s">`${ISSUER}/.well-known/jwks.json`</span>));
+
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">rateLimiter</span>);                                   <span class="c">// rate limit before anything else</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="n">doubleCsrfProtection</span>);                          <span class="c">// CSRF tokens (csrf-csrf)</span>
+<span class="n">app</span>.<span class="n">get</span>(<span class="s">"/health"</span>, (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> { <span class="n">res</span>.<span class="n">send</span>(<span class="s">"ok"</span>); }); <span class="c">// permitAll: before auth</span>
+<span class="n">app</span>.<span class="n">use</span>(<span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>, <span class="n">next</span>) <span class="o">=&gt;</span> {                     <span class="c">// OAuth2 resource server: JWT</span>
+    <span class="k">const</span> <span class="n">token</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">headers</span>.<span class="n">authorization</span><span class="o">?.</span><span class="n">replace</span>(<span class="s">"Bearer "</span>, <span class="s">""</span>) <span class="o">??</span> <span class="s">""</span>;
+    <span class="k">try</span> { <span class="n">res</span>.<span class="n">locals</span>.<span class="n">claims</span> <span class="o">=</span> (<span class="k">await</span> <span class="n">jwtVerify</span>(<span class="n">token</span>, <span class="n">jwks</span>)).<span class="n">payload</span>; <span class="n">next</span>(); }
+    <span class="k">catch</span> { <span class="n">res</span>.<span class="n">sendStatus</span>(<span class="num">401</span>); }                      <span class="c">// anyRequest().authenticated()</span>
+});
+<span class="n">app</span>.<span class="n">use</span>(<span class="s">"/v1"</span>, <span class="n">apiRouter</span>);</pre></div>
     </div>
   </section>
 
@@ -222,7 +223,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab java" data-target="c2-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Input validation — the "T" (Tampering) mitigation.</span>
 <span class="k">type</span> <span class="t">CreateOrderReq</span> <span class="k">struct</span> {
     <span class="n">ProductID</span> <span class="t">string</span>  <span class="s">`json:"product_id" validate:"required,uuid"`</span>
@@ -251,15 +252,16 @@
 <span class="k">async def</span> <span class="n">create</span>(<span class="n">body</span>: <span class="t">CreateOrder</span>):
     <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"INSERT INTO orders VALUES ($1,$2)"</span>,
         <span class="n">body</span>.<span class="n">product_id</span>, <span class="n">body</span>.<span class="n">quantity</span>)</pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// Jakarta Validation — Spring auto-validates @Valid.</span>
-<span class="k">public record</span> <span class="t">CreateOrderReq</span>(
-    <span class="o">@</span><span class="t">NotNull</span> <span class="t">UUID</span> <span class="n">productId</span>,
-    <span class="o">@</span><span class="t">Min</span>(<span class="num">1</span>) <span class="o">@</span><span class="t">Max</span>(<span class="num">100</span>) <span class="k">int</span> <span class="n">quantity</span>
-) {}
-<span class="o">@</span><span class="t">PostMapping</span>(<span class="s">"/v1/orders"</span>)
-<span class="k">public</span> <span class="t">Order</span> <span class="n">create</span>(<span class="o">@</span><span class="t">Valid</span> <span class="o">@</span><span class="t">RequestBody</span> <span class="t">CreateOrderReq</span> <span class="n">req</span>) {
-    <span class="k">return</span> <span class="n">repo</span>.<span class="n">save</span>(<span class="k">new</span> <span class="t">Order</span>(<span class="n">req</span>.<span class="n">productId</span>(), <span class="n">req</span>.<span class="n">quantity</span>()));
-}</pre></div>
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// zod — validate every request body before it touches the DB.</span>
+<span class="k">const</span> <span class="t">CreateOrderReq</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">object</span>({
+    <span class="n">productId</span>: <span class="n">z</span>.<span class="n">string</span>().<span class="n">uuid</span>(),
+    <span class="n">quantity</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>().<span class="n">min</span>(<span class="num">1</span>).<span class="n">max</span>(<span class="num">100</span>),
+});
+<span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/orders"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">parsed</span> <span class="o">=</span> <span class="t">CreateOrderReq</span>.<span class="n">safeParse</span>(<span class="n">req</span>.<span class="n">body</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">parsed</span>.<span class="n">success</span>) { <span class="n">res</span>.<span class="n">status</span>(<span class="num">400</span>).<span class="n">json</span>(<span class="n">parsed</span>.<span class="n">error</span>.<span class="n">issues</span>); <span class="k">return</span>; }
+    <span class="n">res</span>.<span class="n">json</span>(<span class="k">await</span> <span class="n">repo</span>.<span class="n">save</span>(<span class="n">parsed</span>.<span class="n">data</span>));
+});</pre></div>
     </div>
   </section>
 
@@ -302,7 +304,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python</button><button class="tab java" data-target="c3-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Vault — fetch dynamic DB creds, auto-renew lease.</span>
 <span class="k">func</span> <span class="n">dbCreds</span>(<span class="n">v</span> <span class="o">*</span><span class="t">vault.Client</span>) (<span class="t">string</span>, <span class="t">string</span>, <span class="t">error</span>) {
     <span class="n">secret</span>, <span class="n">err</span> <span class="o">:=</span> <span class="n">v</span>.<span class="n">Logical</span>().<span class="n">Read</span>(<span class="s">"database/creds/orders-svc"</span>)
@@ -323,15 +325,15 @@
 
 <span class="n">creds</span> <span class="o">=</span> <span class="n">get_db_creds</span>()
 <span class="n">pool</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncpg</span>.<span class="n">create_pool</span>(<span class="n">user</span><span class="o">=</span><span class="n">creds</span>[<span class="s">"username"</span>], <span class="n">password</span><span class="o">=</span><span class="n">creds</span>[<span class="s">"password"</span>])</pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// Spring Cloud Vault — auto-injects secrets as properties.</span>
-<span class="c">// bootstrap.yml: spring.cloud.vault.authentication: KUBERNETES</span>
-<span class="c">//                spring.cloud.vault.database.enabled: true</span>
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// node-vault — log in with the pod's K8s service account, fetch at startup.</span>
+<span class="k">const</span> <span class="n">vault</span> <span class="o">=</span> <span class="n">nodeVault</span>({ <span class="n">endpoint</span>: <span class="s">"https://vault:8200"</span> });
+<span class="k">await</span> <span class="n">vault</span>.<span class="n">kubernetesLogin</span>({ <span class="n">role</span>: <span class="s">"orders-svc"</span>, <span class="n">jwt</span>: <span class="k">await</span> <span class="n">readFile</span>(<span class="n">SA_TOKEN</span>, <span class="s">"utf8"</span>) });
 
-<span class="c">// Spring auto-fetches dynamic DB creds from Vault.</span>
-<span class="c">// spring.datasource.username/.password set automatically.</span>
+<span class="c">// Dynamic DB creds from Vault's database engine (short-lived lease).</span>
+<span class="k">const</span> { <span class="n">data</span>: <span class="n">db</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">vault</span>.<span class="n">read</span>(<span class="s">"database/creds/orders-svc"</span>);
+<span class="k">const</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Pool</span>({ <span class="n">user</span>: <span class="n">db</span>.<span class="n">username</span>, <span class="n">password</span>: <span class="n">db</span>.<span class="n">password</span> });
 
-<span class="o">@</span><span class="t">Value</span>(<span class="s">"${stripe.api-key}"</span>)  <span class="c">// from Vault, not env</span>
-<span class="k">private</span> <span class="t">String</span> <span class="n">stripeKey</span>;</pre></div>
+<span class="k">const</span> <span class="n">stripeKey</span>: <span class="t">string</span> <span class="o">=</span> (<span class="k">await</span> <span class="n">vault</span>.<span class="n">read</span>(<span class="s">"secret/data/stripe"</span>)).<span class="n">data</span>.<span class="n">data</span>.<span class="n">apiKey</span>; <span class="c">// from Vault, not env</span></pre></div>
     </div>
   </section>
 
@@ -383,7 +385,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Terraform</button><button class="tab py" data-target="c4-py">AWS CDK</button><button class="tab java" data-target="c4-java">K8s RBAC</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Terraform</button><button class="tab py" data-target="c4-py">AWS CDK</button><button class="tab yaml" data-target="c4-rbac">K8s RBAC</button></div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Terraform — scoped IAM role for orders-svc.</span>
 <span class="k">resource</span> <span class="s">"aws_iam_role_policy"</span> <span class="s">"orders"</span> {
   <span class="n">role</span> <span class="o">=</span> <span class="n">aws_iam_role</span>.<span class="n">orders_svc</span>.<span class="n">id</span>
@@ -405,7 +407,7 @@
 
 <span class="n">bucket</span>.<span class="n">grant_read</span>(<span class="n">orders_role</span>, <span class="s">"orders-*"</span>)  <span class="c"># only this prefix</span>
 <span class="n">queue</span>.<span class="n">grant_send_messages</span>(<span class="n">orders_role</span>)     <span class="c"># only send, not receive</span></pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c"># Kubernetes RBAC — minimal service account.</span>
+      <div class="code-pane" id="c4-rbac"><pre><span class="c"># Kubernetes RBAC — minimal service account.</span>
 <span class="c"># orders-svc can only read its own secrets.</span>
 <span class="n">apiVersion</span>: <span class="n">rbac.authorization.k8s.io/v1</span>
 <span class="n">kind</span>: <span class="t">Role</span>
@@ -456,7 +458,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go</button><button class="tab py" data-target="c5-py">Istio</button><button class="tab java" data-target="c5-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go</button><button class="tab py" data-target="c5-py">Istio</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Go — mTLS server: verify client certs.</span>
 <span class="n">caCert</span>, <span class="n">_</span> <span class="o">:=</span> <span class="n">os</span>.<span class="n">ReadFile</span>(<span class="s">"/certs/ca.pem"</span>)
 <span class="n">pool</span> <span class="o">:=</span> <span class="n">x509</span>.<span class="n">NewCertPool</span>()
@@ -481,15 +483,15 @@
 <span class="n">spec</span>:
   <span class="n">mtls</span>:
     <span class="n">mode</span>: <span class="n">STRICT</span>   <span class="c"># reject any non-mTLS traffic</span></pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// Spring Boot — mTLS via application.yml.</span>
-<span class="c">//   server:</span>
-<span class="c">//     ssl:</span>
-<span class="c">//       enabled: true</span>
-<span class="c">//       key-store: /certs/server.p12</span>
-<span class="c">//       key-store-password: ${KEYSTORE_PASS}</span>
-<span class="c">//       client-auth: need            # ← require client cert</span>
-<span class="c">//       trust-store: /certs/ca.p12</span>
-<span class="c">//       trust-store-password: ${TRUSTSTORE_PASS}</span></pre></div>
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// Node https — mTLS: require and verify client certs.</span>
+<span class="k">const</span> <span class="n">server</span> <span class="o">=</span> <span class="n">https</span>.<span class="n">createServer</span>({
+    <span class="n">key</span>: <span class="n">readFileSync</span>(<span class="s">"/certs/server-key.pem"</span>),
+    <span class="n">cert</span>: <span class="n">readFileSync</span>(<span class="s">"/certs/server.pem"</span>),
+    <span class="n">ca</span>: <span class="n">readFileSync</span>(<span class="s">"/certs/ca.pem"</span>),        <span class="c">// trust store</span>
+    <span class="n">requestCert</span>: <span class="k">true</span>,                         <span class="c">// ask for a client cert</span>
+    <span class="n">rejectUnauthorized</span>: <span class="k">true</span>,                  <span class="c">// ← reject if missing/untrusted</span>
+}, <span class="n">app</span>);
+<span class="n">server</span>.<span class="n">listen</span>(<span class="num">8443</span>);</pre></div>
     </div>
   </section>
 
@@ -540,7 +542,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Go</button><button class="tab py" data-target="c6-py">Python</button><button class="tab java" data-target="c6-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Go</button><button class="tab py" data-target="c6-py">Python</button><button class="tab ts" data-target="c6-ts">TypeScript</button></div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// AWS KMS envelope encryption — encrypt PII column.</span>
 <span class="k">func</span> <span class="n">encryptPII</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">kms</span> <span class="o">*</span><span class="t">kms.Client</span>, <span class="n">plaintext</span> []<span class="t">byte</span>) ([]<span class="t">byte</span>, <span class="t">error</span>) {
     <span class="n">out</span>, <span class="n">err</span> <span class="o">:=</span> <span class="n">kms</span>.<span class="n">Encrypt</span>(<span class="n">ctx</span>, <span class="o">&amp;</span><span class="t">kms.EncryptInput</span>{
@@ -558,12 +560,12 @@
         <span class="n">KeyId</span><span class="o">=</span><span class="s">"alias/pii-key"</span>,
         <span class="n">Plaintext</span><span class="o">=</span><span class="n">plaintext</span>,
     )[<span class="s">"CiphertextBlob"</span>]</pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// AWS SDK v2 — KMS encrypt for PII fields.</span>
-<span class="k">var</span> <span class="n">resp</span> <span class="o">=</span> <span class="n">kmsClient</span>.<span class="n">encrypt</span>(<span class="t">EncryptRequest</span>.<span class="n">builder</span>()
-    .<span class="n">keyId</span>(<span class="s">"alias/pii-key"</span>)
-    .<span class="n">plaintext</span>(<span class="t">SdkBytes</span>.<span class="n">fromUtf8String</span>(<span class="n">ssn</span>))
-    .<span class="n">build</span>());
-<span class="t">byte</span>[] <span class="n">encrypted</span> <span class="o">=</span> <span class="n">resp</span>.<span class="n">ciphertextBlob</span>().<span class="n">asByteArray</span>();</pre></div>
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// AWS SDK v3 — KMS encrypt for PII fields.</span>
+<span class="k">const</span> <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">kms</span>.<span class="n">send</span>(<span class="k">new</span> <span class="t">EncryptCommand</span>({
+    <span class="n">KeyId</span>: <span class="s">"alias/pii-key"</span>,
+    <span class="n">Plaintext</span>: <span class="t">Buffer</span>.<span class="n">from</span>(<span class="n">ssn</span>, <span class="s">"utf8"</span>),
+}));
+<span class="k">const</span> <span class="n">encrypted</span>: <span class="t">Uint8Array</span> <span class="o">=</span> <span class="n">resp</span>.<span class="n">CiphertextBlob</span><span class="o">!</span>;</pre></div>
     </div>
   </section>
 
@@ -614,7 +616,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab java" data-target="c7-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Go — govulncheck scans for known CVEs in deps.</span>
 <span class="c">//   go install golang.org/x/vuln/cmd/govulncheck@latest</span>
 <span class="c">//   govulncheck ./...     # scans code + dependencies</span>
@@ -631,14 +633,13 @@
 <span class="c">#   syft packages myapp:latest -o cyclonedx-json > sbom.json</span>
 <span class="c">#</span>
 <span class="c"># Always pin: requirements.txt with hashes (pip-compile --generate-hashes)</span></pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// OWASP dependency-check — Gradle/Maven plugin.</span>
-<span class="c">//   plugins { id "org.owasp.dependencycheck" version "9.0" }</span>
-<span class="c">//   ./gradlew dependencyCheckAnalyze</span>
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// npm audit — scans package-lock.json for known CVEs.</span>
+<span class="c">//   npm audit --omit=dev --audit-level=high</span>
 <span class="c">//</span>
-<span class="c">// SBOM with CycloneDX Maven plugin:</span>
-<span class="c">//   mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom</span>
+<span class="c">// SBOM in CycloneDX format (built into npm 10+):</span>
+<span class="c">//   npm sbom --sbom-format cyclonedx &gt; sbom.json</span>
 <span class="c">//</span>
-<span class="c">// Pin deps: use Gradle lockfile (--write-locks)</span></pre></div>
+<span class="c">// Pin deps: commit package-lock.json, install with `npm ci`</span></pre></div>
     </div>
   </section>
 
@@ -691,7 +692,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab java" data-target="c8-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Append-only audit log with hash chain.</span>
 <span class="k">type</span> <span class="t">AuditEntry</span> <span class="k">struct</span> {
     <span class="n">Seq</span>      <span class="t">int64</span>     <span class="s">`json:"seq"`</span>
@@ -722,21 +723,20 @@
         <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">entry</span>, <span class="n">sort_keys</span><span class="o">=</span><span class="k">True</span>).<span class="n">encode</span>()).<span class="n">hexdigest</span>()
     <span class="n">audit</span>.<span class="n">info</span>(<span class="s">"audit_event"</span>, <span class="o">**</span><span class="n">entry</span>)
     <span class="c"># Fluentd/Vector ships to S3 with Object Lock</span></pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring AOP — automatic audit logging on annotated methods.</span>
-<span class="o">@</span><span class="t">Aspect</span> <span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">AuditAspect</span> {
-    <span class="o">@</span><span class="t">Around</span>(<span class="s">"@annotation(Audited)"</span>)
-    <span class="k">public</span> <span class="t">Object</span> <span class="n">audit</span>(<span class="t">ProceedingJoinPoint</span> <span class="n">jp</span>) <span class="k">throws</span> <span class="t">Throwable</span> {
-        <span class="k">var</span> <span class="n">user</span> <span class="o">=</span> <span class="t">SecurityContextHolder</span>.<span class="n">getContext</span>()
-            .<span class="n">getAuthentication</span>().<span class="n">getName</span>();
-        <span class="n">log</span>.<span class="n">info</span>(<span class="s">"AUDIT actor={} action={}"</span>, <span class="n">user</span>, <span class="n">jp</span>.<span class="n">getSignature</span>());
-        <span class="k">return</span> <span class="n">jp</span>.<span class="n">proceed</span>();
-    }
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// Higher-order wrapper — automatic audit logging around any service function.</span>
+<span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">"node:async_hooks"</span>;
+<span class="k">export const</span> <span class="n">requestContext</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AsyncLocalStorage</span>&lt;{ <span class="n">user</span>: <span class="t">string</span> }&gt;();
+
+<span class="k">export function</span> <span class="n">audited</span>&lt;<span class="t">A</span> <span class="k">extends</span> <span class="t">unknown</span>[], <span class="t">R</span>&gt;(<span class="n">action</span>: <span class="t">string</span>, <span class="n">fn</span>: (<span class="o">...</span><span class="n">args</span>: <span class="t">A</span>) <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="t">R</span>&gt;) {
+    <span class="k">return async</span> (<span class="o">...</span><span class="n">args</span>: <span class="t">A</span>): <span class="t">Promise</span>&lt;<span class="t">R</span>&gt; <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">user</span> <span class="o">=</span> <span class="n">requestContext</span>.<span class="n">getStore</span>()<span class="o">?.</span><span class="n">user</span> <span class="o">??</span> <span class="s">"anonymous"</span>;
+        <span class="n">log</span>.<span class="n">info</span>({ <span class="n">actor</span>: <span class="n">user</span>, <span class="n">action</span> }, <span class="s">"AUDIT"</span>);
+        <span class="k">return</span> <span class="n">fn</span>(<span class="o">...</span><span class="n">args</span>);
+    };
 }
 
-<span class="c">// Usage: @Audited on any service method.</span>
-<span class="o">@</span><span class="t">Audited</span>
-<span class="k">public void</span> <span class="n">deleteUser</span>(<span class="t">String</span> <span class="n">id</span>) { <span class="o">...</span> }</pre></div>
+<span class="c">// Usage: wrap any service function.</span>
+<span class="k">export const</span> <span class="n">deleteUser</span> <span class="o">=</span> <span class="n">audited</span>(<span class="s">"deleteUser"</span>, <span class="k">async</span> (<span class="n">id</span>: <span class="t">string</span>) <span class="o">=&gt;</span> { <span class="c">/* ... */</span> });</pre></div>
     </div>
   </section>
 
@@ -801,7 +801,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c9-go">Go</button><button class="tab py" data-target="c9-py">Python</button><button class="tab java" data-target="c9-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c9-go">Go</button><button class="tab py" data-target="c9-py">Python</button><button class="tab ts" data-target="c9-ts">TypeScript</button></div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Token bucket rate limiter per API key.</span>
 <span class="k">import</span> <span class="s">"golang.org/x/time/rate"</span>
 
@@ -829,13 +829,13 @@
 <span class="o">@</span><span class="n">limiter</span>.<span class="n">limit</span>(<span class="s">"100/minute"</span>)
 <span class="k">async def</span> <span class="n">list_products</span>(<span class="n">request</span>: <span class="t">Request</span>):
     <span class="k">return</span> <span class="k">await</span> <span class="n">load_products</span>()</pre></div>
-      <div class="code-pane" id="c9-java"><pre><span class="c">// Bucket4j — token bucket for Spring.</span>
-<span class="o">@</span><span class="t">Bean</span>
-<span class="k">public</span> <span class="t">FilterRegistrationBean</span> <span class="n">rateLimitFilter</span>() {
-    <span class="t">Bandwidth</span> <span class="n">limit</span> <span class="o">=</span> <span class="t">Bandwidth</span>.<span class="n">classic</span>(<span class="num">100</span>,
-        <span class="t">Refill</span>.<span class="n">greedy</span>(<span class="num">100</span>, <span class="t">Duration</span>.<span class="n">ofMinutes</span>(<span class="num">1</span>)));
-    <span class="c">// Per-API-key bucket stored in ConcurrentHashMap or Redis</span>
-}</pre></div>
+      <div class="code-pane" id="c9-ts"><pre><span class="c">// rate-limiter-flexible — token bucket middleware for Express.</span>
+<span class="k">const</span> <span class="n">limiter</span> <span class="o">=</span> <span class="k">new</span> <span class="t">RateLimiterRedis</span>({ <span class="n">storeClient</span>: <span class="n">redis</span>, <span class="n">points</span>: <span class="num">100</span>, <span class="n">duration</span>: <span class="num">60</span> }); <span class="c">// 100/min</span>
+<span class="k">export const</span> <span class="n">rateLimit</span>: <span class="t">RequestHandler</span> <span class="o">=</span> <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>, <span class="n">next</span>) <span class="o">=&gt;</span> {
+    <span class="k">try</span> { <span class="k">await</span> <span class="n">limiter</span>.<span class="n">consume</span>(<span class="n">req</span>.<span class="n">header</span>(<span class="s">"x-api-key"</span>) <span class="o">??</span> <span class="n">req</span>.<span class="n">ip</span><span class="o">!</span>); <span class="n">next</span>(); }
+    <span class="k">catch</span> { <span class="n">res</span>.<span class="n">set</span>(<span class="s">"Retry-After"</span>, <span class="s">"60"</span>).<span class="n">sendStatus</span>(<span class="num">429</span>); }
+};
+<span class="c">// Per-API-key bucket stored in Redis (or RateLimiterMemory)</span></pre></div>
     </div>
   </section>
 
@@ -894,7 +894,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c10-go">Go + OPA</button><button class="tab py" data-target="c10-py">Istio</button><button class="tab java" data-target="c10-java">Java + OPA</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c10-go">Go + OPA</button><button class="tab py" data-target="c10-py">Istio</button><button class="tab ts" data-target="c10-ts">TypeScript + OPA</button></div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// OPA (Open Policy Agent) sidecar — every request checked.</span>
 <span class="k">func</span> <span class="n">AuthZMiddleware</span>(<span class="n">next</span> <span class="t">http.Handler</span>) <span class="t">http.Handler</span> {
     <span class="k">return</span> <span class="n">http</span>.<span class="n">HandlerFunc</span>(<span class="k">func</span>(<span class="n">w</span> <span class="t">http.ResponseWriter</span>, <span class="n">r</span> <span class="o">*</span><span class="t">http.Request</span>) {
@@ -932,29 +932,31 @@
     - <span class="n">operation</span>:
         <span class="n">methods</span>: [<span class="s">"POST"</span>]
         <span class="n">paths</span>: [<span class="s">"/v1/charges"</span>]</pre></div>
-      <div class="code-pane" id="c10-java"><pre><span class="c">// Spring + OPA sidecar — check policy on every request.</span>
+      <div class="code-pane" id="c10-ts"><pre><span class="c">// Express + OPA sidecar — check policy on every request.</span>
+<span class="k">import type</span> { <span class="t">NextFunction</span>, <span class="t">Request</span>, <span class="t">Response</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import type</span> { <span class="t">TLSSocket</span> } <span class="k">from</span> <span class="s">"node:tls"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">OpaAuthzFilter</span> <span class="k">extends</span> <span class="t">OncePerRequestFilter</span> {
-    <span class="k">private final</span> <span class="t">RestClient</span> <span class="n">opa</span> <span class="o">=</span> <span class="t">RestClient</span>.<span class="n">create</span>(<span class="s">"http://localhost:8181"</span>);
+<span class="k">type</span> <span class="t">OpaResult</span> <span class="o">=</span> { <span class="n">result</span>?: <span class="t">boolean</span> };
+<span class="k">const</span> <span class="n">OPA_URL</span> <span class="o">=</span> <span class="s">"http://localhost:8181"</span>;
 
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected void</span> <span class="n">doFilterInternal</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                                    <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                                    <span class="t">FilterChain</span> <span class="n">chain</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="k">var</span> <span class="n">input</span> <span class="o">=</span> <span class="t">Map</span>.<span class="n">of</span>(
-            <span class="s">"caller"</span>, <span class="n">req</span>.<span class="n">getUserPrincipal</span>().<span class="n">getName</span>(),
-            <span class="s">"method"</span>, <span class="n">req</span>.<span class="n">getMethod</span>(),
-            <span class="s">"path"</span>,   <span class="n">req</span>.<span class="n">getRequestURI</span>());
-        <span class="k">var</span> <span class="n">decision</span> <span class="o">=</span> <span class="n">opa</span>.<span class="n">post</span>()
-            .<span class="n">uri</span>(<span class="s">"/v1/data/authz/allow"</span>)
-            .<span class="n">body</span>(<span class="t">Map</span>.<span class="n">of</span>(<span class="s">"input"</span>, <span class="n">input</span>))
-            .<span class="n">retrieve</span>().<span class="n">body</span>(<span class="t">OpaResult</span>.<span class="k">class</span>);
-        <span class="k">if</span> (<span class="o">!</span><span class="n">decision</span>.<span class="n">result</span>()) {
-            <span class="n">res</span>.<span class="n">sendError</span>(<span class="num">403</span>); <span class="k">return</span>;
-        }
-        <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>);
+<span class="k">export async function</span> <span class="n">opaAuthz</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">const</span> <span class="n">cert</span> <span class="o">=</span> (<span class="n">req</span>.<span class="n">socket</span> <span class="k">as</span> <span class="t">TLSSocket</span>).<span class="n">getPeerCertificate</span>();
+    <span class="k">const</span> <span class="n">input</span> <span class="o">=</span> {
+        <span class="n">caller</span>: <span class="n">cert</span>.<span class="n">subject</span><span class="o">?.</span><span class="n">CN</span>,
+        <span class="n">method</span>: <span class="n">req</span>.<span class="n">method</span>,
+        <span class="n">path</span>: <span class="n">req</span>.<span class="n">path</span>,
+    };
+    <span class="k">const</span> <span class="n">opa</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">`${OPA_URL}/v1/data/authz/allow`</span>, {
+        <span class="n">method</span>: <span class="s">"POST"</span>,
+        <span class="n">headers</span>: { <span class="s">"content-type"</span>: <span class="s">"application/json"</span> },
+        <span class="n">body</span>: <span class="t">JSON</span>.<span class="n">stringify</span>({ <span class="n">input</span> }),
+        <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">500</span>),
+    });
+    <span class="k">const</span> <span class="n">decision</span> <span class="o">=</span> (<span class="k">await</span> <span class="n">opa</span>.<span class="n">json</span>()) <span class="k">as</span> <span class="t">OpaResult</span>;
+    <span class="k">if</span> (<span class="o">!</span><span class="n">decision</span>.<span class="n">result</span>) {
+        <span class="n">res</span>.<span class="n">sendStatus</span>(<span class="num">403</span>); <span class="k">return</span>;
     }
+    <span class="n">next</span>();
 }</pre></div>
     </div>
   </section>
