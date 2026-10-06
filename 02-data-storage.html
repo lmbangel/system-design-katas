@@ -99,7 +99,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">40 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
 
@@ -210,8 +210,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
-        <button class="tab py" data-target="c1-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c1-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c1-py">Python · SQLAlchemy</button>
+        <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Picking the right index for the query, not the other way around.</span>
 <span class="k">var</span> <span class="n">migrations</span> <span class="o">=</span> []<span class="t">string</span>{
@@ -266,33 +266,31 @@
     )
 
 <span class="c"># Each extra index slows writes. Drop the ones EXPLAIN doesn't use.</span></pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// Flyway / JPA — declaring indexes that match the query patterns.</span>
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// Drizzle ORM — declaring indexes that match the query patterns.</span>
+<span class="k">import</span> { <span class="n">pgTable</span>, <span class="n">bigserial</span>, <span class="t">bigint</span>, <span class="n">text</span>, <span class="n">timestamp</span>, <span class="n">index</span> } <span class="k">from</span> <span class="s">"drizzle-orm/pg-core"</span>;
 
-<span class="o">@</span><span class="t">Entity</span>
-<span class="o">@</span><span class="t">Table</span>(
-    <span class="n">name</span> <span class="o">=</span> <span class="s">"orders"</span>,
-    <span class="n">indexes</span> <span class="o">=</span> {
-        <span class="c">// B-tree composite: matches WHERE user_id=? ORDER BY created_at DESC</span>
-        <span class="o">@</span><span class="t">Index</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"idx_orders_user_created"</span>,
-                <span class="n">columnList</span> <span class="o">=</span> <span class="s">"user_id, created_at DESC"</span>),
+<span class="k">export const</span> <span class="n">orders</span> <span class="o">=</span> <span class="n">pgTable</span>(
+    <span class="s">"orders"</span>,
+    {
+        <span class="n">id</span>: <span class="n">bigserial</span>(<span class="s">"id"</span>, { <span class="n">mode</span>: <span class="s">"number"</span> }).<span class="n">primaryKey</span>(),
+        <span class="n">userId</span>: <span class="t">bigint</span>(<span class="s">"user_id"</span>, { <span class="n">mode</span>: <span class="s">"number"</span> }).<span class="n">notNull</span>(),
+        <span class="n">status</span>: <span class="n">text</span>(<span class="s">"status"</span>).<span class="n">notNull</span>(),
+        <span class="n">total</span>: <span class="t">bigint</span>(<span class="s">"total"</span>, { <span class="n">mode</span>: <span class="s">"number"</span> }).<span class="n">notNull</span>(),
+        <span class="n">createdAt</span>: <span class="n">timestamp</span>(<span class="s">"created_at"</span>, { <span class="n">withTimezone</span>: <span class="k">true</span> }),
+    },
+    (<span class="n">t</span>) <span class="o">=&gt;</span> [
+        <span class="c">// B-tree composite: matches WHERE user_id=$1 ORDER BY created_at DESC</span>
+        <span class="n">index</span>(<span class="s">"idx_orders_user_created"</span>).<span class="n">on</span>(<span class="n">t</span>.<span class="n">userId</span>, <span class="n">t</span>.<span class="n">createdAt</span>.<span class="n">desc</span>()),
 
         <span class="c">// Single-column lookup index</span>
-        <span class="o">@</span><span class="t">Index</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"idx_orders_status"</span>, <span class="n">columnList</span> <span class="o">=</span> <span class="s">"status"</span>)
-    }
-)
-<span class="k">public class</span> <span class="t">Order</span> {
-    <span class="o">@</span><span class="t">Id</span> <span class="o">@</span><span class="t">GeneratedValue</span>
-    <span class="k">private</span> <span class="t">Long</span> <span class="n">id</span>;
+        <span class="n">index</span>(<span class="s">"idx_orders_status"</span>).<span class="n">on</span>(<span class="n">t</span>.<span class="n">status</span>),
+    ],
+);
 
-    <span class="o">@</span><span class="t">Column</span>(<span class="n">nullable</span> <span class="o">=</span> <span class="k">false</span>) <span class="k">private</span> <span class="t">Long</span> <span class="n">userId</span>;
-    <span class="o">@</span><span class="t">Column</span>(<span class="n">nullable</span> <span class="o">=</span> <span class="k">false</span>) <span class="k">private</span> <span class="t">String</span> <span class="n">status</span>;
-    <span class="o">@</span><span class="t">Column</span>(<span class="n">nullable</span> <span class="o">=</span> <span class="k">false</span>) <span class="k">private</span> <span class="t">Long</span> <span class="n">total</span>;
-    <span class="k">private</span> <span class="t">Instant</span> <span class="n">createdAt</span>;
-    <span class="c">// getters / setters</span>
-}
+<span class="k">export type</span> <span class="t">Order</span> <span class="o">=</span> <span class="k">typeof</span> <span class="n">orders</span>.<span class="n">$inferSelect</span>;
 
-<span class="c">// For partial / GIN / BRIN — drop down to Flyway SQL migrations.</span>
-<span class="c">// Postgres-specific features don't fit cleanly into JPA annotations.</span></pre></div>
+<span class="c">// For partial / GIN / BRIN — review (or hand-write) the SQL migration.</span>
+<span class="c">// Postgres-specific features are clearest in plain SQL, not a schema DSL.</span></pre></div>
     </div>
   </section>
 
@@ -373,8 +371,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
-        <button class="tab py" data-target="c2-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c2-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c2-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Programmatic EXPLAIN — useful in slow-query logging middleware.</span>
 <span class="k">func</span> <span class="n">explainSlow</span>(<span class="n">db</span> <span class="o">*</span><span class="t">sql.DB</span>, <span class="n">query</span> <span class="t">string</span>, <span class="n">args</span> <span class="o">...</span><span class="k">interface</span>{}) <span class="t">string</span> {
@@ -430,32 +428,33 @@
     <span class="k">return</span> <span class="n">rows</span>
 
 <span class="c"># Estimated vs actual mismatch &gt; 10× → ANALYZE the table or rewrite the query.</span></pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// Hibernate / Spring — log the plan when a query goes slow.</span>
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// pg + pino — log the plan when a query goes slow.</span>
+<span class="k">import</span> { <span class="t">Pool</span>, <span class="k">type</span> <span class="t">QueryResultRow</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> <span class="n">pino</span> <span class="k">from</span> <span class="s">"pino"</span>;
 
-<span class="o">@</span><span class="t">Aspect</span>
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">SlowQueryAdvice</span> {
+<span class="k">const</span> <span class="n">log</span> <span class="o">=</span> <span class="n">pino</span>();
 
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
-    <span class="k">private final</span> <span class="k">long</span> <span class="n">slowMs</span> <span class="o">=</span> <span class="num">200</span>;
+<span class="k">export class</span> <span class="t">SlowQueryLogger</span> {
+    <span class="k">private readonly</span> <span class="n">slowMs</span> <span class="o">=</span> <span class="num">200</span>;
 
-    <span class="o">@</span><span class="t">Around</span>(<span class="s">"@annotation(org.springframework.transaction.annotation.Transactional)"</span>)
-    <span class="k">public</span> <span class="t">Object</span> <span class="n">timeIt</span>(<span class="t">ProceedingJoinPoint</span> <span class="n">pjp</span>) <span class="k">throws</span> <span class="t">Throwable</span> {
-        <span class="k">long</span> <span class="n">t0</span> <span class="o">=</span> <span class="t">System</span>.<span class="n">nanoTime</span>();
-        <span class="t">Object</span> <span class="n">out</span> <span class="o">=</span> <span class="n">pjp</span>.<span class="n">proceed</span>();
-        <span class="k">long</span> <span class="n">ms</span> <span class="o">=</span> (<span class="t">System</span>.<span class="n">nanoTime</span>() <span class="o">-</span> <span class="n">t0</span>) <span class="o">/</span> <span class="num">1_000_000</span>;
-        <span class="k">if</span> (<span class="n">ms</span> <span class="o">&gt;=</span> <span class="n">slowMs</span>) {
-            <span class="n">log</span>.<span class="n">warn</span>(<span class="s">"slow_op {} ms — run EXPLAIN ANALYZE on the offending query"</span>, <span class="n">ms</span>);
+    <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
+
+    <span class="c">// Every query goes through here, so timing and logging live in one place</span>
+    <span class="k">async</span> <span class="n">query</span>&lt;<span class="t">R</span> <span class="k">extends</span> <span class="t">QueryResultRow</span>&gt;(<span class="n">sql</span>: <span class="t">string</span>, <span class="n">args</span>: <span class="t">unknown</span>[] <span class="o">=</span> []): <span class="t">Promise</span>&lt;<span class="t">R</span>[]&gt; {
+        <span class="k">const</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">process</span>.<span class="n">hrtime</span>.<span class="n">bigint</span>();
+        <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">R</span>&gt;(<span class="n">sql</span>, <span class="n">args</span>);
+        <span class="k">const</span> <span class="n">ms</span> <span class="o">=</span> <span class="t">Number</span>(<span class="n">process</span>.<span class="n">hrtime</span>.<span class="n">bigint</span>() <span class="o">-</span> <span class="n">t0</span>) <span class="o">/</span> <span class="num">1_000_000</span>;
+        <span class="k">if</span> (<span class="n">ms</span> <span class="o">&gt;=</span> <span class="k">this</span>.<span class="n">slowMs</span>) {
+            <span class="n">log</span>.<span class="n">warn</span>({ <span class="n">ms</span>, <span class="n">sql</span> }, <span class="s">"slow_op — run EXPLAIN ANALYZE on the offending query"</span>);
         }
-        <span class="k">return</span> <span class="n">out</span>;
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">rows</span>;
     }
 
     <span class="c">// Helper to fetch the plan when investigating</span>
-    <span class="k">public</span> <span class="t">String</span> <span class="n">explain</span>(<span class="t">String</span> <span class="n">sql</span>, <span class="t">Object</span><span class="o">...</span> <span class="n">args</span>) {
-        <span class="t">List</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">lines</span> <span class="o">=</span> <span class="n">jdbc</span>.<span class="n">query</span>(
-            <span class="s">"EXPLAIN (ANALYZE, BUFFERS) "</span> <span class="o">+</span> <span class="n">sql</span>,
-            (<span class="n">rs</span>, <span class="n">i</span>) <span class="o">-&gt;</span> <span class="n">rs</span>.<span class="n">getString</span>(<span class="num">1</span>), <span class="n">args</span>);
-        <span class="k">return</span> <span class="t">String</span>.<span class="n">join</span>(<span class="s">"\n"</span>, <span class="n">lines</span>);
+    <span class="k">async</span> <span class="n">explain</span>(<span class="n">sql</span>: <span class="t">string</span>, <span class="n">args</span>: <span class="t">unknown</span>[] <span class="o">=</span> []): <span class="t">Promise</span>&lt;<span class="t">string</span>&gt; {
+        <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>&lt;{ <span class="s">"QUERY PLAN"</span>: <span class="t">string</span> }&gt;(
+            <span class="s">`EXPLAIN (ANALYZE, BUFFERS) ${sql}`</span>, <span class="n">args</span>);
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">rows</span>.<span class="n">map</span>((<span class="n">r</span>) <span class="o">=&gt;</span> <span class="n">r</span>[<span class="s">"QUERY PLAN"</span>]).<span class="n">join</span>(<span class="s">"\n"</span>);
     }
 }</pre></div>
     </div>
@@ -534,8 +533,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c3-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c3-py">Python · SQLAlchemy</button>
+        <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// A real ACID transaction — atomic, durable, with explicit isolation.</span>
 <span class="k">func</span> <span class="n">transferFunds</span>(<span class="n">db</span> <span class="o">*</span><span class="t">sql.DB</span>, <span class="n">from</span>, <span class="n">to</span> <span class="t">int64</span>, <span class="n">cents</span> <span class="t">int64</span>) <span class="t">error</span> {
@@ -591,30 +590,34 @@
             <span class="k">raise</span>
 
 <span class="c"># C is enforced by CHECK (balance &gt;= 0). D is the engine's WAL fsync.</span></pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// Spring's @Transactional makes ACID the default.</span>
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// BEGIN/COMMIT on one PoolClient is the transaction boundary.</span>
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> <span class="n">pRetry</span>, { <span class="t">AbortError</span> } <span class="k">from</span> <span class="s">"p-retry"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">TransferService</span> {
-
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
-
-    <span class="o">@</span><span class="t">Transactional</span>(<span class="n">isolation</span> <span class="o">=</span> <span class="t">Isolation</span>.<span class="n">SERIALIZABLE</span>,
-                   <span class="n">rollbackFor</span> <span class="o">=</span> <span class="t">Exception</span>.<span class="k">class</span>)
-    <span class="o">@</span><span class="t">Retryable</span>(
-        <span class="n">retryFor</span> <span class="o">=</span> <span class="t">CannotSerializeTransactionException</span>.<span class="k">class</span>,
-        <span class="n">maxAttempts</span> <span class="o">=</span> <span class="num">3</span>,
-        <span class="n">backoff</span> <span class="o">=</span> <span class="o">@</span><span class="t">Backoff</span>(<span class="n">delay</span> <span class="o">=</span> <span class="num">25</span>, <span class="n">multiplier</span> <span class="o">=</span> <span class="num">2</span>)
-    )
-    <span class="k">public void</span> <span class="n">transfer</span>(<span class="k">long</span> <span class="n">from</span>, <span class="k">long</span> <span class="n">to</span>, <span class="k">long</span> <span class="n">cents</span>) {
-        <span class="c">// A: both run or neither — Spring handles rollback on exception</span>
-        <span class="n">jdbc</span>.<span class="n">update</span>(<span class="s">"UPDATE accounts SET balance = balance - ? WHERE id = ?"</span>,
-                     <span class="n">cents</span>, <span class="n">from</span>);
-        <span class="n">jdbc</span>.<span class="n">update</span>(<span class="s">"UPDATE accounts SET balance = balance + ? WHERE id = ?"</span>,
-                     <span class="n">cents</span>, <span class="n">to</span>);
-        <span class="c">// C: CHECK constraint catches negatives. Will throw → rollback.</span>
-        <span class="c">// D: commit forces WAL fsync. Crash-safe.</span>
-        <span class="c">// I: SERIALIZABLE — concurrent transfers serialized cleanly.</span>
-    }
+<span class="k">export async function</span> <span class="n">transfer</span>(<span class="n">db</span>: <span class="t">Pool</span>, <span class="n">fromId</span>: <span class="t">number</span>, <span class="n">toId</span>: <span class="t">number</span>, <span class="n">cents</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="c">// p-retry: 3 attempts, 25ms backoff ×2</span>
+    <span class="k">await</span> <span class="n">pRetry</span>(<span class="k">async</span> () <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">connect</span>();
+        <span class="k">try</span> {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN ISOLATION LEVEL SERIALIZABLE"</span>);
+            <span class="c">// A: both run or neither — we ROLLBACK on any exception</span>
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"UPDATE accounts SET balance = balance - $1 WHERE id = $2"</span>,
+                [<span class="n">cents</span>, <span class="n">fromId</span>]);
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"UPDATE accounts SET balance = balance + $1 WHERE id = $2"</span>,
+                [<span class="n">cents</span>, <span class="n">toId</span>]);
+            <span class="c">// C: CHECK constraint catches negatives. Will throw → rollback.</span>
+            <span class="c">// D: COMMIT forces WAL fsync. Crash-safe.</span>
+            <span class="c">// I: SERIALIZABLE — concurrent transfers serialized cleanly.</span>
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+        } <span class="k">catch</span> (<span class="n">err</span>) {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+            <span class="c">// Only serialization failures (SQLSTATE 40001) are worth retrying</span>
+            <span class="k">if</span> ((<span class="n">err</span> <span class="k">as</span> { <span class="n">code</span><span class="o">?</span>: <span class="t">string</span> }).<span class="n">code</span> <span class="o">!==</span> <span class="s">"40001"</span>) <span class="k">throw new</span> <span class="t">AbortError</span>(<span class="n">err</span> <span class="k">as</span> <span class="t">Error</span>);
+            <span class="k">throw</span> <span class="n">err</span>;
+        } <span class="k">finally</span> {
+            <span class="n">client</span>.<span class="n">release</span>();
+        }
+    }, { <span class="n">retries</span>: <span class="num">2</span>, <span class="n">minTimeout</span>: <span class="num">25</span>, <span class="n">factor</span>: <span class="num">2</span> });
 }</pre></div>
     </div>
   </section>
@@ -706,8 +709,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
-        <button class="tab py" data-target="c4-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c4-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c4-py">Python · SQLAlchemy</button>
+        <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// The classic write-skew bug: two doctors going off-call at once.</span>
 <span class="c">// Read Committed lets it through; Serializable catches it.</span>
@@ -760,35 +763,35 @@
 <span class="c"># Optimistic alternative — version column, no locks held during the work:</span>
 <span class="c">#   UPDATE accounts SET balance = balance - :c, version = version + 1</span>
 <span class="c">#    WHERE id = :id AND version = :v   -- if 0 rows changed → retry</span></pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c">// Spring + JPA: optimistic locking via @Version, retry on conflict.</span>
+      <div class="code-pane" id="c4-ts"><pre><span class="c">// pg: optimistic locking via a version column, retry on conflict.</span>
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> <span class="n">pRetry</span>, { <span class="t">AbortError</span> } <span class="k">from</span> <span class="s">"p-retry"</span>;
 
-<span class="o">@</span><span class="t">Entity</span>
-<span class="k">public class</span> <span class="t">Account</span> {
-    <span class="o">@</span><span class="t">Id</span>      <span class="k">private</span> <span class="t">Long</span> <span class="n">id</span>;
-    <span class="o">@</span><span class="t">Version</span> <span class="k">private</span> <span class="t">Long</span> <span class="n">version</span>;          <span class="c">// JPA bumps it; mismatch → ex.</span>
-    <span class="k">private</span>          <span class="t">Long</span> <span class="n">balance</span>;
-    <span class="c">// getters/setters elided</span>
+<span class="k">interface</span> <span class="t">Account</span> {
+    <span class="n">id</span>: <span class="t">number</span>;
+    <span class="n">version</span>: <span class="t">number</span>;          <span class="c">// bumped on every write; mismatch → conflict</span>
+    <span class="n">balance</span>: <span class="t">number</span>;
 }
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">AccountService</span> {
+<span class="k">export class</span> <span class="t">AccountService</span> {
+    <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
 
-    <span class="k">private final</span> <span class="t">AccountRepo</span> <span class="n">repo</span>;
-
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="o">@</span><span class="t">Retryable</span>(
-        <span class="n">retryFor</span> <span class="o">=</span> <span class="t">ObjectOptimisticLockingFailureException</span>.<span class="k">class</span>,
-        <span class="n">maxAttempts</span> <span class="o">=</span> <span class="num">5</span>,
-        <span class="n">backoff</span> <span class="o">=</span> <span class="o">@</span><span class="t">Backoff</span>(<span class="n">delay</span> <span class="o">=</span> <span class="num">10</span>, <span class="n">multiplier</span> <span class="o">=</span> <span class="num">2</span>)
-    )
-    <span class="k">public boolean</span> <span class="n">withdraw</span>(<span class="t">Long</span> <span class="n">id</span>, <span class="k">long</span> <span class="n">cents</span>) {
-        <span class="t">Account</span> <span class="n">a</span> <span class="o">=</span> <span class="n">repo</span>.<span class="n">findById</span>(<span class="n">id</span>).<span class="n">orElseThrow</span>();
-        <span class="k">if</span> (<span class="n">a</span>.<span class="n">getBalance</span>() <span class="o">&lt;</span> <span class="n">cents</span>) <span class="k">return</span> <span class="k">false</span>;
-        <span class="n">a</span>.<span class="n">setBalance</span>(<span class="n">a</span>.<span class="n">getBalance</span>() <span class="o">-</span> <span class="n">cents</span>);
-        <span class="n">repo</span>.<span class="n">save</span>(<span class="n">a</span>);                  <span class="c">// commit checks @Version</span>
-        <span class="k">return</span> <span class="k">true</span>;
+    <span class="c">// p-retry: 5 attempts, 10ms backoff ×2</span>
+    <span class="n">withdraw</span>(<span class="n">id</span>: <span class="t">number</span>, <span class="n">cents</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="t">boolean</span>&gt; {
+        <span class="k">return</span> <span class="n">pRetry</span>(<span class="k">async</span> () <span class="o">=&gt;</span> {
+            <span class="k">const</span> { <span class="n">rows</span>: [<span class="n">a</span>] } <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">Account</span>&gt;(
+                <span class="s">"SELECT id, version, balance FROM accounts WHERE id = $1"</span>, [<span class="n">id</span>]);
+            <span class="k">if</span> (<span class="o">!</span><span class="n">a</span>) <span class="k">throw new</span> <span class="t">AbortError</span>(<span class="s">`account ${id} not found`</span>);
+            <span class="k">if</span> (<span class="n">a</span>.<span class="n">balance</span> <span class="o">&lt;</span> <span class="n">cents</span>) <span class="k">return false</span>;
+            <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>(
+                <span class="s">`UPDATE accounts SET balance = $1, version = version + 1
+                  WHERE id = $2 AND version = $3`</span>,     <span class="c">// the version check</span>
+                [<span class="n">a</span>.<span class="n">balance</span> <span class="o">-</span> <span class="n">cents</span>, <span class="n">id</span>, <span class="n">a</span>.<span class="n">version</span>]);
+            <span class="k">if</span> (<span class="n">res</span>.<span class="n">rowCount</span> <span class="o">===</span> <span class="num">0</span>) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">"optimistic lock conflict"</span>);
+            <span class="k">return true</span>;
+        }, { <span class="n">retries</span>: <span class="num">4</span>, <span class="n">minTimeout</span>: <span class="num">10</span>, <span class="n">factor</span>: <span class="num">2</span> });
     }
-    <span class="c">// Pessimistic alternative: @Lock(LockModeType.PESSIMISTIC_WRITE) on the query.</span>
+    <span class="c">// Pessimistic alternative: SELECT ... FOR UPDATE inside BEGIN/COMMIT.</span>
 }</pre></div>
     </div>
   </section>
@@ -865,8 +868,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
-        <button class="tab py" data-target="c5-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c5-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c5-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Find long-running transactions that block vacuum (the MVCC enemy).</span>
 <span class="k">func</span> <span class="n">findVacuumBlockers</span>(<span class="n">db</span> <span class="o">*</span><span class="t">sql.DB</span>) ([]<span class="t">Blocker</span>, <span class="t">error</span>) {
@@ -929,37 +932,39 @@
          WHERE state = 'idle in transaction'
            AND now() - xact_start &gt; interval '5 minutes'
     """</span>)</pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// Spring boot health indicator — surface MVCC bloat as ops signal.</span>
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// Express health endpoint — surface MVCC bloat as an ops signal.</span>
+<span class="k">import</span> { <span class="t">Router</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">MvccBloatHealth</span> <span class="k">implements</span> <span class="t">HealthIndicator</span> {
+<span class="k">export function</span> <span class="n">mvccBloatHealth</span>(<span class="n">db</span>: <span class="t">Pool</span>): <span class="t">Router</span> {
+    <span class="k">const</span> <span class="n">router</span> <span class="o">=</span> <span class="t">Router</span>();
 
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
-
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public</span> <span class="t">Health</span> <span class="n">health</span>() {
-        <span class="t">List</span><span class="o">&lt;</span><span class="t">Map</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">Object</span><span class="o">&gt;&gt;</span> <span class="n">bloat</span> <span class="o">=</span> <span class="n">jdbc</span>.<span class="n">queryForList</span>(<span class="s">"""
+    <span class="n">router</span>.<span class="n">get</span>(<span class="s">"/health/mvcc"</span>, <span class="k">async</span> (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+        <span class="k">const</span> { <span class="n">rows</span>: <span class="n">bloat</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>(<span class="s">`
             SELECT relname, n_live_tup, n_dead_tup
               FROM pg_stat_user_tables
              WHERE n_dead_tup &gt; 100000
                AND n_dead_tup * 1.0 /
                    NULLIF(n_live_tup + n_dead_tup, 0) &gt; 0.3
-        """</span>);
+        `</span>);
 
-        <span class="t">List</span><span class="o">&lt;</span><span class="t">Map</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">Object</span><span class="o">&gt;&gt;</span> <span class="n">longTxns</span> <span class="o">=</span> <span class="n">jdbc</span>.<span class="n">queryForList</span>(<span class="s">"""
+        <span class="k">const</span> { <span class="n">rows</span>: <span class="n">longTxns</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>(<span class="s">`
             SELECT pid, usename, state, age(now(), xact_start) AS age
               FROM pg_stat_activity
              WHERE xact_start &lt; now() - interval '5 minutes'
-        """</span>);
+        `</span>);
 
-        <span class="k">if</span> (<span class="o">!</span><span class="n">bloat</span>.<span class="n">isEmpty</span>() <span class="o">||</span> <span class="o">!</span><span class="n">longTxns</span>.<span class="n">isEmpty</span>()) {
-            <span class="k">return</span> <span class="t">Health</span>.<span class="n">status</span>(<span class="s">"DEGRADED"</span>)
-                .<span class="n">withDetail</span>(<span class="s">"bloated_tables"</span>, <span class="n">bloat</span>)
-                .<span class="n">withDetail</span>(<span class="s">"long_transactions"</span>, <span class="n">longTxns</span>)
-                .<span class="n">build</span>();
+        <span class="k">if</span> (<span class="n">bloat</span>.<span class="n">length</span> <span class="o">&gt;</span> <span class="num">0</span> <span class="o">||</span> <span class="n">longTxns</span>.<span class="n">length</span> <span class="o">&gt;</span> <span class="num">0</span>) {
+            <span class="n">res</span>.<span class="n">json</span>({
+                <span class="n">status</span>: <span class="s">"DEGRADED"</span>,
+                <span class="n">bloated_tables</span>: <span class="n">bloat</span>,
+                <span class="n">long_transactions</span>: <span class="n">longTxns</span>,
+            });
+            <span class="k">return</span>;
         }
-        <span class="k">return</span> <span class="t">Health</span>.<span class="n">up</span>().<span class="n">build</span>();
-    }
+        <span class="n">res</span>.<span class="n">json</span>({ <span class="n">status</span>: <span class="s">"UP"</span> });
+    });
+    <span class="k">return</span> <span class="n">router</span>;
 }</pre></div>
     </div>
   </section>
@@ -1067,8 +1072,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c6-go">Go</button>
-        <button class="tab py" data-target="c6-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c6-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c6-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c6-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Read/write split — writes to primary, reads to followers.</span>
 <span class="k">type</span> <span class="t">DB</span> <span class="k">struct</span> {
@@ -1120,36 +1125,40 @@
             <span class="k">return</span> <span class="k">await</span> <span class="n">replica</span>.<span class="n">fetch</span>(<span class="n">sql</span>, <span class="o">*</span><span class="n">args</span>)
         <span class="k">except</span> <span class="t">Exception</span>:
             <span class="k">return</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">primary</span>.<span class="n">fetch</span>(<span class="n">sql</span>, <span class="o">*</span><span class="n">args</span>)</pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// Spring + AbstractRoutingDataSource — write to primary, read from replica.</span>
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// pg — two pools; a readOnly flag routes to the replica, the rest to primary.</span>
+<span class="k">import</span> { <span class="t">Pool</span>, <span class="k">type</span> <span class="t">PoolClient</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="k">public class</span> <span class="t">RoutingDataSource</span> <span class="k">extends</span> <span class="t">AbstractRoutingDataSource</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected</span> <span class="t">Object</span> <span class="n">determineCurrentLookupKey</span>() {
-        <span class="c">// Read-only @Transactional propagates this hint</span>
-        <span class="k">return</span> <span class="t">TransactionSynchronizationManager</span>.<span class="n">isCurrentTransactionReadOnly</span>()
-            <span class="o">?</span> <span class="s">"replica"</span> : <span class="s">"primary"</span>;
+<span class="k">const</span> <span class="n">primary</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Pool</span>({ <span class="n">connectionString</span>: <span class="n">process</span>.<span class="n">env</span>.<span class="n">PRIMARY_URL</span> });
+<span class="k">const</span> <span class="n">replica</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Pool</span>({ <span class="n">connectionString</span>: <span class="n">process</span>.<span class="n">env</span>.<span class="n">REPLICA_URL</span> });
+
+<span class="c">// Read-only transactions go to the replica; writes go to the primary</span>
+<span class="k">export async function</span> <span class="n">withTx</span>&lt;<span class="t">T</span>&gt;(<span class="n">readOnly</span>: <span class="t">boolean</span>,
+                                <span class="n">fn</span>: (<span class="n">c</span>: <span class="t">PoolClient</span>) <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="t">T</span>&gt;): <span class="t">Promise</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await</span> (<span class="n">readOnly</span> <span class="o">?</span> <span class="n">replica</span> : <span class="n">primary</span>).<span class="n">connect</span>();
+    <span class="k">try</span> {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="n">readOnly</span> <span class="o">?</span> <span class="s">"BEGIN READ ONLY"</span> : <span class="s">"BEGIN"</span>);
+        <span class="k">const</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fn</span>(<span class="n">client</span>);
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+        <span class="k">return</span> <span class="n">result</span>;
+    } <span class="k">catch</span> (<span class="n">err</span>) {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+        <span class="k">throw</span> <span class="n">err</span>;
+    } <span class="k">finally</span> {
+        <span class="n">client</span>.<span class="n">release</span>();
     }
 }
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">DataSourceConfig</span> {
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">DataSource</span> <span class="n">dataSource</span>(<span class="o">@</span><span class="t">Qualifier</span>(<span class="s">"primary"</span>)  <span class="t">DataSource</span> <span class="n">p</span>,
-                                  <span class="o">@</span><span class="t">Qualifier</span>(<span class="s">"replica"</span>)  <span class="t">DataSource</span> <span class="n">r</span>) {
-        <span class="t">RoutingDataSource</span> <span class="n">rds</span> <span class="o">=</span> <span class="k">new</span> <span class="t">RoutingDataSource</span>();
-        <span class="n">rds</span>.<span class="n">setTargetDataSources</span>(<span class="t">Map</span>.<span class="n">of</span>(<span class="s">"primary"</span>, <span class="n">p</span>, <span class="s">"replica"</span>, <span class="n">r</span>));
-        <span class="n">rds</span>.<span class="n">setDefaultTargetDataSource</span>(<span class="n">p</span>);
-        <span class="k">return</span> <span class="n">rds</span>;
+<span class="k">export class</span> <span class="t">UserService</span> {
+    <span class="n">find</span>(<span class="n">id</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="t">User</span> <span class="o">|</span> <span class="k">undefined</span>&gt; {             <span class="c">// → replica</span>
+        <span class="k">return</span> <span class="n">withTx</span>(<span class="k">true</span>, <span class="k">async</span> (<span class="n">c</span>) <span class="o">=&gt;</span>
+            (<span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>&lt;<span class="t">User</span>&gt;(<span class="s">"SELECT * FROM users WHERE id = $1"</span>, [<span class="n">id</span>])).<span class="n">rows</span>[<span class="num">0</span>]);
     }
-}
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">UserService</span> {
-    <span class="o">@</span><span class="t">Transactional</span>(<span class="n">readOnly</span> <span class="o">=</span> <span class="k">true</span>)               <span class="c">// → replica</span>
-    <span class="k">public</span> <span class="t">User</span> <span class="n">find</span>(<span class="t">Long</span> <span class="n">id</span>) { <span class="o">...</span> }
-
-    <span class="o">@</span><span class="t">Transactional</span>                                <span class="c">// → primary</span>
-    <span class="k">public void</span> <span class="n">save</span>(<span class="t">User</span> <span class="n">u</span>)   { <span class="o">...</span> }
+    <span class="n">save</span>(<span class="n">u</span>: <span class="t">User</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {                            <span class="c">// → primary</span>
+        <span class="k">return</span> <span class="n">withTx</span>(<span class="k">false</span>, <span class="k">async</span> (<span class="n">c</span>) <span class="o">=&gt;</span> {
+            <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"UPDATE users SET name = $2 WHERE id = $1"</span>, [<span class="n">u</span>.<span class="n">id</span>, <span class="n">u</span>.<span class="n">name</span>]);
+        });
+    }
 }</pre></div>
     </div>
   </section>
@@ -1240,8 +1249,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
-        <button class="tab py" data-target="c7-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c7-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c7-py">Python</button>
+        <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Consistent hashing — adding/removing a node moves ~1/N of keys.</span>
 <span class="k">type</span> <span class="t">Ring</span> <span class="k">struct</span> {
@@ -1299,36 +1308,36 @@
 
 <span class="c"># Adding a node migrates only ~1/N of keys.</span>
 <span class="c"># Real systems (Vitess, Citus) handle the migration plumbing for you.</span></pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// Spring — TenantContext-based directory sharding.</span>
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// Express + AsyncLocalStorage — tenant-directory sharding.</span>
+<span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">"node:async_hooks"</span>;
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="k">public class</span> <span class="t">ShardRouter</span> <span class="k">extends</span> <span class="t">AbstractRoutingDataSource</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected</span> <span class="t">Object</span> <span class="n">determineCurrentLookupKey</span>() {
-        <span class="k">return</span> <span class="t">TenantContext</span>.<span class="n">getShardId</span>();
+<span class="c">// Stands in for TenantContext: per-request context, no thread-locals in Node</span>
+<span class="k">const</span> <span class="n">tenantContext</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AsyncLocalStorage</span>&lt;{ <span class="n">shardId</span>: <span class="t">string</span> }&gt;();
+
+<span class="k">export class</span> <span class="t">ShardRouter</span> {
+    <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">shards</span>: <span class="t">Map</span>&lt;<span class="t">string</span>, <span class="t">Pool</span>&gt;) {}
+
+    <span class="n">pool</span>(): <span class="t">Pool</span> {
+        <span class="k">const</span> <span class="n">shardId</span> <span class="o">=</span> <span class="n">tenantContext</span>.<span class="n">getStore</span>()<span class="o">?.</span><span class="n">shardId</span>;
+        <span class="k">const</span> <span class="n">pool</span> <span class="o">=</span> <span class="n">shardId</span> <span class="o">?</span> <span class="k">this</span>.<span class="n">shards</span>.<span class="n">get</span>(<span class="n">shardId</span>) : <span class="k">undefined</span>;
+        <span class="k">if</span> (<span class="o">!</span><span class="n">pool</span>) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`no pool for shard ${shardId}`</span>);
+        <span class="k">return</span> <span class="n">pool</span>;
     }
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">TenantInterceptor</span> <span class="k">implements</span> <span class="t">HandlerInterceptor</span> {
-
-    <span class="k">private final</span> <span class="t">DirectoryClient</span> <span class="n">dir</span>;          <span class="c">// e.g. Redis lookup</span>
-
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public boolean</span> <span class="n">preHandle</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                             <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                             <span class="t">Object</span> <span class="n">handler</span>) {
-        <span class="t">String</span> <span class="n">tenant</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">getHeader</span>(<span class="s">"X-Tenant-Id"</span>);
-        <span class="k">if</span> (<span class="n">tenant</span> <span class="o">==</span> <span class="k">null</span>) <span class="k">throw new</span> <span class="t">BadRequest</span>(<span class="s">"tenant required"</span>);
-        <span class="t">String</span> <span class="n">shardId</span> <span class="o">=</span> <span class="n">dir</span>.<span class="n">lookup</span>(<span class="n">tenant</span>);   <span class="c">// "shard-3"</span>
-        <span class="t">TenantContext</span>.<span class="n">setShardId</span>(<span class="n">shardId</span>);
-        <span class="k">return</span> <span class="k">true</span>;
-    }
-
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public void</span> <span class="n">afterCompletion</span>(<span class="t">HttpServletRequest</span> <span class="n">r</span>, <span class="t">HttpServletResponse</span> <span class="n">s</span>,
-                                <span class="t">Object</span> <span class="n">h</span>, <span class="t">Exception</span> <span class="n">ex</span>) {
-        <span class="t">TenantContext</span>.<span class="n">clear</span>();                        <span class="c">// avoid leaks</span>
-    }
+<span class="k">export function</span> <span class="n">tenantMiddleware</span>(<span class="n">dir</span>: <span class="t">DirectoryClient</span>) {      <span class="c">// e.g. Redis lookup</span>
+    <span class="k">return async</span> (<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>) <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">tenant</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">header</span>(<span class="s">"X-Tenant-Id"</span>);
+        <span class="k">if</span> (<span class="o">!</span><span class="n">tenant</span>) {
+            <span class="n">res</span>.<span class="n">status</span>(<span class="num">400</span>).<span class="n">json</span>({ <span class="n">error</span>: <span class="s">"tenant required"</span> });
+            <span class="k">return</span>;
+        }
+        <span class="k">const</span> <span class="n">shardId</span> <span class="o">=</span> <span class="k">await</span> <span class="n">dir</span>.<span class="n">lookup</span>(<span class="n">tenant</span>);             <span class="c">// "shard-3"</span>
+        <span class="c">// Context lives only for this request's async chain — nothing to clear, no leaks</span>
+        <span class="n">tenantContext</span>.<span class="n">run</span>({ <span class="n">shardId</span> }, () <span class="o">=&gt;</span> <span class="n">next</span>());
+    };
 }</pre></div>
     </div>
   </section>
@@ -1418,8 +1427,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c8-go">Go</button>
-        <button class="tab py" data-target="c8-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c8-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c8-py">Python · aiokafka</button>
+        <button class="tab ts" data-target="c8-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Postgres logical replication consumer — reads change events directly.</span>
 <span class="k">import</span> <span class="s">"github.com/jackc/pglogrepl"</span>
@@ -1478,34 +1487,35 @@
             <span class="k">await</span> <span class="n">consumer</span>.<span class="n">commit</span>()                      <span class="c"># at-least-once</span>
     <span class="k">finally</span>:
         <span class="k">await</span> <span class="n">consumer</span>.<span class="n">stop</span>()</pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring Kafka consumer for Debezium events.</span>
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// KafkaJS consumer for Debezium events.</span>
+<span class="k">import</span> { <span class="t">Kafka</span> } <span class="k">from</span> <span class="s">"kafkajs"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">OrdersChangeConsumer</span> {
+<span class="k">type</span> <span class="t">DebeziumEvent</span>&lt;<span class="t">T</span>&gt; <span class="o">=</span> { <span class="n">payload</span>: { <span class="n">op</span>: <span class="s">"c"</span> <span class="o">|</span> <span class="s">"u"</span> <span class="o">|</span> <span class="s">"d"</span> <span class="o">|</span> <span class="s">"r"</span>; <span class="n">before</span>: <span class="t">T</span> <span class="o">|</span> <span class="k">null</span>; <span class="n">after</span>: <span class="t">T</span> <span class="o">|</span> <span class="k">null</span> } };
 
-    <span class="k">private final</span> <span class="t">SearchIndex</span>  <span class="n">search</span>;
-    <span class="k">private final</span> <span class="t">ObjectMapper</span> <span class="n">json</span>;
+<span class="k">const</span> <span class="n">kafka</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Kafka</span>({ <span class="n">clientId</span>: <span class="s">"search-indexer"</span>, <span class="n">brokers</span>: [<span class="s">"kafka:9092"</span>] });
+<span class="k">const</span> <span class="n">consumer</span> <span class="o">=</span> <span class="n">kafka</span>.<span class="n">consumer</span>({ <span class="n">groupId</span>: <span class="s">"search-indexer"</span> });
 
-    <span class="o">@</span><span class="t">KafkaListener</span>(<span class="n">topics</span> <span class="o">=</span> <span class="s">"db.public.orders"</span>,
-                    <span class="n">groupId</span> <span class="o">=</span> <span class="s">"search-indexer"</span>,
-                    <span class="n">containerFactory</span> <span class="o">=</span> <span class="s">"manualAckFactory"</span>)
-    <span class="k">public void</span> <span class="n">consume</span>(<span class="t">ConsumerRecord</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">String</span><span class="o">&gt;</span> <span class="n">rec</span>,
-                        <span class="t">Acknowledgment</span> <span class="n">ack</span>) <span class="k">throws</span> <span class="t">IOException</span> {
-
-        <span class="t">JsonNode</span> <span class="n">root</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">readTree</span>(<span class="n">rec</span>.<span class="n">value</span>());
-        <span class="t">JsonNode</span> <span class="n">payload</span> <span class="o">=</span> <span class="n">root</span>.<span class="n">get</span>(<span class="s">"payload"</span>);
-        <span class="t">String</span> <span class="n">op</span> <span class="o">=</span> <span class="n">payload</span>.<span class="n">get</span>(<span class="s">"op"</span>).<span class="n">asText</span>();
-
-        <span class="k">switch</span> (<span class="n">op</span>) {
-            <span class="k">case</span> <span class="s">"c"</span>, <span class="s">"u"</span>, <span class="s">"r"</span> <span class="o">-&gt;</span>
-                <span class="n">search</span>.<span class="n">index</span>(<span class="n">json</span>.<span class="n">treeToValue</span>(
-                    <span class="n">payload</span>.<span class="n">get</span>(<span class="s">"after"</span>), <span class="t">Order</span>.<span class="k">class</span>));
-            <span class="k">case</span> <span class="s">"d"</span> <span class="o">-&gt;</span>
-                <span class="n">search</span>.<span class="n">delete</span>(<span class="n">payload</span>.<span class="n">get</span>(<span class="s">"before"</span>).<span class="n">get</span>(<span class="s">"id"</span>).<span class="n">asLong</span>());
-        }
-
-        <span class="n">ack</span>.<span class="n">acknowledge</span>();                              <span class="c">// commit only after success</span>
-    }
+<span class="k">export async function</span> <span class="n">consumeOrderChanges</span>(<span class="n">search</span>: <span class="t">SearchIndex</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">await</span> <span class="n">consumer</span>.<span class="n">connect</span>();
+    <span class="k">await</span> <span class="n">consumer</span>.<span class="n">subscribe</span>({ <span class="n">topic</span>: <span class="s">"db.public.orders"</span> });
+    <span class="k">await</span> <span class="n">consumer</span>.<span class="n">run</span>({
+        <span class="n">autoCommit</span>: <span class="k">false</span>,                                  <span class="c">// manual ack</span>
+        <span class="n">eachMessage</span>: <span class="k">async</span> ({ <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">message</span> }) <span class="o">=&gt;</span> {
+            <span class="k">const</span> { <span class="n">payload</span> } <span class="o">=</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">message</span>.<span class="n">value</span><span class="o">!</span>.<span class="n">toString</span>()) <span class="k">as</span> <span class="t">DebeziumEvent</span>&lt;<span class="t">Order</span>&gt;;
+            <span class="k">switch</span> (<span class="n">payload</span>.<span class="n">op</span>) {
+                <span class="k">case</span> <span class="s">"c"</span>: <span class="k">case</span> <span class="s">"u"</span>: <span class="k">case</span> <span class="s">"r"</span>:
+                    <span class="k">await</span> <span class="n">search</span>.<span class="n">index</span>(<span class="n">payload</span>.<span class="n">after</span><span class="o">!</span>);
+                    <span class="k">break</span>;
+                <span class="k">case</span> <span class="s">"d"</span>:
+                    <span class="k">await</span> <span class="n">search</span>.<span class="n">delete</span>(<span class="n">payload</span>.<span class="n">before</span><span class="o">!</span>.<span class="n">id</span>);
+                    <span class="k">break</span>;
+            }
+            <span class="c">// commit only after success (committed offset = next one to read)</span>
+            <span class="k">await</span> <span class="n">consumer</span>.<span class="n">commitOffsets</span>([
+                { <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">offset</span>: (<span class="t">BigInt</span>(<span class="n">message</span>.<span class="n">offset</span>) <span class="o">+</span> <span class="num">1n</span>).<span class="n">toString</span>() },
+            ]);
+        },
+    });
 }</pre></div>
     </div>
   </section>
@@ -1584,8 +1594,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c9-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c9-py">Python</button>
+        <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Layered storage — system of record + caches + search, kept in sync via CDC.</span>
 <span class="k">type</span> <span class="t">UserService</span> <span class="k">struct</span> {
@@ -1645,39 +1655,42 @@
     <span class="k">async def</span> <span class="n">save</span>(<span class="n">self</span>, <span class="n">user</span>: <span class="t">User</span>):
         <span class="c"># Write ONLY to source of truth. CDC propagates to Redis + ES.</span>
         <span class="k">await</span> <span class="n">self</span>.<span class="n">pg</span>.<span class="n">execute</span>(<span class="s">"INSERT INTO users ..."</span>, user)</pre></div>
-      <div class="code-pane" id="c9-java"><pre><span class="c">// Spring boot — one service, multiple stores, one source of truth.</span>
+      <div class="code-pane" id="c9-ts"><pre><span class="c">// Node.js — one service, multiple stores, one source of truth.</span>
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import type</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
+<span class="k">import type</span> { <span class="t">Client</span> <span class="k">as</span> <span class="t">Elastic</span> } <span class="k">from</span> <span class="s">"@elastic/elasticsearch"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">UserService</span> {
+<span class="k">export class</span> <span class="t">UserService</span> {
+    <span class="k">constructor</span>(
+        <span class="k">private readonly</span> <span class="n">pg</span>: <span class="t">Pool</span>,          <span class="c">// system of record</span>
+        <span class="k">private readonly</span> <span class="n">redis</span>: <span class="t">Redis</span>,      <span class="c">// hot read cache</span>
+        <span class="k">private readonly</span> <span class="n">es</span>: <span class="t">Elastic</span>,       <span class="c">// full-text</span>
+    ) {}
 
-    <span class="k">private final</span> <span class="t">UserRepo</span>          <span class="n">pg</span>;       <span class="c">// system of record</span>
-    <span class="k">private final</span> <span class="t">StringRedisTemplate</span> <span class="n">redis</span>;   <span class="c">// hot read cache</span>
-    <span class="k">private final</span> <span class="t">ElasticsearchOps</span>   <span class="n">es</span>;      <span class="c">// full-text</span>
-    <span class="k">private final</span> <span class="t">ObjectMapper</span>      <span class="n">json</span>;
+    <span class="k">async</span> <span class="n">getById</span>(<span class="n">id</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="t">User</span> <span class="o">|</span> <span class="k">null</span>&gt; {
+        <span class="k">const</span> <span class="n">cached</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="s">`u:${id}`</span>);
+        <span class="k">if</span> (<span class="n">cached</span> <span class="o">!==</span> <span class="k">null</span>) <span class="k">return</span> <span class="t">JSON</span>.<span class="n">parse</span>(<span class="n">cached</span>) <span class="k">as</span> <span class="t">User</span>;
 
-    <span class="k">public</span> <span class="t">User</span> <span class="n">getById</span>(<span class="t">Long</span> <span class="n">id</span>) <span class="k">throws</span> <span class="t">IOException</span> {
-        <span class="t">String</span> <span class="n">cached</span> <span class="o">=</span> <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">get</span>(<span class="s">"u:"</span> <span class="o">+</span> <span class="n">id</span>);
-        <span class="k">if</span> (<span class="n">cached</span> <span class="o">!=</span> <span class="k">null</span>) <span class="k">return</span> <span class="n">json</span>.<span class="n">readValue</span>(<span class="n">cached</span>, <span class="t">User</span>.<span class="k">class</span>);
-
-        <span class="t">User</span> <span class="n">u</span> <span class="o">=</span> <span class="n">pg</span>.<span class="n">findById</span>(<span class="n">id</span>).<span class="n">orElse</span>(<span class="k">null</span>);
-        <span class="k">if</span> (<span class="n">u</span> <span class="o">!=</span> <span class="k">null</span>) {
-            <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">set</span>(<span class="s">"u:"</span> <span class="o">+</span> <span class="n">id</span>,
-                <span class="n">json</span>.<span class="n">writeValueAsString</span>(<span class="n">u</span>), <span class="t">Duration</span>.<span class="n">ofMinutes</span>(<span class="num">5</span>));
+        <span class="k">const</span> { <span class="n">rows</span>: [<span class="n">u</span>] } <span class="o">=</span> <span class="k">await this</span>.<span class="n">pg</span>.<span class="n">query</span>&lt;<span class="t">User</span>&gt;(
+            <span class="s">"SELECT * FROM users WHERE id = $1"</span>, [<span class="n">id</span>]);
+        <span class="k">if</span> (<span class="n">u</span>) {
+            <span class="k">await this</span>.<span class="n">redis</span>.<span class="n">set</span>(<span class="s">`u:${id}`</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">u</span>), <span class="s">"EX"</span>, <span class="num">300</span>);   <span class="c">// 5 min</span>
         }
-        <span class="k">return</span> <span class="n">u</span>;
+        <span class="k">return</span> <span class="n">u</span> <span class="o">??</span> <span class="k">null</span>;
     }
 
-    <span class="k">public</span> <span class="t">List</span><span class="o">&lt;</span><span class="t">User</span><span class="o">&gt;</span> <span class="n">search</span>(<span class="t">String</span> <span class="n">q</span>) {
-        <span class="t">Query</span> <span class="n">query</span> <span class="o">=</span> <span class="t">NativeQuery</span>.<span class="n">builder</span>()
-            .<span class="n">withQuery</span>(<span class="n">qb</span> <span class="o">-&gt;</span> <span class="n">qb</span>.<span class="n">multiMatch</span>(<span class="n">m</span> <span class="o">-&gt;</span> <span class="n">m</span>.<span class="n">query</span>(<span class="n">q</span>)
-                .<span class="n">fields</span>(<span class="s">"name^2"</span>, <span class="s">"email"</span>))).<span class="n">build</span>();
-        <span class="k">return</span> <span class="n">es</span>.<span class="n">search</span>(<span class="n">query</span>, <span class="t">User</span>.<span class="k">class</span>).<span class="n">stream</span>()
-            .<span class="n">map</span>(<span class="n">SearchHit</span>::<span class="n">getContent</span>).<span class="n">toList</span>();
+    <span class="k">async</span> <span class="n">search</span>(<span class="n">q</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">User</span>[]&gt; {
+        <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">es</span>.<span class="n">search</span>&lt;<span class="t">User</span>&gt;({
+            <span class="n">index</span>: <span class="s">"users"</span>,
+            <span class="n">query</span>: { <span class="n">multi_match</span>: { <span class="n">query</span>: <span class="n">q</span>, <span class="n">fields</span>: [<span class="s">"name^2"</span>, <span class="s">"email"</span>] } },
+        });
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">hits</span>.<span class="n">hits</span>.<span class="n">map</span>((<span class="n">h</span>) <span class="o">=&gt;</span> <span class="n">h</span>.<span class="n">_source</span><span class="o">!</span>);
     }
 
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="k">public void</span> <span class="n">save</span>(<span class="t">User</span> <span class="n">u</span>) {
-        <span class="n">pg</span>.<span class="n">save</span>(<span class="n">u</span>);    <span class="c">// CDC fans out to Redis + ES asynchronously</span>
+    <span class="k">async</span> <span class="n">save</span>(<span class="n">u</span>: <span class="t">User</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="c">// Write ONLY to Postgres. CDC fans out to Redis + ES asynchronously.</span>
+        <span class="k">await this</span>.<span class="n">pg</span>.<span class="n">query</span>(<span class="s">"INSERT INTO users (id, name, email) VALUES ($1, $2, $3)"</span>,
+            [<span class="n">u</span>.<span class="n">id</span>, <span class="n">u</span>.<span class="n">name</span>, <span class="n">u</span>.<span class="n">email</span>]);
     }
 }</pre></div>
     </div>
@@ -1781,8 +1794,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c10-go">Go</button>
-        <button class="tab py" data-target="c10-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c10-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c10-py">Python</button>
+        <button class="tab ts" data-target="c10-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// ✗ BROKEN — classic dual write. Crash between calls = data drift.</span>
 <span class="k">func</span> <span class="n">placeOrderBroken</span>(<span class="n">db</span> <span class="o">*</span><span class="t">sql.DB</span>, <span class="n">k</span> <span class="o">*</span><span class="t">kafka.Writer</span>, <span class="n">o</span> <span class="t">Order</span>) <span class="t">error</span> {
@@ -1846,48 +1859,51 @@
                 <span class="n">e</span>[<span class="s">"id"</span>])
         <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>(<span class="num">0.5</span>)
 <span class="c"># Idempotent consumers downstream handle the at-least-once duplicates.</span></pre></div>
-      <div class="code-pane" id="c10-java"><pre><span class="c">// ✗ BROKEN — dual write, even inside @Transactional, leaks at the boundary</span>
-<span class="o">@</span><span class="t">Transactional</span>
-<span class="k">public void</span> <span class="n">placeOrderBroken</span>(<span class="t">Order</span> <span class="n">o</span>) {
-    <span class="n">orderRepo</span>.<span class="n">save</span>(<span class="n">o</span>);
-    <span class="c">// Even if Kafka send is "fire and forget", a crash here = inconsistency</span>
-    <span class="n">kafka</span>.<span class="n">send</span>(<span class="s">"orders"</span>, <span class="n">o</span>);
+      <div class="code-pane" id="c10-ts"><pre><span class="k">import type</span> { <span class="t">Pool</span>, <span class="t">PoolClient</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import type</span> { <span class="t">Producer</span> } <span class="k">from</span> <span class="s">"kafkajs"</span>;
+<span class="k">import</span> { <span class="n">setTimeout</span> <span class="k">as</span> <span class="n">sleep</span> } <span class="k">from</span> <span class="s">"node:timers/promises"</span>;
+
+<span class="c">// ✗ BROKEN — dual write, even inside a DB transaction, leaks at the boundary</span>
+<span class="k">export async function</span> <span class="n">placeOrderBroken</span>(<span class="n">client</span>: <span class="t">PoolClient</span>, <span class="n">o</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);
+    <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"INSERT INTO orders (id, total) VALUES ($1, $2)"</span>, [<span class="n">o</span>.<span class="n">id</span>, <span class="n">o</span>.<span class="n">total</span>]);
+    <span class="c">// Kafka isn't in the transaction: a crash (or failed COMMIT) here = inconsistency</span>
+    <span class="k">await</span> <span class="n">producer</span>.<span class="n">send</span>({ <span class="n">topic</span>: <span class="s">"orders"</span>, <span class="n">messages</span>: [{ <span class="n">value</span>: <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">o</span>) }] });
+    <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
 }
 
-<span class="c">// ✓ FIXED — outbox in same transaction; publisher runs separately</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrderService</span> {
-
-    <span class="k">private final</span> <span class="t">OrderRepo</span>  <span class="n">orders</span>;
-    <span class="k">private final</span> <span class="t">OutboxRepo</span> <span class="n">outbox</span>;
-    <span class="k">private final</span> <span class="t">ObjectMapper</span> <span class="n">json</span>;
-
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="k">public void</span> <span class="n">placeOrder</span>(<span class="t">Order</span> <span class="n">o</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="n">orders</span>.<span class="n">save</span>(<span class="n">o</span>);
-        <span class="n">outbox</span>.<span class="n">save</span>(<span class="k">new</span> <span class="t">OutboxEvent</span>(
-            <span class="n">o</span>.<span class="n">id</span>(), <span class="s">"order.placed"</span>, <span class="n">json</span>.<span class="n">writeValueAsString</span>(<span class="n">o</span>)));
-        <span class="c">// Both rows committed atomically — no dual write.</span>
+<span class="c">// ✓ FIXED — outbox row in the same transaction; publisher runs separately</span>
+<span class="k">export async function</span> <span class="n">placeOrder</span>(<span class="n">db</span>: <span class="t">Pool</span>, <span class="n">o</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">connect</span>();
+    <span class="k">try</span> {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"INSERT INTO orders (id, total) VALUES ($1, $2)"</span>, [<span class="n">o</span>.<span class="n">id</span>, <span class="n">o</span>.<span class="n">total</span>]);
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(
+            <span class="s">"INSERT INTO outbox (aggregate_id, type, payload) VALUES ($1, $2, $3)"</span>,
+            [<span class="n">o</span>.<span class="n">id</span>, <span class="s">"order.placed"</span>, <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">o</span>)]);
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);      <span class="c">// Both rows committed atomically — no dual write.</span>
+    } <span class="k">catch</span> (<span class="n">err</span>) {
+        <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+        <span class="k">throw</span> <span class="n">err</span>;
+    } <span class="k">finally</span> {
+        <span class="n">client</span>.<span class="n">release</span>();
     }
 }
 
-<span class="c">// Drainer — runs on a schedule or via Debezium tailing the outbox table</span>
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">OutboxPublisher</span> {
-
-    <span class="k">private final</span> <span class="t">OutboxRepo</span>            <span class="n">outbox</span>;
-    <span class="k">private final</span> <span class="t">KafkaTemplate</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">String</span><span class="o">&gt;</span> <span class="n">kafka</span>;
-
-    <span class="o">@</span><span class="t">Scheduled</span>(<span class="n">fixedDelay</span> <span class="o">=</span> <span class="num">500</span>)
-    <span class="k">public void</span> <span class="n">drain</span>() {
-        <span class="n">outbox</span>.<span class="n">findUnpublished</span>(<span class="num">100</span>).<span class="n">forEach</span>(<span class="n">e</span> <span class="o">-&gt;</span> {
-            <span class="n">kafka</span>.<span class="n">send</span>(<span class="n">e</span>.<span class="n">type</span>(), <span class="n">e</span>.<span class="n">payload</span>())
-                 .<span class="n">whenComplete</span>((<span class="n">res</span>, <span class="n">err</span>) <span class="o">-&gt;</span> {
-                     <span class="k">if</span> (<span class="n">err</span> <span class="o">==</span> <span class="k">null</span>) <span class="n">outbox</span>.<span class="n">markPublished</span>(<span class="n">e</span>.<span class="n">id</span>());
-                 });
-        });
+<span class="c">// Drainer — a fixed-delay loop (or Debezium tailing the outbox table)</span>
+<span class="k">export async function</span> <span class="n">drainOutbox</span>(<span class="n">db</span>: <span class="t">Pool</span>, <span class="n">producer</span>: <span class="t">Producer</span>): <span class="t">Promise</span>&lt;<span class="t">never</span>&gt; {
+    <span class="k">while</span> (<span class="k">true</span>) {
+        <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>&lt;<span class="t">OutboxEvent</span>&gt;(
+            <span class="s">`SELECT id, type, payload FROM outbox
+              WHERE published_at IS NULL ORDER BY id LIMIT 100`</span>);
+        <span class="k">for</span> (<span class="k">const</span> <span class="n">e</span> <span class="k">of</span> <span class="n">rows</span>) {
+            <span class="k">await</span> <span class="n">producer</span>.<span class="n">send</span>({ <span class="n">topic</span>: <span class="n">e</span>.<span class="n">type</span>, <span class="n">messages</span>: [{ <span class="n">value</span>: <span class="n">e</span>.<span class="n">payload</span> }] });
+            <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>(<span class="s">"UPDATE outbox SET published_at = now() WHERE id = $1"</span>, [<span class="n">e</span>.<span class="n">id</span>]);
+        }
+        <span class="k">await</span> <span class="n">sleep</span>(<span class="num">500</span>);
     }
-}</pre></div>
+}
+<span class="c">// Idempotent consumers downstream handle the at-least-once duplicates.</span></pre></div>
     </div>
   </section>
 

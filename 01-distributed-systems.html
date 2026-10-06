@@ -99,7 +99,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">35 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
 
@@ -185,8 +185,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
-        <button class="tab py" data-target="c1-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c1-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c1-py">Python · httpx</button>
+        <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// The fallacies translated into defensive code.</span>
 <span class="k">func</span> <span class="n">callOrders</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">cart</span> <span class="t">Cart</span>) (<span class="o">*</span><span class="t">Result</span>, <span class="t">error</span>) {
@@ -231,32 +231,31 @@
 <span class="c"># #6 one admin? lol — emit structured logs every call</span>
 <span class="c"># #7 transport free? — serialize once, reuse connections</span>
 <span class="c"># #8 homogeneous? — version everything, expect mixed clients</span></pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// The fallacies translated into defensive code.</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrdersClient</span> {
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// The fallacies translated into defensive code.</span>
+<span class="k">import</span> <span class="n">pRetry</span>, { <span class="t">AbortError</span> } <span class="k">from</span> <span class="s">"p-retry"</span>;
+<span class="k">import</span> { <span class="t">Agent</span> } <span class="k">from</span> <span class="s">"undici"</span>;
 
-    <span class="k">private final</span> <span class="t">RestClient</span> <span class="n">rest</span>;
+<span class="k">export class</span> <span class="t">OrdersClient</span> {
+    <span class="c">// #2 latency &gt; 0  → connect timeout here, read timeout per request</span>
+    <span class="c">// #4 not secure  → TLS via mesh / https with the default CA store</span>
+    <span class="k">private readonly</span> <span class="n">dispatcher</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Agent</span>({ <span class="n">connect</span>: { <span class="n">timeout</span>: <span class="num">500</span> } });
 
-    <span class="k">public</span> <span class="t">OrdersClient</span>(<span class="t">RestClient.Builder</span> <span class="n">b</span>) {
-        <span class="c">// #2 latency &gt; 0  → connect + read timeout</span>
-        <span class="c">// #4 not secure  → TLS via mesh / explicit truststore</span>
-        <span class="t">SimpleClientHttpRequestFactory</span> <span class="n">f</span> <span class="o">=</span> <span class="k">new</span> <span class="t">SimpleClientHttpRequestFactory</span>();
-        <span class="n">f</span>.<span class="n">setConnectTimeout</span>(<span class="num">500</span>);
-        <span class="n">f</span>.<span class="n">setReadTimeout</span>(<span class="num">2000</span>);
-        <span class="k">this</span>.<span class="n">rest</span> <span class="o">=</span> <span class="n">b</span>.<span class="n">requestFactory</span>(<span class="n">f</span>).<span class="n">build</span>();
-    }
-
-    <span class="o">@</span><span class="t">Retryable</span>(                                    <span class="c">// #1 retry transients</span>
-        <span class="n">retryFor</span> <span class="o">=</span> <span class="t">TransientException</span>.<span class="k">class</span>,
-        <span class="n">maxAttempts</span> <span class="o">=</span> <span class="num">3</span>,
-        <span class="n">backoff</span> <span class="o">=</span> <span class="o">@</span><span class="t">Backoff</span>(<span class="n">delay</span> <span class="o">=</span> <span class="num">100</span>, <span class="n">multiplier</span> <span class="o">=</span> <span class="num">2</span>, <span class="n">random</span> <span class="o">=</span> <span class="k">true</span>)
-    )
-    <span class="k">public</span> <span class="t">OrderResult</span> <span class="n">place</span>(<span class="t">Cart</span> <span class="n">cart</span>) {
-        <span class="k">return</span> <span class="n">rest</span>.<span class="n">post</span>()
-            .<span class="n">uri</span>(<span class="s">"https://orders/orders"</span>)           <span class="c">// #5 logical name</span>
-            .<span class="n">body</span>(<span class="n">cart</span>)
-            .<span class="n">retrieve</span>()
-            .<span class="n">body</span>(<span class="t">OrderResult</span>.<span class="k">class</span>);
+    <span class="k">async</span> <span class="n">place</span>(<span class="n">cart</span>: <span class="t">Cart</span>): <span class="t">Promise</span>&lt;<span class="t">OrderResult</span>&gt; {
+        <span class="k">return</span> <span class="n">pRetry</span>(<span class="k">async</span> () <span class="o">=&gt;</span> {                   <span class="c">// #1 retry transients</span>
+            <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="s">"https://orders/orders"</span>, {   <span class="c">// #5 logical name</span>
+                <span class="n">method</span>: <span class="s">"POST"</span>,
+                <span class="n">headers</span>: { <span class="s">"content-type"</span>: <span class="s">"application/json"</span> },
+                <span class="n">body</span>: <span class="n">JSON</span>.<span class="n">stringify</span>(<span class="n">cart</span>),
+                <span class="n">dispatcher</span>: <span class="k">this</span>.<span class="n">dispatcher</span>,
+                <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">2000</span>),
+            });
+            <span class="k">if</span> (<span class="n">res</span>.<span class="n">status</span> <span class="o">&gt;=</span> <span class="num">500</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">TransientError</span>(<span class="n">res</span>.<span class="n">status</span>);
+            <span class="k">if</span> (<span class="o">!</span><span class="n">res</span>.<span class="n">ok</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">AbortError</span>(<span class="s">`orders: ${res.status}`</span>);  <span class="c">// 4xx: no retry</span>
+            <span class="k">return</span> (<span class="k">await</span> <span class="n">res</span>.<span class="n">json</span>()) <span class="k">as</span> <span class="t">OrderResult</span>;
+        }, {
+            <span class="n">retries</span>: <span class="num">2</span>,                               <span class="c">// 3 attempts in total</span>
+            <span class="n">minTimeout</span>: <span class="num">100</span>, <span class="n">factor</span>: <span class="num">2</span>, <span class="n">randomize</span>: <span class="k">true</span>,
+        });
     }
 }</pre></div>
     </div>
@@ -325,8 +324,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
-        <button class="tab py" data-target="c2-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c2-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c2-py">Python</button>
+        <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// CP system: refuse writes when leadership is uncertain (etcd / Raft).</span>
 <span class="k">func</span> (<span class="n">n</span> <span class="o">*</span><span class="t">Node</span>) <span class="n">Write</span>(<span class="n">k</span>, <span class="n">v</span> <span class="t">string</span>) <span class="t">error</span> {
@@ -371,28 +370,32 @@
         <span class="n">self</span>.<span class="n">local</span>[<span class="n">k</span>] <span class="o">=</span> (<span class="n">v</span>, <span class="n">self</span>.<span class="n">vector_tick</span>())
         <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">self</span>.<span class="n">gossip</span>(<span class="n">k</span>))
         <span class="k">return</span> <span class="k">True</span></pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// CP vs AP at the data tier — a strategy interface.</span>
-<span class="k">public interface</span> <span class="t">Replication</span> {
-    <span class="k">boolean</span> <span class="n">write</span>(<span class="t">String</span> <span class="n">k</span>, <span class="t">String</span> <span class="n">v</span>) <span class="k">throws</span> <span class="t">Exception</span>;
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// CP vs AP at the data tier — a strategy interface.</span>
+<span class="k">import</span> { <span class="t">EventEmitter</span> } <span class="k">from</span> <span class="s">"node:events"</span>;
+
+<span class="k">export interface</span> <span class="t">Replication</span> {
+    <span class="n">write</span>(<span class="n">k</span>: <span class="t">string</span>, <span class="n">v</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">boolean</span>&gt;;
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">class</span> <span class="t">CpReplication</span> <span class="k">implements</span> <span class="t">Replication</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public boolean</span> <span class="n">write</span>(<span class="t">String</span> <span class="n">k</span>, <span class="t">String</span> <span class="n">v</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="k">if</span> (<span class="o">!</span><span class="n">cluster</span>.<span class="n">hasQuorum</span>()) {
-            <span class="k">throw new</span> <span class="t">UnavailableException</span>(<span class="s">"partition — refusing"</span>);
+<span class="k">export class</span> <span class="t">CpReplication</span> <span class="k">implements</span> <span class="t">Replication</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">cluster</span>: <span class="t">Cluster</span>) {}
+
+    <span class="k">async</span> <span class="n">write</span>(<span class="n">k</span>: <span class="t">string</span>, <span class="n">v</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">boolean</span>&gt; {
+        <span class="k">if</span> (<span class="o">!</span>(<span class="k">await</span> <span class="k">this</span>.<span class="n">cluster</span>.<span class="n">hasQuorum</span>())) {
+            <span class="k">throw</span> <span class="k">new</span> <span class="t">UnavailableError</span>(<span class="s">"partition — refusing"</span>);
         }
-        <span class="k">return</span> <span class="n">cluster</span>.<span class="n">replicateMajority</span>(<span class="n">k</span>, <span class="n">v</span>);
+        <span class="k">return</span> <span class="k">this</span>.<span class="n">cluster</span>.<span class="n">replicateMajority</span>(<span class="n">k</span>, <span class="n">v</span>);
     }
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">class</span> <span class="t">ApReplication</span> <span class="k">implements</span> <span class="t">Replication</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public boolean</span> <span class="n">write</span>(<span class="t">String</span> <span class="n">k</span>, <span class="t">String</span> <span class="n">v</span>) {
-        <span class="n">local</span>.<span class="n">put</span>(<span class="n">k</span>, <span class="k">new</span> <span class="t">Versioned</span>(<span class="n">v</span>, <span class="n">vector</span>.<span class="n">tick</span>()));
-        <span class="n">eventBus</span>.<span class="n">postAsync</span>(<span class="k">new</span> <span class="t">GossipEvent</span>(<span class="n">k</span>));
+<span class="k">export class</span> <span class="t">ApReplication</span> <span class="k">implements</span> <span class="t">Replication</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">local</span>: <span class="t">Map</span>&lt;<span class="t">string</span>, <span class="t">Versioned</span>&gt;,
+                <span class="k">private readonly</span> <span class="n">vector</span>: <span class="t">VectorClock</span>,
+                <span class="k">private readonly</span> <span class="n">bus</span>: <span class="t">EventEmitter</span>) {}
+
+    <span class="k">async</span> <span class="n">write</span>(<span class="n">k</span>: <span class="t">string</span>, <span class="n">v</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">boolean</span>&gt; {
+        <span class="k">this</span>.<span class="n">local</span>.<span class="n">set</span>(<span class="n">k</span>, { <span class="n">value</span>: <span class="n">v</span>, <span class="n">clock</span>: <span class="k">this</span>.<span class="n">vector</span>.<span class="n">tick</span>() });
+        <span class="n">setImmediate</span>(() <span class="o">=&gt;</span> <span class="k">this</span>.<span class="n">bus</span>.<span class="n">emit</span>(<span class="s">"gossip"</span>, <span class="n">k</span>));   <span class="c">// async gossip</span>
         <span class="k">return</span> <span class="k">true</span>;        <span class="c">// always succeed locally</span>
     }
 }</pre></div>
@@ -463,8 +466,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c3-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c3-py">Python</button>
+        <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Cassandra-style tunable consistency — the EL/EC knob, per query.</span>
 <span class="k">type</span> <span class="t">Consistency</span> <span class="t">int</span>
@@ -507,37 +510,35 @@
     <span class="c"># Hint stale replicas to update — async, off the critical path.</span>
     <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">read_repair</span>(<span class="n">key</span>, <span class="n">winner</span>, <span class="n">replies</span>))
     <span class="k">return</span> <span class="n">winner</span>.<span class="n">value</span></pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// Spring Data Cassandra — consistency as a per-call concern.</span>
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// cassandra-driver — consistency as a per-call concern.</span>
+<span class="k">import</span> { <span class="t">Client</span>, <span class="n">types</span> } <span class="k">from</span> <span class="s">"cassandra-driver"</span>;
 
-<span class="o">@</span><span class="t">Repository</span>
-<span class="k">public class</span> <span class="t">UserRepo</span> {
-    <span class="k">private final</span> <span class="t">CqlSession</span> <span class="n">session</span>;
+<span class="k">const</span> { <span class="n">consistencies</span> } <span class="o">=</span> <span class="n">types</span>;
+
+<span class="k">export class</span> <span class="t">UserRepo</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">client</span>: <span class="t">Client</span>) {}
 
     <span class="c">// Hot path — speed first. Stale-tolerant (e.g. profile photo).</span>
-    <span class="k">public</span> <span class="t">User</span> <span class="n">readFast</span>(<span class="t">UUID</span> <span class="n">id</span>) {
-        <span class="k">return</span> <span class="n">session</span>.<span class="n">execute</span>(
-            <span class="t">SimpleStatement</span>.<span class="n">builder</span>(<span class="s">"SELECT * FROM users WHERE id=?"</span>)
-                .<span class="n">addPositionalValues</span>(<span class="n">id</span>)
-                .<span class="n">setConsistencyLevel</span>(<span class="t">DefaultConsistencyLevel</span>.<span class="n">ONE</span>)
-                .<span class="n">build</span>()).<span class="n">one</span>().<span class="n">get</span>(<span class="t">User</span>.<span class="k">class</span>);
+    <span class="k">async</span> <span class="n">readFast</span>(<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">User</span>&gt; {
+        <span class="k">const</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">await</span> <span class="k">this</span>.<span class="n">client</span>.<span class="n">execute</span>(
+            <span class="s">"SELECT * FROM users WHERE id = ?"</span>, [<span class="n">id</span>],
+            { <span class="n">prepare</span>: <span class="k">true</span>, <span class="n">consistency</span>: <span class="n">consistencies</span>.<span class="n">one</span> });
+        <span class="k">return</span> <span class="n">rs</span>.<span class="n">first</span>() <span class="k">as</span> <span class="t">User</span>;
     }
 
     <span class="c">// Critical — pay the latency cost (e.g. account balance).</span>
-    <span class="k">public</span> <span class="t">User</span> <span class="n">readStrong</span>(<span class="t">UUID</span> <span class="n">id</span>) {
-        <span class="k">return</span> <span class="n">session</span>.<span class="n">execute</span>(
-            <span class="t">SimpleStatement</span>.<span class="n">builder</span>(<span class="s">"SELECT * FROM users WHERE id=?"</span>)
-                .<span class="n">addPositionalValues</span>(<span class="n">id</span>)
-                .<span class="n">setConsistencyLevel</span>(<span class="t">DefaultConsistencyLevel</span>.<span class="n">QUORUM</span>)
-                .<span class="n">build</span>()).<span class="n">one</span>().<span class="n">get</span>(<span class="t">User</span>.<span class="k">class</span>);
+    <span class="k">async</span> <span class="n">readStrong</span>(<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">User</span>&gt; {
+        <span class="k">const</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">await</span> <span class="k">this</span>.<span class="n">client</span>.<span class="n">execute</span>(
+            <span class="s">"SELECT * FROM users WHERE id = ?"</span>, [<span class="n">id</span>],
+            { <span class="n">prepare</span>: <span class="k">true</span>, <span class="n">consistency</span>: <span class="n">consistencies</span>.<span class="n">quorum</span> });
+        <span class="k">return</span> <span class="n">rs</span>.<span class="n">first</span>() <span class="k">as</span> <span class="t">User</span>;
     }
 
     <span class="c">// W=QUORUM + R=QUORUM = strong consistency. Two extra round-trips.</span>
-    <span class="k">public void</span> <span class="n">save</span>(<span class="t">User</span> <span class="n">u</span>) {
-        <span class="n">session</span>.<span class="n">execute</span>(
-            <span class="t">SimpleStatement</span>.<span class="n">builder</span>(<span class="s">"INSERT INTO users (id) VALUES (?)"</span>)
-                .<span class="n">addPositionalValues</span>(<span class="n">u</span>.<span class="n">id</span>())
-                .<span class="n">setConsistencyLevel</span>(<span class="t">DefaultConsistencyLevel</span>.<span class="n">QUORUM</span>)
-                .<span class="n">build</span>());
+    <span class="k">async</span> <span class="n">save</span>(<span class="n">u</span>: <span class="t">User</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">await</span> <span class="k">this</span>.<span class="n">client</span>.<span class="n">execute</span>(
+            <span class="s">"INSERT INTO users (id) VALUES (?)"</span>, [<span class="n">u</span>.<span class="n">id</span>],
+            { <span class="n">prepare</span>: <span class="k">true</span>, <span class="n">consistency</span>: <span class="n">consistencies</span>.<span class="n">quorum</span> });
     }
 }</pre></div>
     </div>
@@ -615,8 +616,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
-        <button class="tab py" data-target="c4-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c4-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c4-py">Python</button>
+        <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Read-your-writes via session stickiness to a write timestamp.</span>
 <span class="k">type</span> <span class="t">Session</span> <span class="k">struct</span> {
@@ -660,29 +661,28 @@
     <span class="k">await</span> <span class="n">replica</span>.<span class="n">wait_for</span>(<span class="n">tok</span>.<span class="n">deps</span>)             <span class="c"># cause-before-effect</span>
     <span class="k">return</span> <span class="k">await</span> <span class="n">replica</span>.<span class="n">get</span>(<span class="n">k</span>)
 <span class="c"># MongoDB causal sessions, Cassandra LWT, and Cosmos all do variants of this.</span></pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c">// MongoDB driver — causal consistency via session tokens.</span>
+      <div class="code-pane" id="c4-ts"><pre><span class="c">// MongoDB Node driver — causal consistency via session tokens.</span>
+<span class="k">import</span> { <span class="t">MongoClient</span> } <span class="k">from</span> <span class="s">"mongodb"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">CommentService</span> {
-
-    <span class="k">private final</span> <span class="t">MongoClient</span> <span class="n">mongo</span>;
+<span class="k">export class</span> <span class="t">CommentService</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">mongo</span>: <span class="t">MongoClient</span>) {}
 
     <span class="c">// Same session = causal consistency: a follow-up read sees prior writes,</span>
     <span class="c">// even when the read lands on a different secondary replica.</span>
-    <span class="k">public</span> <span class="t">List</span><span class="o">&lt;</span><span class="t">Comment</span><span class="o">&gt;</span> <span class="n">writeAndList</span>(<span class="t">String</span> <span class="n">postId</span>, <span class="t">Comment</span> <span class="n">c</span>) {
-        <span class="k">try</span> (<span class="t">ClientSession</span> <span class="n">s</span> <span class="o">=</span> <span class="n">mongo</span>.<span class="n">startSession</span>(
-                <span class="t">ClientSessionOptions</span>.<span class="n">builder</span>()
-                    .<span class="n">causallyConsistent</span>(<span class="k">true</span>)
-                    .<span class="n">build</span>())) {
+    <span class="k">async</span> <span class="n">writeAndList</span>(<span class="n">postId</span>: <span class="t">string</span>, <span class="n">c</span>: <span class="t">Comment</span>): <span class="t">Promise</span>&lt;<span class="t">Comment</span>[]&gt; {
+        <span class="k">const</span> <span class="n">s</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">mongo</span>.<span class="n">startSession</span>({ <span class="n">causalConsistency</span>: <span class="k">true</span> });
+        <span class="k">try</span> {
+            <span class="k">const</span> <span class="n">comments</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">mongo</span>
+                .<span class="n">db</span>(<span class="s">"app"</span>)
+                .<span class="n">collection</span>&lt;<span class="t">Comment</span>&gt;(<span class="s">"comments"</span>);
 
-            <span class="n">mongo</span>.<span class="n">getDatabase</span>(<span class="s">"app"</span>)
-                 .<span class="n">getCollection</span>(<span class="s">"comments"</span>, <span class="t">Comment</span>.<span class="k">class</span>)
-                 .<span class="n">insertOne</span>(<span class="n">s</span>, <span class="n">c</span>);
+            <span class="k">await</span> <span class="n">comments</span>.<span class="n">insertOne</span>(<span class="n">c</span>, { <span class="n">session</span>: <span class="n">s</span> });
 
-            <span class="k">return</span> <span class="n">mongo</span>.<span class="n">getDatabase</span>(<span class="s">"app"</span>)
-                 .<span class="n">getCollection</span>(<span class="s">"comments"</span>, <span class="t">Comment</span>.<span class="k">class</span>)
-                 .<span class="n">find</span>(<span class="n">s</span>, <span class="t">Filters</span>.<span class="n">eq</span>(<span class="s">"postId"</span>, <span class="n">postId</span>))
-                 .<span class="n">into</span>(<span class="k">new</span> <span class="t">ArrayList</span><span class="o">&lt;&gt;</span>());
+            <span class="k">return</span> <span class="k">await</span> <span class="n">comments</span>
+                .<span class="n">find</span>({ <span class="n">postId</span> }, { <span class="n">session</span>: <span class="n">s</span>, <span class="n">readPreference</span>: <span class="s">"secondaryPreferred"</span> })
+                .<span class="n">toArray</span>();
+        } <span class="k">finally</span> {
+            <span class="k">await</span> <span class="n">s</span>.<span class="n">endSession</span>();
         }
     }
     <span class="c">// Without the session: read might land on a stale secondary,</span>
@@ -768,8 +768,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
-        <button class="tab py" data-target="c5-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c5-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c5-py">Python</button>
+        <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Vector clock — happens-before, concurrent, or strict descendant.</span>
 <span class="k">type</span> <span class="t">VC</span> <span class="k">map</span>[<span class="t">string</span>]<span class="t">int64</span>
@@ -822,35 +822,37 @@
         <span class="k">if</span> <span class="n">b_less</span> <span class="k">and not</span> <span class="n">a_less</span>: <span class="k">return</span> <span class="s">"after"</span>
         <span class="k">if</span> <span class="k">not</span> <span class="n">a_less</span> <span class="k">and not</span> <span class="n">b_less</span>: <span class="k">return</span> <span class="s">"equal"</span>
         <span class="k">return</span> <span class="s">"concurrent"</span>      <span class="c"># needs domain merge</span></pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// Vector clock — used in Riak/Dynamo-style conflict detection.</span>
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// Vector clock — used in Riak/Dynamo-style conflict detection.</span>
 
-<span class="k">public class</span> <span class="t">VectorClock</span> {
-    <span class="k">private final</span> <span class="t">Map</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">Long</span><span class="o">&gt;</span> <span class="n">v</span> <span class="o">=</span> <span class="k">new</span> <span class="t">HashMap</span><span class="o">&lt;&gt;</span>();
+<span class="k">export type</span> <span class="t">Order</span> <span class="o">=</span> <span class="s">"BEFORE"</span> | <span class="s">"AFTER"</span> | <span class="s">"EQUAL"</span> | <span class="s">"CONCURRENT"</span>;
 
-    <span class="k">public void</span> <span class="n">tick</span>(<span class="t">String</span> <span class="n">node</span>) {
-        <span class="n">v</span>.<span class="n">merge</span>(<span class="n">node</span>, <span class="num">1L</span>, <span class="t">Long</span>::<span class="n">sum</span>);
+<span class="k">export class</span> <span class="t">VectorClock</span> {
+    <span class="k">private readonly</span> <span class="n">v</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Map</span>&lt;<span class="t">string</span>, <span class="t">number</span>&gt;();
+
+    <span class="n">tick</span>(<span class="n">node</span>: <span class="t">string</span>): <span class="k">void</span> {
+        <span class="k">this</span>.<span class="n">v</span>.<span class="n">set</span>(<span class="n">node</span>, (<span class="k">this</span>.<span class="n">v</span>.<span class="n">get</span>(<span class="n">node</span>) <span class="o">??</span> <span class="num">0</span>) <span class="o">+</span> <span class="num">1</span>);
     }
 
-    <span class="k">public void</span> <span class="n">merge</span>(<span class="t">VectorClock</span> <span class="n">other</span>) {
-        <span class="n">other</span>.<span class="n">v</span>.<span class="n">forEach</span>((<span class="n">k</span>, <span class="n">t</span>) <span class="o">-&gt;</span> <span class="n">v</span>.<span class="n">merge</span>(<span class="n">k</span>, <span class="n">t</span>, <span class="t">Long</span>::<span class="n">max</span>));
-    }
-
-    <span class="k">public</span> <span class="t">Order</span> <span class="n">compare</span>(<span class="t">VectorClock</span> <span class="n">o</span>) {
-        <span class="k">boolean</span> <span class="n">aLess</span> <span class="o">=</span> <span class="k">false</span>, <span class="n">bLess</span> <span class="o">=</span> <span class="k">false</span>;
-        <span class="t">Set</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">keys</span> <span class="o">=</span> <span class="k">new</span> <span class="t">HashSet</span><span class="o">&lt;&gt;</span>(<span class="n">v</span>.<span class="n">keySet</span>());
-        <span class="n">keys</span>.<span class="n">addAll</span>(<span class="n">o</span>.<span class="n">v</span>.<span class="n">keySet</span>());
-        <span class="k">for</span> (<span class="t">String</span> <span class="n">k</span> : <span class="n">keys</span>) {
-            <span class="k">long</span> <span class="n">a</span> <span class="o">=</span> <span class="n">v</span>.<span class="n">getOrDefault</span>(<span class="n">k</span>, <span class="num">0L</span>);
-            <span class="k">long</span> <span class="n">b</span> <span class="o">=</span> <span class="n">o</span>.<span class="n">v</span>.<span class="n">getOrDefault</span>(<span class="n">k</span>, <span class="num">0L</span>);
-            <span class="k">if</span> (<span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span>) <span class="n">aLess</span> <span class="o">=</span> <span class="k">true</span>;
-            <span class="k">else if</span> (<span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span>) <span class="n">bLess</span> <span class="o">=</span> <span class="k">true</span>;
+    <span class="n">merge</span>(<span class="n">other</span>: <span class="t">VectorClock</span>): <span class="k">void</span> {
+        <span class="k">for</span> (<span class="k">const</span> [<span class="n">k</span>, <span class="n">t</span>] <span class="k">of</span> <span class="n">other</span>.<span class="n">v</span>) {
+            <span class="k">this</span>.<span class="n">v</span>.<span class="n">set</span>(<span class="n">k</span>, <span class="t">Math</span>.<span class="n">max</span>(<span class="k">this</span>.<span class="n">v</span>.<span class="n">get</span>(<span class="n">k</span>) <span class="o">??</span> <span class="num">0</span>, <span class="n">t</span>));
         }
-        <span class="k">if</span> (<span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">bLess</span>) <span class="k">return</span> <span class="t">Order</span>.<span class="n">BEFORE</span>;
-        <span class="k">if</span> (<span class="o">!</span><span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="n">bLess</span>) <span class="k">return</span> <span class="t">Order</span>.<span class="n">AFTER</span>;
-        <span class="k">if</span> (<span class="o">!</span><span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">bLess</span>) <span class="k">return</span> <span class="t">Order</span>.<span class="n">EQUAL</span>;
-        <span class="k">return</span> <span class="t">Order</span>.<span class="n">CONCURRENT</span>;
     }
-    <span class="k">public enum</span> <span class="t">Order</span> { <span class="n">BEFORE</span>, <span class="n">AFTER</span>, <span class="n">EQUAL</span>, <span class="n">CONCURRENT</span> }
+
+    <span class="n">compare</span>(<span class="n">o</span>: <span class="t">VectorClock</span>): <span class="t">Order</span> {
+        <span class="k">let</span> <span class="n">aLess</span> <span class="o">=</span> <span class="k">false</span>, <span class="n">bLess</span> <span class="o">=</span> <span class="k">false</span>;
+        <span class="k">const</span> <span class="n">keys</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Set</span>([<span class="o">...</span><span class="k">this</span>.<span class="n">v</span>.<span class="n">keys</span>(), <span class="o">...</span><span class="n">o</span>.<span class="n">v</span>.<span class="n">keys</span>()]);
+        <span class="k">for</span> (<span class="k">const</span> <span class="n">k</span> <span class="k">of</span> <span class="n">keys</span>) {
+            <span class="k">const</span> <span class="n">a</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">v</span>.<span class="n">get</span>(<span class="n">k</span>) <span class="o">??</span> <span class="num">0</span>;
+            <span class="k">const</span> <span class="n">b</span> <span class="o">=</span> <span class="n">o</span>.<span class="n">v</span>.<span class="n">get</span>(<span class="n">k</span>) <span class="o">??</span> <span class="num">0</span>;
+            <span class="k">if</span> (<span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span>) <span class="n">aLess</span> <span class="o">=</span> <span class="k">true</span>;
+            <span class="k">else</span> <span class="k">if</span> (<span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span>) <span class="n">bLess</span> <span class="o">=</span> <span class="k">true</span>;
+        }
+        <span class="k">if</span> (<span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">bLess</span>) <span class="k">return</span> <span class="s">"BEFORE"</span>;
+        <span class="k">if</span> (<span class="o">!</span><span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="n">bLess</span>) <span class="k">return</span> <span class="s">"AFTER"</span>;
+        <span class="k">if</span> (<span class="o">!</span><span class="n">aLess</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">bLess</span>) <span class="k">return</span> <span class="s">"EQUAL"</span>;
+        <span class="k">return</span> <span class="s">"CONCURRENT"</span>;        <span class="c">// needs domain merge</span>
+    }
 }</pre></div>
     </div>
   </section>
@@ -929,8 +931,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c6-go">Go</button>
-        <button class="tab py" data-target="c6-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c6-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c6-py">Python</button>
+        <button class="tab ts" data-target="c6-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Skeleton of Raft AppendEntries — the heart of log replication.</span>
 <span class="k">type</span> <span class="t">Entry</span> <span class="k">struct</span> { <span class="n">Term</span> <span class="t">uint64</span>; <span class="n">Cmd</span> []<span class="t">byte</span> }
@@ -1002,36 +1004,40 @@
             <span class="n">self</span>.<span class="n">apply_committed</span>()                  <span class="c"># to state machine</span>
 
         <span class="k">return</span> <span class="n">self</span>.<span class="n">current_term</span>, <span class="k">True</span></pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// Spring Boot exposing a Raft endpoint via Atomix or similar.</span>
-<span class="c">// In practice you'd use ratis, atomix, or a managed primitive (etcd / ZK).</span>
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// Express exposing a Raft endpoint. In practice you'd embed a real impl</span>
+<span class="c">// or use a managed primitive (etcd / ZK) instead of hand-rolling Raft.</span>
+<span class="k">import</span> <span class="n">express</span> <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="n">z</span> } <span class="k">from</span> <span class="s">"zod"</span>;
 
-<span class="o">@</span><span class="t">RestController</span>
-<span class="k">public class</span> <span class="t">RaftController</span> {
+<span class="k">const</span> <span class="t">AppendArgs</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">object</span>({
+    <span class="n">term</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>(), <span class="n">leaderId</span>: <span class="n">z</span>.<span class="n">string</span>(),
+    <span class="n">prevLogIdx</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>(), <span class="n">prevLogTerm</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>(),
+    <span class="n">entries</span>: <span class="n">z</span>.<span class="n">array</span>(<span class="n">z</span>.<span class="n">unknown</span>()), <span class="n">leaderCommit</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>(),
+});
 
-    <span class="k">private final</span> <span class="t">RaftNode</span> <span class="n">node</span>;
+<span class="k">export const</span> <span class="n">raft</span> <span class="o">=</span> <span class="n">express</span>.<span class="t">Router</span>();
 
-    <span class="o">@</span><span class="t">PostMapping</span>(<span class="s">"/raft/append"</span>)
-    <span class="k">public</span> <span class="t">AppendReply</span> <span class="n">appendEntries</span>(<span class="o">@</span><span class="t">RequestBody</span> <span class="t">AppendArgs</span> <span class="n">a</span>) {
-        <span class="k">if</span> (<span class="n">a</span>.<span class="n">term</span>() <span class="o">&lt;</span> <span class="n">node</span>.<span class="n">currentTerm</span>())
-            <span class="k">return</span> <span class="k">new</span> <span class="t">AppendReply</span>(<span class="n">node</span>.<span class="n">currentTerm</span>(), <span class="k">false</span>);
+<span class="n">raft</span>.<span class="n">post</span>(<span class="s">"/raft/append"</span>, (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">a</span> <span class="o">=</span> <span class="t">AppendArgs</span>.<span class="n">parse</span>(<span class="n">req</span>.<span class="n">body</span>);
+    <span class="k">if</span> (<span class="n">a</span>.<span class="n">term</span> <span class="o">&lt;</span> <span class="n">node</span>.<span class="n">currentTerm</span>)
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">json</span>({ <span class="n">term</span>: <span class="n">node</span>.<span class="n">currentTerm</span>, <span class="n">success</span>: <span class="k">false</span> });
 
-        <span class="k">if</span> (<span class="n">a</span>.<span class="n">term</span>() <span class="o">&gt;</span> <span class="n">node</span>.<span class="n">currentTerm</span>())
-            <span class="n">node</span>.<span class="n">stepDown</span>(<span class="n">a</span>.<span class="n">term</span>());
+    <span class="k">if</span> (<span class="n">a</span>.<span class="n">term</span> <span class="o">&gt;</span> <span class="n">node</span>.<span class="n">currentTerm</span>)
+        <span class="n">node</span>.<span class="n">stepDown</span>(<span class="n">a</span>.<span class="n">term</span>);
 
-        <span class="n">node</span>.<span class="n">resetElectionTimer</span>();
+    <span class="n">node</span>.<span class="n">resetElectionTimer</span>();
 
-        <span class="k">if</span> (<span class="o">!</span><span class="n">node</span>.<span class="n">log</span>().<span class="n">matches</span>(<span class="n">a</span>.<span class="n">prevLogIdx</span>(), <span class="n">a</span>.<span class="n">prevLogTerm</span>()))
-            <span class="k">return</span> <span class="k">new</span> <span class="t">AppendReply</span>(<span class="n">node</span>.<span class="n">currentTerm</span>(), <span class="k">false</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">node</span>.<span class="n">log</span>.<span class="n">matches</span>(<span class="n">a</span>.<span class="n">prevLogIdx</span>, <span class="n">a</span>.<span class="n">prevLogTerm</span>))
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">json</span>({ <span class="n">term</span>: <span class="n">node</span>.<span class="n">currentTerm</span>, <span class="n">success</span>: <span class="k">false</span> });
 
-        <span class="n">node</span>.<span class="n">log</span>().<span class="n">appendFrom</span>(<span class="n">a</span>.<span class="n">prevLogIdx</span>() <span class="o">+</span> <span class="num">1</span>, <span class="n">a</span>.<span class="n">entries</span>());
+    <span class="n">node</span>.<span class="n">log</span>.<span class="n">appendFrom</span>(<span class="n">a</span>.<span class="n">prevLogIdx</span> <span class="o">+</span> <span class="num">1</span>, <span class="n">a</span>.<span class="n">entries</span>);
 
-        <span class="k">if</span> (<span class="n">a</span>.<span class="n">leaderCommit</span>() <span class="o">&gt;</span> <span class="n">node</span>.<span class="n">commitIndex</span>()) {
-            <span class="n">node</span>.<span class="n">setCommitIndex</span>(<span class="t">Math</span>.<span class="n">min</span>(<span class="n">a</span>.<span class="n">leaderCommit</span>(), <span class="n">node</span>.<span class="n">log</span>().<span class="n">lastIdx</span>()));
-            <span class="n">node</span>.<span class="n">applyCommittedAsync</span>();
-        }
-        <span class="k">return</span> <span class="k">new</span> <span class="t">AppendReply</span>(<span class="n">node</span>.<span class="n">currentTerm</span>(), <span class="k">true</span>);
+    <span class="k">if</span> (<span class="n">a</span>.<span class="n">leaderCommit</span> <span class="o">&gt;</span> <span class="n">node</span>.<span class="n">commitIndex</span>) {
+        <span class="n">node</span>.<span class="n">commitIndex</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">min</span>(<span class="n">a</span>.<span class="n">leaderCommit</span>, <span class="n">node</span>.<span class="n">log</span>.<span class="n">lastIdx</span>());
+        <span class="k">void</span> <span class="n">node</span>.<span class="n">applyCommitted</span>();          <span class="c">// async, off the reply path</span>
     }
-}</pre></div>
+    <span class="n">res</span>.<span class="n">json</span>({ <span class="n">term</span>: <span class="n">node</span>.<span class="n">currentTerm</span>, <span class="n">success</span>: <span class="k">true</span> });
+});</pre></div>
     </div>
   </section>
 
@@ -1101,8 +1107,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
-        <button class="tab py" data-target="c7-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c7-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c7-py">Python · asyncio</button>
+        <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Quorum read — wait for R replicas to reply, return latest version.</span>
 <span class="k">type</span> <span class="t">Versioned</span> <span class="k">struct</span> { <span class="n">V</span> <span class="t">string</span>; <span class="n">TS</span> <span class="t">int64</span> }
@@ -1146,31 +1152,28 @@
 
 <span class="c"># R + W &gt; N: pick the right knob for the right call.</span>
 <span class="c"># Idempotent retries make &gt;W writes harmless.</span></pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// Cassandra: quorum levels are first-class on every statement.</span>
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// cassandra-driver: quorum levels are first-class on every statement.</span>
+<span class="k">import</span> { <span class="t">Client</span>, <span class="n">types</span> } <span class="k">from</span> <span class="s">"cassandra-driver"</span>;
 
-<span class="o">@</span><span class="t">Repository</span>
-<span class="k">public class</span> <span class="t">AccountRepo</span> {
-    <span class="k">private final</span> <span class="t">CqlSession</span> <span class="n">session</span>;
+<span class="k">export class</span> <span class="t">AccountRepo</span> {
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">client</span>: <span class="t">Client</span>) {}
 
     <span class="c">// W = QUORUM (= N/2 + 1).  Cluster of 5 → 3 acks before returning.</span>
-    <span class="k">public void</span> <span class="n">creditAccount</span>(<span class="t">UUID</span> <span class="n">id</span>, <span class="k">long</span> <span class="n">delta</span>) {
-        <span class="t">SimpleStatement</span> <span class="n">stmt</span> <span class="o">=</span> <span class="t">SimpleStatement</span>.<span class="n">builder</span>(
-                <span class="s">"UPDATE accounts SET balance = balance + ? WHERE id = ?"</span>)
-            .<span class="n">addPositionalValues</span>(<span class="n">delta</span>, <span class="n">id</span>)
-            .<span class="n">setConsistencyLevel</span>(<span class="t">DefaultConsistencyLevel</span>.<span class="n">QUORUM</span>)
-            .<span class="n">build</span>();
-        <span class="n">session</span>.<span class="n">execute</span>(<span class="n">stmt</span>);
+    <span class="k">async</span> <span class="n">creditAccount</span>(<span class="n">id</span>: <span class="t">string</span>, <span class="n">delta</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">await</span> <span class="k">this</span>.<span class="n">client</span>.<span class="n">execute</span>(
+            <span class="s">"UPDATE accounts SET balance = balance + ? WHERE id = ?"</span>,
+            [<span class="n">delta</span>, <span class="n">id</span>],
+            { <span class="n">prepare</span>: <span class="k">true</span>, <span class="n">consistency</span>: <span class="n">types</span>.<span class="n">consistencies</span>.<span class="n">quorum</span> });
     }
 
     <span class="c">// R = QUORUM. Combined with W=QUORUM you get strong reads.</span>
     <span class="c">// Combined with W=ONE you get fast reads but possibly stale.</span>
-    <span class="k">public</span> <span class="k">long</span> <span class="n">balance</span>(<span class="t">UUID</span> <span class="n">id</span>) {
-        <span class="t">SimpleStatement</span> <span class="n">stmt</span> <span class="o">=</span> <span class="t">SimpleStatement</span>.<span class="n">builder</span>(
-                <span class="s">"SELECT balance FROM accounts WHERE id = ?"</span>)
-            .<span class="n">addPositionalValues</span>(<span class="n">id</span>)
-            .<span class="n">setConsistencyLevel</span>(<span class="t">DefaultConsistencyLevel</span>.<span class="n">QUORUM</span>)
-            .<span class="n">build</span>();
-        <span class="k">return</span> <span class="n">session</span>.<span class="n">execute</span>(<span class="n">stmt</span>).<span class="n">one</span>().<span class="n">getLong</span>(<span class="num">0</span>);
+    <span class="k">async</span> <span class="n">balance</span>(<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">number</span>&gt; {
+        <span class="k">const</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">await</span> <span class="k">this</span>.<span class="n">client</span>.<span class="n">execute</span>(
+            <span class="s">"SELECT balance FROM accounts WHERE id = ?"</span>,
+            [<span class="n">id</span>],
+            { <span class="n">prepare</span>: <span class="k">true</span>, <span class="n">consistency</span>: <span class="n">types</span>.<span class="n">consistencies</span>.<span class="n">quorum</span> });
+        <span class="k">return</span> <span class="t">Number</span>(<span class="n">rs</span>.<span class="n">first</span>().<span class="n">get</span>(<span class="s">"balance"</span>));
     }
 }</pre></div>
     </div>
@@ -1246,7 +1249,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c8-go">Go</button>
         <button class="tab py" data-target="c8-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c8-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c8-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Idempotency middleware — store key → response, replay on duplicate.</span>
 <span class="k">func</span> <span class="n">Idempotent</span>(<span class="n">store</span> <span class="t">KVStore</span>, <span class="n">h</span> <span class="t">http.Handler</span>) <span class="t">http.Handler</span> {
@@ -1297,40 +1300,35 @@
     <span class="k">if</span> <span class="n">cache_key</span>:
         <span class="k">await</span> <span class="n">r</span>.<span class="n">set</span>(<span class="n">cache_key</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">result</span>), <span class="n">ex</span><span class="o">=</span><span class="num">86400</span>)
     <span class="k">return</span> <span class="n">result</span></pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring filter — Idempotency-Key with Redis. Production-grade skeleton.</span>
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// Express middleware — Idempotency-Key with Redis. Production-grade skeleton.</span>
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">IdempotencyFilter</span> <span class="k">extends</span> <span class="t">OncePerRequestFilter</span> {
+<span class="k">const</span> <span class="n">redis</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Redis</span>();
+<span class="k">const</span> <span class="n">DAY</span> <span class="o">=</span> <span class="num">24</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">60</span>;
 
-    <span class="k">private final</span> <span class="t">StringRedisTemplate</span> <span class="n">redis</span>;
+<span class="k">export async function</span> <span class="n">idempotency</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>) {
+    <span class="k">const</span> <span class="n">key</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">get</span>(<span class="s">"Idempotency-Key"</span>);
+    <span class="k">if</span> (<span class="o">!</span><span class="n">key</span>) <span class="k">return</span> <span class="n">next</span>();
 
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected void</span> <span class="n">doFilterInternal</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                                    <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                                    <span class="t">FilterChain</span> <span class="n">chain</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="t">String</span> <span class="n">key</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">getHeader</span>(<span class="s">"Idempotency-Key"</span>);
-        <span class="k">if</span> (<span class="n">key</span> <span class="o">==</span> <span class="k">null</span>) { <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>); <span class="k">return</span>; }
-
-        <span class="t">String</span> <span class="n">k</span> <span class="o">=</span> <span class="s">"idem:"</span> <span class="o">+</span> <span class="n">key</span>;
-        <span class="t">String</span> <span class="n">cached</span> <span class="o">=</span> <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">get</span>(<span class="n">k</span>);
-        <span class="k">if</span> (<span class="s">"in-flight"</span>.<span class="n">equals</span>(<span class="n">cached</span>)) {
-            <span class="n">res</span>.<span class="n">sendError</span>(<span class="num">409</span>, <span class="s">"request in flight"</span>); <span class="k">return</span>;
-        }
-        <span class="k">if</span> (<span class="n">cached</span> <span class="o">!=</span> <span class="k">null</span>) {
-            <span class="n">res</span>.<span class="n">setStatus</span>(<span class="num">200</span>);
-            <span class="n">res</span>.<span class="n">getWriter</span>().<span class="n">write</span>(<span class="n">cached</span>);
-            <span class="k">return</span>;
-        }
-        <span class="k">if</span> (<span class="t">Boolean</span>.<span class="n">FALSE</span>.<span class="n">equals</span>(<span class="n">redis</span>.<span class="n">opsForValue</span>()
-                .<span class="n">setIfAbsent</span>(<span class="n">k</span>, <span class="s">"in-flight"</span>, <span class="t">Duration</span>.<span class="n">ofHours</span>(<span class="num">24</span>)))) {
-            <span class="n">res</span>.<span class="n">sendError</span>(<span class="num">409</span>, <span class="s">"in flight"</span>); <span class="k">return</span>;
-        }
-        <span class="t">ContentCachingResponseWrapper</span> <span class="n">w</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ContentCachingResponseWrapper</span>(<span class="n">res</span>);
-        <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">w</span>);
-        <span class="t">String</span> <span class="n">body</span> <span class="o">=</span> <span class="k">new</span> <span class="t">String</span>(<span class="n">w</span>.<span class="n">getContentAsByteArray</span>());
-        <span class="n">redis</span>.<span class="n">opsForValue</span>().<span class="n">set</span>(<span class="n">k</span>, <span class="n">body</span>, <span class="t">Duration</span>.<span class="n">ofHours</span>(<span class="num">24</span>));
-        <span class="n">w</span>.<span class="n">copyBodyToResponse</span>();
+    <span class="k">const</span> <span class="n">k</span> <span class="o">=</span> <span class="s">`idem:${key}`</span>;
+    <span class="k">const</span> <span class="n">cached</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">get</span>(<span class="n">k</span>);
+    <span class="k">if</span> (<span class="n">cached</span> <span class="o">===</span> <span class="s">"in-flight"</span>) {
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">status</span>(<span class="num">409</span>).<span class="n">send</span>(<span class="s">"request in flight"</span>);
     }
+    <span class="k">if</span> (<span class="n">cached</span> <span class="o">!==</span> <span class="k">null</span>) {
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">status</span>(<span class="num">200</span>).<span class="n">type</span>(<span class="s">"json"</span>).<span class="n">send</span>(<span class="n">cached</span>);
+    }
+    <span class="k">if</span> ((<span class="k">await</span> <span class="n">redis</span>.<span class="n">set</span>(<span class="n">k</span>, <span class="s">"in-flight"</span>, <span class="s">"EX"</span>, <span class="n">DAY</span>, <span class="s">"NX"</span>)) <span class="o">===</span> <span class="k">null</span>) {
+        <span class="k">return</span> <span class="n">res</span>.<span class="n">status</span>(<span class="num">409</span>).<span class="n">send</span>(<span class="s">"in flight"</span>);
+    }
+    <span class="c">// Wrap send() so the handler's response body is cached for replays.</span>
+    <span class="k">const</span> <span class="n">send</span> <span class="o">=</span> <span class="n">res</span>.<span class="n">send</span>.<span class="n">bind</span>(<span class="n">res</span>);
+    <span class="n">res</span>.<span class="n">send</span> <span class="o">=</span> (<span class="n">body</span>?: <span class="t">unknown</span>) <span class="o">=&gt;</span> {
+        <span class="k">void</span> <span class="n">redis</span>.<span class="n">set</span>(<span class="n">k</span>, <span class="t">String</span>(<span class="n">body</span>), <span class="s">"EX"</span>, <span class="n">DAY</span>);
+        <span class="k">return</span> <span class="n">send</span>(<span class="n">body</span>);
+    };
+    <span class="n">next</span>();
 }</pre></div>
     </div>
   </section>
@@ -1400,8 +1398,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c9-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c9-py">Python · asyncpg</button>
+        <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// At-least-once delivery + idempotent consumer = exactly-once processing.</span>
 <span class="k">func</span> <span class="n">consume</span>(<span class="n">msg</span> <span class="t">kafka.Message</span>, <span class="n">db</span> <span class="o">*</span><span class="t">sql.DB</span>) <span class="t">error</span> {
@@ -1450,28 +1448,32 @@
 <span class="c"># Without dedup table: replays after a crash double-charge customers.</span>
 <span class="c"># Without same-tx commit: ack might land while the side effect rolls back.</span>
 <span class="c"># Both pieces together = exactly-once *effect*. That's all you get.</span></pre></div>
-      <div class="code-pane" id="c9-java"><pre><span class="c">// Spring Kafka — exactly-once *processing* via transactional outbox + dedup.</span>
-
-<span class="o">@</span><span class="t">KafkaListener</span>(<span class="n">topics</span> <span class="o">=</span> <span class="s">"orders"</span>)
-<span class="o">@</span><span class="t">Transactional</span>
-<span class="k">public void</span> <span class="n">onMessage</span>(<span class="t">ConsumerRecord</span><span class="o">&lt;</span><span class="t">String</span>, <span class="t">String</span><span class="o">&gt;</span> <span class="n">rec</span>, <span class="t">Acknowledgment</span> <span class="n">ack</span>) {
-
-    <span class="c">// 1. Try to insert into the dedup table — relies on UNIQUE(msg_id)</span>
-    <span class="k">int</span> <span class="n">inserted</span> <span class="o">=</span> <span class="n">jdbc</span>.<span class="n">update</span>(
-        <span class="s">"INSERT INTO processed_messages(id) VALUES (?) ON CONFLICT DO NOTHING"</span>,
-        <span class="n">rec</span>.<span class="n">key</span>()
-    );
-    <span class="k">if</span> (<span class="n">inserted</span> <span class="o">==</span> <span class="num">0</span>) {
-        <span class="n">ack</span>.<span class="n">acknowledge</span>();          <span class="c">// already processed — skip</span>
-        <span class="k">return</span>;
-    }
-
-    <span class="c">// 2. Apply the side effect in the SAME transaction.</span>
-    <span class="n">orderService</span>.<span class="n">handle</span>(<span class="n">parse</span>(<span class="n">rec</span>.<span class="n">value</span>()));
-
-    <span class="c">// 3. Commit (Spring's @Transactional). Ack only after.</span>
-    <span class="n">ack</span>.<span class="n">acknowledge</span>();
-}
+      <div class="code-pane" id="c9-ts"><pre><span class="c">// KafkaJS — exactly-once *processing* via pg transaction + dedup + manual ack.</span>
+<span class="k">await</span> <span class="n">consumer</span>.<span class="n">subscribe</span>({ <span class="n">topics</span>: [<span class="s">"orders"</span>] });
+<span class="k">await</span> <span class="n">consumer</span>.<span class="n">run</span>({
+    <span class="n">autoCommit</span>: <span class="k">false</span>,
+    <span class="n">eachMessage</span>: <span class="k">async</span> ({ <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">message</span> }) <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">connect</span>();            <span class="c">// pg PoolClient</span>
+        <span class="k">try</span> {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);
+            <span class="c">// 1. Try to insert into the dedup table — relies on UNIQUE(msg_id)</span>
+            <span class="k">const</span> { <span class="n">rowCount</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(
+                <span class="s">"INSERT INTO processed_messages(id) VALUES ($1) ON CONFLICT DO NOTHING"</span>,
+                [<span class="n">message</span>.<span class="n">key</span><span class="o">?.</span><span class="n">toString</span>()]);
+            <span class="c">// 2. Apply the side effect in the SAME transaction (0 rows → skip).</span>
+            <span class="k">if</span> (<span class="n">rowCount</span> <span class="o">===</span> <span class="num">1</span>) <span class="k">await</span> <span class="n">orderService</span>.<span class="n">handle</span>(<span class="n">parse</span>(<span class="n">message</span>.<span class="n">value</span>));
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+        } <span class="k">catch</span> (<span class="n">err</span>) {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+            <span class="k">throw</span> <span class="n">err</span>;                                   <span class="c">// no ack → redelivered</span>
+        } <span class="k">finally</span> {
+            <span class="n">client</span>.<span class="n">release</span>();
+        }
+        <span class="c">// 3. Transaction committed. Ack (commit the offset) only after.</span>
+        <span class="k">const</span> <span class="n">offset</span> <span class="o">=</span> (<span class="t">BigInt</span>(<span class="n">message</span>.<span class="n">offset</span>) <span class="o">+</span> <span class="num">1n</span>).<span class="n">toString</span>();
+        <span class="k">await</span> <span class="n">consumer</span>.<span class="n">commitOffsets</span>([{ <span class="n">topic</span>, <span class="n">partition</span>, <span class="n">offset</span> }]);
+    },
+});
 
 <span class="c">// Or: use Kafka's native transactions to bind read+write atomically:</span>
 <span class="c">// `isolation.level=read_committed` + transactional producer.</span>
@@ -1549,8 +1551,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c10-go">Go</button>
-        <button class="tab py" data-target="c10-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c10-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c10-py">Python</button>
+        <button class="tab ts" data-target="c10-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// Phi accrual detector — tracks heartbeat arrival distribution.</span>
 <span class="k">type</span> <span class="t">PhiDetector</span> <span class="k">struct</span> {
@@ -1608,36 +1610,34 @@
 
     <span class="k">def</span> <span class="n">is_suspect</span>(<span class="n">self</span>) <span class="o">-&gt;</span> <span class="t">bool</span>:
         <span class="k">return</span> <span class="n">self</span>.<span class="n">phi</span>() <span class="o">&gt;=</span> <span class="n">self</span>.<span class="n">threshold</span></pre></div>
-      <div class="code-pane" id="c10-java"><pre><span class="c">// Akka's phi accrual detector — production-grade, used in Cassandra too.</span>
+      <div class="code-pane" id="c10-ts"><pre><span class="c">// Akka's phi accrual detector — production-grade, used in Cassandra too.</span>
+<span class="k">import</span> { <span class="n">erf</span> } <span class="k">from</span> <span class="s">"mathjs"</span>;
 
-<span class="k">public class</span> <span class="t">PhiAccrualDetector</span> {
-    <span class="k">private final</span> <span class="t">Deque</span><span class="o">&lt;</span><span class="t">Long</span><span class="o">&gt;</span> <span class="n">arrivals</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ArrayDeque</span><span class="o">&lt;&gt;</span>();
-    <span class="k">private final</span> <span class="k">int</span> <span class="n">window</span>;
-    <span class="k">private final</span> <span class="k">double</span> <span class="n">threshold</span>;       <span class="c">// 8.0 is a common default</span>
+<span class="k">export class</span> <span class="t">PhiAccrualDetector</span> {
+    <span class="k">private readonly</span> <span class="n">arrivals</span>: <span class="t">number</span>[] <span class="o">=</span> [];
 
-    <span class="k">public</span> <span class="t">PhiAccrualDetector</span>(<span class="k">int</span> <span class="n">window</span>, <span class="k">double</span> <span class="n">threshold</span>) {
-        <span class="k">this</span>.<span class="n">window</span> <span class="o">=</span> <span class="n">window</span>;
-        <span class="k">this</span>.<span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>;
+    <span class="n">constructor</span>(<span class="k">private readonly</span> <span class="n">window</span>: <span class="t">number</span>,
+                <span class="k">private readonly</span> <span class="n">threshold</span>: <span class="t">number</span>) {}   <span class="c">// 8.0 is a common default</span>
+
+    <span class="c">// One event loop, no threads: no `synchronized` needed.</span>
+    <span class="n">heartbeat</span>(): <span class="k">void</span> {
+        <span class="k">this</span>.<span class="n">arrivals</span>.<span class="n">push</span>(<span class="n">performance</span>.<span class="n">now</span>());
+        <span class="k">while</span> (<span class="k">this</span>.<span class="n">arrivals</span>.<span class="n">length</span> <span class="o">&gt;</span> <span class="k">this</span>.<span class="n">window</span>) <span class="k">this</span>.<span class="n">arrivals</span>.<span class="n">shift</span>();
     }
 
-    <span class="k">public synchronized void</span> <span class="n">heartbeat</span>() {
-        <span class="n">arrivals</span>.<span class="n">addLast</span>(<span class="t">System</span>.<span class="n">nanoTime</span>());
-        <span class="k">while</span> (<span class="n">arrivals</span>.<span class="n">size</span>() <span class="o">&gt;</span> <span class="n">window</span>) <span class="n">arrivals</span>.<span class="n">removeFirst</span>();
-    }
+    <span class="n">phi</span>(): <span class="t">number</span> {
+        <span class="k">if</span> (<span class="k">this</span>.<span class="n">arrivals</span>.<span class="n">length</span> <span class="o">&lt;</span> <span class="num">2</span>) <span class="k">return</span> <span class="num">0</span>;
+        <span class="k">const</span> <span class="n">last</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">arrivals</span>[<span class="k">this</span>.<span class="n">arrivals</span>.<span class="n">length</span> <span class="o">-</span> <span class="num">1</span>];
+        <span class="k">const</span> <span class="n">elapsedMs</span> <span class="o">=</span> <span class="n">performance</span>.<span class="n">now</span>() <span class="o">-</span> <span class="n">last</span>;
 
-    <span class="k">public synchronized double</span> <span class="n">phi</span>() {
-        <span class="k">if</span> (<span class="n">arrivals</span>.<span class="n">size</span>() <span class="o">&lt;</span> <span class="num">2</span>) <span class="k">return</span> <span class="num">0</span>;
-        <span class="k">long</span> <span class="n">last</span> <span class="o">=</span> <span class="n">arrivals</span>.<span class="n">peekLast</span>();
-        <span class="k">double</span> <span class="n">elapsedMs</span> <span class="o">=</span> (<span class="t">System</span>.<span class="n">nanoTime</span>() <span class="o">-</span> <span class="n">last</span>) <span class="o">/</span> <span class="num">1e6</span>;
-
-        <span class="k">double</span>[] <span class="n">stats</span> <span class="o">=</span> <span class="n">computeStats</span>(<span class="n">arrivals</span>);
-        <span class="k">double</span> <span class="n">mean</span> <span class="o">=</span> <span class="n">stats</span>[<span class="num">0</span>], <span class="n">stddev</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">max</span>(<span class="n">stats</span>[<span class="num">1</span>], <span class="num">0.001</span>);
-        <span class="k">double</span> <span class="n">z</span> <span class="o">=</span> (<span class="n">elapsedMs</span> <span class="o">-</span> <span class="n">mean</span>) <span class="o">/</span> <span class="n">stddev</span>;
-        <span class="k">double</span> <span class="n">p</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">max</span>(<span class="num">0.5</span> <span class="o">*</span> <span class="t">Math</span>.<span class="n">erfc</span>(<span class="n">z</span> <span class="o">/</span> <span class="t">Math</span>.<span class="n">sqrt</span>(<span class="num">2</span>)), <span class="num">1e-12</span>);
+        <span class="k">const</span> [<span class="n">mean</span>, <span class="n">sd</span>] <span class="o">=</span> <span class="n">computeStats</span>(<span class="k">this</span>.<span class="n">arrivals</span>);
+        <span class="k">const</span> <span class="n">stddev</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">max</span>(<span class="n">sd</span>, <span class="num">0.001</span>);
+        <span class="k">const</span> <span class="n">z</span> <span class="o">=</span> (<span class="n">elapsedMs</span> <span class="o">-</span> <span class="n">mean</span>) <span class="o">/</span> <span class="n">stddev</span>;
+        <span class="k">const</span> <span class="n">p</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">max</span>(<span class="num">0.5</span> <span class="o">*</span> (<span class="num">1</span> <span class="o">-</span> <span class="n">erf</span>(<span class="n">z</span> <span class="o">/</span> <span class="t">Math</span>.<span class="n">SQRT2</span>)), <span class="num">1e-12</span>);
         <span class="k">return</span> <span class="o">-</span><span class="t">Math</span>.<span class="n">log10</span>(<span class="n">p</span>);
     }
 
-    <span class="k">public boolean</span> <span class="n">isSuspect</span>() { <span class="k">return</span> <span class="n">phi</span>() <span class="o">&gt;=</span> <span class="n">threshold</span>; }
+    <span class="n">isSuspect</span>(): <span class="t">boolean</span> { <span class="k">return</span> <span class="k">this</span>.<span class="n">phi</span>() <span class="o">&gt;=</span> <span class="k">this</span>.<span class="n">threshold</span>; }
 }</pre></div>
     </div>
   </section>

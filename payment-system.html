@@ -97,7 +97,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Deep-dives</span><span class="hf-stat__value">8</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">50 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
 
@@ -189,7 +189,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python</button><button class="tab java" data-target="c1-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python</button><button class="tab ts" data-target="c1-ts">TypeScript</button></div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Payment intent — the central entity in the payment lifecycle.</span>
 <span class="k">type</span> <span class="t">PaymentIntent</span> <span class="k">struct</span> {
     <span class="n">ID</span>             <span class="t">string</span>         <span class="s">`json:"id"`</span>
@@ -250,26 +250,28 @@
     <span class="n">pi</span> <span class="o">=</span> <span class="t">PaymentIntent</span>(<span class="n">id</span><span class="o">=</span><span class="n">ulid</span>(), <span class="n">idempotency_key</span><span class="o">=</span><span class="n">idem_key</span>, <span class="o">**</span><span class="n">req</span>.<span class="n">dict</span>())
     <span class="k">await</span> <span class="n">store</span>.<span class="n">insert</span>(<span class="n">pi</span>)
     <span class="k">return</span> <span class="n">pi</span></pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// PaymentIntent entity — JPA + validation.</span>
-<span class="o">@</span><span class="t">Entity</span>
-<span class="k">public class</span> <span class="t">PaymentIntent</span> {
-    <span class="o">@</span><span class="t">Id</span> <span class="k">private</span> <span class="t">String</span> <span class="n">id</span>;
-    <span class="o">@</span><span class="t">Column</span>(<span class="n">unique</span> <span class="o">=</span> <span class="k">true</span>) <span class="k">private</span> <span class="t">String</span> <span class="n">idempotencyKey</span>;
-    <span class="k">private long</span> <span class="n">amountCents</span>;          <span class="c">// integer cents, never BigDecimal</span>
-    <span class="k">private</span> <span class="t">String</span> <span class="n">currency</span>;           <span class="c">// ISO 4217</span>
-    <span class="o">@</span><span class="t">Enumerated</span>(<span class="t">EnumType</span>.<span class="n">STRING</span>)
-    <span class="k">private</span> <span class="t">PaymentState</span> <span class="n">state</span> <span class="o">=</span> <span class="t">PaymentState</span>.<span class="n">PENDING</span>;
-    <span class="k">private</span> <span class="t">String</span> <span class="n">tokenId</span>;            <span class="c">// never raw card</span>
-    <span class="k">private</span> <span class="t">String</span> <span class="n">pspReference</span>;
-}
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// PaymentIntent entity — zod schema + inferred type.</span>
+<span class="k">import</span> { <span class="n">z</span> } <span class="k">from</span> <span class="s">"zod"</span>;
 
-<span class="o">@</span><span class="t">PostMapping</span>(<span class="s">"/v1/payment-intents"</span>)
-<span class="k">public</span> <span class="t">PaymentIntent</span> <span class="n">create</span>(
-        <span class="o">@</span><span class="t">RequestHeader</span>(<span class="s">"Idempotency-Key"</span>) <span class="t">String</span> <span class="n">idemKey</span>,
-        <span class="o">@</span><span class="t">Valid</span> <span class="o">@</span><span class="t">RequestBody</span> <span class="t">CreatePaymentReq</span> <span class="n">req</span>) {
-    <span class="k">return</span> <span class="n">repo</span>.<span class="n">findByIdempotencyKey</span>(<span class="n">idemKey</span>)
-        .<span class="n">orElseGet</span>(() <span class="o">-&gt;</span> <span class="n">repo</span>.<span class="n">save</span>(<span class="k">new</span> <span class="t">PaymentIntent</span>(<span class="n">idemKey</span>, <span class="n">req</span>)));
-}</pre></div>
+<span class="k">export const</span> <span class="t">PaymentState</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">enum</span>([<span class="s">"pending"</span>, <span class="s">"authorised"</span>, <span class="s">"captured"</span>, <span class="s">"settled"</span>, <span class="s">"failed"</span>, <span class="s">"refunded"</span>]);
+
+<span class="k">export const</span> <span class="t">PaymentIntent</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">object</span>({
+    <span class="n">id</span>: <span class="n">z</span>.<span class="n">string</span>(),
+    <span class="n">idempotencyKey</span>: <span class="n">z</span>.<span class="n">string</span>(),                 <span class="c">// UNIQUE index in the table</span>
+    <span class="n">amountCents</span>: <span class="n">z</span>.<span class="n">number</span>().<span class="n">int</span>().<span class="n">positive</span>(),   <span class="c">// integer cents, never float</span>
+    <span class="n">currency</span>: <span class="n">z</span>.<span class="n">string</span>().<span class="n">length</span>(<span class="num">3</span>),             <span class="c">// ISO 4217</span>
+    <span class="n">state</span>: <span class="t">PaymentState</span>.<span class="n">default</span>(<span class="s">"pending"</span>),
+    <span class="n">tokenId</span>: <span class="n">z</span>.<span class="n">string</span>(),                        <span class="c">// never raw card</span>
+    <span class="n">pspReference</span>: <span class="n">z</span>.<span class="n">string</span>().<span class="n">optional</span>(),
+});
+<span class="k">export type</span> <span class="t">PaymentIntent</span> <span class="o">=</span> <span class="n">z</span>.<span class="n">infer</span>&lt;<span class="k">typeof</span> <span class="t">PaymentIntent</span>&gt;;
+
+<span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/payment-intents"</span>, <span class="k">async</span> (<span class="n">req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">idemKey</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">header</span>(<span class="s">"Idempotency-Key"</span>);
+    <span class="k">const</span> <span class="n">body</span> <span class="o">=</span> <span class="t">CreatePaymentReq</span>.<span class="n">parse</span>(<span class="n">req</span>.<span class="n">body</span>);   <span class="c">// validation</span>
+    <span class="k">const</span> <span class="n">existing</span> <span class="o">=</span> <span class="k">await</span> <span class="n">repo</span>.<span class="n">findByIdempotencyKey</span>(<span class="n">idemKey</span>);
+    <span class="n">res</span>.<span class="n">json</span>(<span class="n">existing</span> <span class="o">??</span> <span class="k">await</span> <span class="n">repo</span>.<span class="n">save</span>({ <span class="n">id</span>: <span class="n">ulid</span>(), <span class="n">idempotencyKey</span>: <span class="n">idemKey</span>, <span class="o">...</span><span class="n">body</span> }));
+});</pre></div>
     </div>
   </section>
 
@@ -354,7 +356,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab java" data-target="c2-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Double-entry ledger write — always in a transaction.</span>
 <span class="k">type</span> <span class="t">LedgerEntry</span> <span class="k">struct</span> {
     <span class="n">TxID</span>      <span class="t">string</span>
@@ -415,25 +417,28 @@
                    <span class="n">direction</span><span class="o">=</span><span class="s">"credit"</span> <span class="k">if</span> <span class="n">e</span>.<span class="n">direction</span> <span class="o">==</span> <span class="s">"debit"</span> <span class="k">else</span> <span class="s">"debit"</span>)
         <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">original</span>]
     <span class="k">await</span> <span class="n">transfer</span>(<span class="n">db</span>, <span class="n">reversed_entries</span>)</pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// Spring — transactional ledger write with invariant check.</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">Ledger</span> {
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// pg — transactional ledger write with invariant check.</span>
+<span class="k">export class</span> <span class="t">Ledger</span> {
+    <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
 
-    <span class="o">@</span><span class="t">Transactional</span>
-    <span class="k">public void</span> <span class="n">transfer</span>(<span class="t">List</span><span class="o">&lt;</span><span class="t">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span>) {
-        <span class="k">long</span> <span class="n">debits</span>  <span class="o">=</span> <span class="n">entries</span>.<span class="n">stream</span>()
-            .<span class="n">filter</span>(<span class="n">e</span> <span class="o">-&gt;</span> <span class="n">e</span>.<span class="n">direction</span>() <span class="o">==</span> <span class="t">Direction</span>.<span class="n">DEBIT</span>)
-            .<span class="n">mapToLong</span>(<span class="t">LedgerEntry</span>::<span class="n">amount</span>).<span class="n">sum</span>();
-        <span class="k">long</span> <span class="n">credits</span> <span class="o">=</span> <span class="n">entries</span>.<span class="n">stream</span>()
-            .<span class="n">filter</span>(<span class="n">e</span> <span class="o">-&gt;</span> <span class="n">e</span>.<span class="n">direction</span>() <span class="o">==</span> <span class="t">Direction</span>.<span class="n">CREDIT</span>)
-            .<span class="n">mapToLong</span>(<span class="t">LedgerEntry</span>::<span class="n">amount</span>).<span class="n">sum</span>();
-        <span class="k">if</span> (<span class="n">debits</span> <span class="o">!=</span> <span class="n">credits</span>)
-            <span class="k">throw new</span> <span class="t">IllegalStateException</span>(<span class="s">"invariant violated"</span>);
+    <span class="k">async</span> <span class="n">transfer</span>(<span class="n">entries</span>: <span class="t">LedgerEntry</span>[]): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">const</span> <span class="n">sum</span> <span class="o">=</span> (<span class="n">dir</span>: <span class="t">Direction</span>) <span class="o">=&gt;</span> <span class="n">entries</span>
+            .<span class="n">filter</span>((<span class="n">e</span>) <span class="o">=&gt;</span> <span class="n">e</span>.<span class="n">direction</span> <span class="o">===</span> <span class="n">dir</span>)
+            .<span class="n">reduce</span>((<span class="n">total</span>, <span class="n">e</span>) <span class="o">=&gt;</span> <span class="n">total</span> <span class="o">+</span> <span class="n">e</span>.<span class="n">amount</span>, <span class="num">0</span>);
+        <span class="k">if</span> (<span class="n">sum</span>(<span class="s">"debit"</span>) <span class="o">!==</span> <span class="n">sum</span>(<span class="s">"credit"</span>))
+            <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">"invariant violated"</span>);
 
-        <span class="n">entries</span>.<span class="n">forEach</span>(<span class="n">e</span> <span class="o">-&gt;</span> <span class="n">jdbc</span>.<span class="n">update</span>(
-            <span class="s">"INSERT INTO ledger (tx_id,account,direction,amount,currency) VALUES (?,?,?,?,?)"</span>,
-            <span class="n">e</span>.<span class="n">txId</span>(), <span class="n">e</span>.<span class="n">account</span>(), <span class="n">e</span>.<span class="n">direction</span>().<span class="n">name</span>(), <span class="n">e</span>.<span class="n">amount</span>(), <span class="n">e</span>.<span class="n">currency</span>()));
+        <span class="k">const</span> <span class="n">client</span> <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">connect</span>();
+        <span class="k">try</span> {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"BEGIN"</span>);   <span class="c">// all entries or none</span>
+            <span class="k">for</span> (<span class="k">const</span> <span class="n">e</span> <span class="k">of</span> <span class="n">entries</span>) <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(
+                <span class="s">"INSERT INTO ledger (tx_id,account,direction,amount,currency) VALUES ($1,$2,$3,$4,$5)"</span>,
+                [<span class="n">e</span>.<span class="n">txId</span>, <span class="n">e</span>.<span class="n">account</span>, <span class="n">e</span>.<span class="n">direction</span>, <span class="n">e</span>.<span class="n">amount</span>, <span class="n">e</span>.<span class="n">currency</span>]);
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"COMMIT"</span>);
+        } <span class="k">catch</span> (<span class="n">err</span>) {
+            <span class="k">await</span> <span class="n">client</span>.<span class="n">query</span>(<span class="s">"ROLLBACK"</span>);
+            <span class="k">throw</span> <span class="n">err</span>;
+        } <span class="k">finally</span> { <span class="n">client</span>.<span class="n">release</span>(); }
     }
 }</pre></div>
     </div>
@@ -489,7 +494,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python</button><button class="tab java" data-target="c3-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Idempotency middleware — check before processing, save after.</span>
 <span class="k">func</span> <span class="n">IdempotentHandler</span>(<span class="n">next</span> <span class="t">http.Handler</span>) <span class="t">http.Handler</span> {
     <span class="k">return</span> <span class="n">http</span>.<span class="n">HandlerFunc</span>(<span class="k">func</span>(<span class="n">w</span> <span class="t">http.ResponseWriter</span>, <span class="n">r</span> <span class="o">*</span><span class="t">http.Request</span>) {
@@ -528,16 +533,20 @@
     <span class="c"># Acquire advisory lock to prevent concurrent retries</span>
     <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"SELECT pg_advisory_xact_lock(hashtext($1))"</span>, <span class="n">key</span>)
     <span class="k">return</span> <span class="k">None</span>  <span class="c"># proceed to handler, save result after</span></pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// Spring AOP — idempotency around annotated methods.</span>
-<span class="o">@</span><span class="t">Around</span>(<span class="s">"@annotation(Idempotent)"</span>)
-<span class="k">public</span> <span class="t">Object</span> <span class="n">checkIdempotency</span>(<span class="t">ProceedingJoinPoint</span> <span class="n">jp</span>) <span class="k">throws</span> <span class="t">Throwable</span> {
-    <span class="t">String</span> <span class="n">key</span> <span class="o">=</span> <span class="n">getIdempotencyKey</span>();  <span class="c">// from request header</span>
-    <span class="t">Optional</span><span class="o">&lt;</span><span class="t">CachedResponse</span><span class="o">&gt;</span> <span class="n">cached</span> <span class="o">=</span> <span class="n">repo</span>.<span class="n">findByKey</span>(<span class="n">key</span>);
-    <span class="k">if</span> (<span class="n">cached</span>.<span class="n">isPresent</span>()) <span class="k">return</span> <span class="n">cached</span>.<span class="n">get</span>().<span class="n">toResponse</span>();
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// Express middleware — idempotency around the wrapped route handler.</span>
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-    <span class="t">Object</span> <span class="n">result</span> <span class="o">=</span> <span class="n">jp</span>.<span class="n">proceed</span>();   <span class="c">// execute handler</span>
-    <span class="n">repo</span>.<span class="n">save</span>(<span class="k">new</span> <span class="t">CachedResponse</span>(<span class="n">key</span>, <span class="n">result</span>));
-    <span class="k">return</span> <span class="n">result</span>;
+<span class="k">export async function</span> <span class="n">idempotent</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>) {
+    <span class="k">const</span> <span class="n">key</span> <span class="o">=</span> <span class="n">req</span>.<span class="n">header</span>(<span class="s">"Idempotency-Key"</span>);   <span class="c">// from request header</span>
+    <span class="k">const</span> <span class="n">cached</span> <span class="o">=</span> <span class="k">await</span> <span class="n">repo</span>.<span class="n">findByKey</span>(<span class="n">key</span>);
+    <span class="k">if</span> (<span class="n">cached</span>) <span class="k">return</span> <span class="n">res</span>.<span class="n">status</span>(<span class="n">cached</span>.<span class="n">status</span>).<span class="n">json</span>(<span class="n">cached</span>.<span class="n">body</span>);
+
+    <span class="k">const</span> <span class="n">send</span> <span class="o">=</span> <span class="n">res</span>.<span class="n">json</span>.<span class="n">bind</span>(<span class="n">res</span>);
+    <span class="n">res</span>.<span class="n">json</span> <span class="o">=</span> (<span class="n">body</span>: <span class="k">unknown</span>) <span class="o">=&gt;</span> {              <span class="c">// capture the handler's result</span>
+        <span class="k">void</span> <span class="n">repo</span>.<span class="n">save</span>({ <span class="n">key</span>, <span class="n">status</span>: <span class="n">res</span>.<span class="n">statusCode</span>, <span class="n">body</span> });
+        <span class="k">return</span> <span class="n">send</span>(<span class="n">body</span>);
+    };
+    <span class="n">next</span>();                                      <span class="c">// execute handler</span>
 }</pre></div>
     </div>
   </section>
@@ -603,7 +612,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python</button><button class="tab java" data-target="c4-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python</button><button class="tab ts" data-target="c4-ts">TypeScript</button></div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Payment state machine — explicit transitions, impossible to skip.</span>
 <span class="k">type</span> <span class="t">PaymentState</span> <span class="t">string</span>
 <span class="k">const</span> (
@@ -651,22 +660,22 @@
         <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"UPDATE payments SET state=$1 WHERE id=$2"</span>,
                         <span class="n">new_state</span>, <span class="n">payment_id</span>)
         <span class="k">await</span> <span class="n">ledger</span>.<span class="n">record_capture</span>(<span class="n">pi</span>)</pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c">// Java enum with allowed transitions built in.</span>
-<span class="k">public enum</span> <span class="t">PaymentState</span> {
-    <span class="n">PENDING</span>(<span class="s">"authorised"</span>, <span class="s">"failed"</span>),
-    <span class="n">AUTHORISED</span>(<span class="s">"captured"</span>, <span class="s">"failed"</span>, <span class="s">"cancelled"</span>),
-    <span class="n">CAPTURED</span>(<span class="s">"settled"</span>, <span class="s">"refunded"</span>),
-    <span class="n">SETTLED</span>(<span class="s">"refunded"</span>),
-    <span class="n">FAILED</span>(), <span class="n">CANCELLED</span>(), <span class="n">REFUNDED</span>();
+      <div class="code-pane" id="c4-ts"><pre><span class="c">// String-literal union with allowed transitions built in.</span>
+<span class="k">export type</span> <span class="t">PaymentState</span> <span class="o">=</span>
+    <span class="s">"pending"</span> <span class="o">|</span> <span class="s">"authorised"</span> <span class="o">|</span> <span class="s">"captured"</span> <span class="o">|</span> <span class="s">"settled"</span> <span class="o">|</span> <span class="s">"failed"</span> <span class="o">|</span> <span class="s">"cancelled"</span> <span class="o">|</span> <span class="s">"refunded"</span>;
 
-    <span class="k">private final</span> <span class="t">Set</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">allowed</span>;
-    <span class="t">PaymentState</span>(<span class="t">String</span>... <span class="n">next</span>) { <span class="n">allowed</span> <span class="o">=</span> <span class="t">Set</span>.<span class="n">of</span>(<span class="n">next</span>); }
+<span class="k">const</span> <span class="n">allowed</span>: <span class="t">Record</span>&lt;<span class="t">PaymentState</span>, <span class="k">readonly</span> <span class="t">PaymentState</span>[]&gt; <span class="o">=</span> {
+    <span class="n">pending</span>: [<span class="s">"authorised"</span>, <span class="s">"failed"</span>],
+    <span class="n">authorised</span>: [<span class="s">"captured"</span>, <span class="s">"failed"</span>, <span class="s">"cancelled"</span>],
+    <span class="n">captured</span>: [<span class="s">"settled"</span>, <span class="s">"refunded"</span>],
+    <span class="n">settled</span>: [<span class="s">"refunded"</span>],
+    <span class="n">failed</span>: [], <span class="n">cancelled</span>: [], <span class="n">refunded</span>: [],
+};
 
-    <span class="k">public</span> <span class="t">PaymentState</span> <span class="n">transitionTo</span>(<span class="t">PaymentState</span> <span class="n">target</span>) {
-        <span class="k">if</span> (<span class="o">!</span><span class="n">allowed</span>.<span class="n">contains</span>(<span class="n">target</span>.<span class="n">name</span>().<span class="n">toLowerCase</span>()))
-            <span class="k">throw new</span> <span class="t">IllegalStateException</span>(<span class="k">this</span> <span class="o">+</span> <span class="s">" → "</span> <span class="o">+</span> <span class="n">target</span>);
-        <span class="k">return</span> <span class="n">target</span>;
-    }
+<span class="k">export function</span> <span class="n">transitionTo</span>(<span class="n">current</span>: <span class="t">PaymentState</span>, <span class="n">target</span>: <span class="t">PaymentState</span>): <span class="t">PaymentState</span> {
+    <span class="k">if</span> (<span class="o">!</span><span class="n">allowed</span>[<span class="n">current</span>].<span class="n">includes</span>(<span class="n">target</span>))
+        <span class="k">throw new</span> <span class="t">Error</span>(<span class="n">current</span> <span class="o">+</span> <span class="s">" → "</span> <span class="o">+</span> <span class="n">target</span>);
+    <span class="k">return</span> <span class="n">target</span>;
 }</pre></div>
     </div>
   </section>
@@ -735,7 +744,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (Temporal)</button><button class="tab py" data-target="c5-py">Python</button><button class="tab java" data-target="c5-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (Temporal)</button><button class="tab py" data-target="c5-py">Python</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Temporal workflow — the saga orchestrator.</span>
 <span class="k">func</span> <span class="n">CheckoutWorkflow</span>(<span class="n">ctx</span> <span class="t">workflow.Context</span>, <span class="n">order</span> <span class="t">Order</span>) <span class="t">error</span> {
     <span class="c">// Step 1: Reserve inventory</span>
@@ -781,20 +790,20 @@
             <span class="k">for</span> <span class="n">comp</span> <span class="k">in</span> <span class="n">reversed</span>(<span class="n">self</span>.<span class="n">compensations</span>):
                 <span class="k">await</span> <span class="n">comp</span>()
             <span class="k">raise</span></pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// Spring — saga orchestrator with compensation list.</span>
-<span class="k">public</span> <span class="t">Order</span> <span class="n">checkout</span>(<span class="t">Order</span> <span class="n">order</span>) {
-    <span class="t">Deque</span><span class="o">&lt;</span><span class="t">Runnable</span><span class="o">&gt;</span> <span class="n">compensations</span> <span class="o">=</span> <span class="k">new</span> <span class="t">ArrayDeque</span><span class="o">&lt;&gt;</span>();
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// Saga orchestrator with a compensation stack.</span>
+<span class="k">export async function</span> <span class="n">checkout</span>(<span class="n">order</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="t">Order</span>&gt; {
+    <span class="k">const</span> <span class="n">compensations</span>: <span class="t">Array</span>&lt;() <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;&gt; <span class="o">=</span> [];
     <span class="k">try</span> {
-        <span class="n">inventory</span>.<span class="n">reserve</span>(<span class="n">order</span>);
-        <span class="n">compensations</span>.<span class="n">push</span>(() <span class="o">-&gt;</span> <span class="n">inventory</span>.<span class="n">release</span>(<span class="n">order</span>));
+        <span class="k">await</span> <span class="n">inventory</span>.<span class="n">reserve</span>(<span class="n">order</span>);
+        <span class="n">compensations</span>.<span class="n">unshift</span>(() <span class="o">=&gt;</span> <span class="n">inventory</span>.<span class="n">release</span>(<span class="n">order</span>));
 
-        <span class="n">payment</span>.<span class="n">charge</span>(<span class="n">order</span>);
-        <span class="n">compensations</span>.<span class="n">push</span>(() <span class="o">-&gt;</span> <span class="n">payment</span>.<span class="n">refund</span>(<span class="n">order</span>));
+        <span class="k">await</span> <span class="n">payment</span>.<span class="n">charge</span>(<span class="n">order</span>);
+        <span class="n">compensations</span>.<span class="n">unshift</span>(() <span class="o">=&gt;</span> <span class="n">payment</span>.<span class="n">refund</span>(<span class="n">order</span>));
 
-        <span class="n">shipping</span>.<span class="n">trigger</span>(<span class="n">order</span>);
+        <span class="k">await</span> <span class="n">shipping</span>.<span class="n">trigger</span>(<span class="n">order</span>);
         <span class="k">return</span> <span class="n">order</span>;
-    } <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">e</span>) {
-        <span class="n">compensations</span>.<span class="n">forEach</span>(<span class="t">Runnable</span>::<span class="n">run</span>);
+    } <span class="k">catch</span> (<span class="n">e</span>) {
+        <span class="k">for</span> (<span class="k">const</span> <span class="n">undo</span> <span class="k">of</span> <span class="n">compensations</span>) <span class="k">await</span> <span class="n">undo</span>();   <span class="c">// newest first</span>
         <span class="k">throw</span> <span class="n">e</span>;
     }
 }</pre></div>
@@ -849,7 +858,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Frontend JS</button><button class="tab py" data-target="c6-py">Python (server)</button><button class="tab java" data-target="c6-java">Java (server)</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Frontend JS</button><button class="tab py" data-target="c6-py">Python (server)</button><button class="tab ts" data-target="c6-ts">TypeScript (server)</button></div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Stripe Elements — card never hits your server.</span>
 <span class="k">const</span> <span class="n">stripe</span> <span class="o">=</span> <span class="n">Stripe</span>(<span class="s">'pk_live_xxx'</span>);  <span class="c">// publishable key only</span>
 <span class="k">const</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">stripe</span>.<span class="n">elements</span>();
@@ -879,19 +888,19 @@
         <span class="n">idempotency_key</span><span class="o">=</span><span class="n">req</span>.<span class="n">idem_key</span>,
     )
     <span class="k">return</span> <span class="n">intent</span></pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// Stripe Java SDK — same pattern, token only.</span>
-<span class="t">PaymentIntentCreateParams</span> <span class="n">params</span> <span class="o">=</span> <span class="t">PaymentIntentCreateParams</span>.<span class="n">builder</span>()
-    .<span class="n">setAmount</span>(<span class="n">req</span>.<span class="n">amountCents</span>())
-    .<span class="n">setCurrency</span>(<span class="n">req</span>.<span class="n">currency</span>())
-    .<span class="n">setPaymentMethod</span>(<span class="n">req</span>.<span class="n">tokenId</span>())    <span class="c">// token, never card</span>
-    .<span class="n">setCaptureMethod</span>(<span class="t">CaptureMethod</span>.<span class="n">MANUAL</span>)
-    .<span class="n">build</span>();
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// Stripe Node SDK — same pattern, token only.</span>
+<span class="k">import</span> <span class="t">Stripe</span> <span class="k">from</span> <span class="s">"stripe"</span>;
+<span class="k">const</span> <span class="n">stripe</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Stripe</span>(<span class="n">process</span>.<span class="n">env</span>.<span class="n">STRIPE_SECRET_KEY</span><span class="o">!</span>);
 
-<span class="t">RequestOptions</span> <span class="n">opts</span> <span class="o">=</span> <span class="t">RequestOptions</span>.<span class="n">builder</span>()
-    .<span class="n">setIdempotencyKey</span>(<span class="n">req</span>.<span class="n">idemKey</span>())
-    .<span class="n">build</span>();
-
-<span class="t">PaymentIntent</span> <span class="n">intent</span> <span class="o">=</span> <span class="t">PaymentIntent</span>.<span class="n">create</span>(<span class="n">params</span>, <span class="n">opts</span>);</pre></div>
+<span class="k">const</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">await</span> <span class="n">stripe</span>.<span class="n">paymentIntents</span>.<span class="n">create</span>(
+    {
+        <span class="n">amount</span>: <span class="n">req</span>.<span class="n">amountCents</span>,
+        <span class="n">currency</span>: <span class="n">req</span>.<span class="n">currency</span>,
+        <span class="n">payment_method</span>: <span class="n">req</span>.<span class="n">tokenId</span>,    <span class="c">// token, never card</span>
+        <span class="n">capture_method</span>: <span class="s">"manual"</span>,
+    },
+    { <span class="n">idempotencyKey</span>: <span class="n">req</span>.<span class="n">idemKey</span> },
+);</pre></div>
     </div>
   </section>
 
@@ -944,7 +953,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab java" data-target="c7-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Nightly reconciliation — compare ledger vs PSP settlement.</span>
 <span class="k">func</span> <span class="n">Reconcile</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">date</span> <span class="t">time.Time</span>) <span class="o">*</span><span class="t">ReconReport</span> {
     <span class="n">ours</span> <span class="o">:=</span> <span class="n">ledger</span>.<span class="n">CapturedForDate</span>(<span class="n">ctx</span>, <span class="n">date</span>)     <span class="c">// map[psp_ref]amount</span>
@@ -973,19 +982,19 @@
             <span class="n">unmatched</span>.<span class="n">append</span>(<span class="n">ref</span>)
     <span class="k">if</span> <span class="n">unmatched</span>:
         <span class="k">await</span> <span class="n">alert</span>.<span class="n">fire</span>(<span class="n">f</span><span class="s">"Recon mismatch: {len(unmatched)} items"</span>)</pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// Spring @Scheduled nightly recon job.</span>
-<span class="o">@</span><span class="t">Scheduled</span>(<span class="n">cron</span> <span class="o">=</span> <span class="s">"0 0 6 * * *"</span>)   <span class="c">// 6am daily</span>
-<span class="k">public void</span> <span class="n">reconcile</span>() {
-    <span class="k">var</span> <span class="n">date</span> <span class="o">=</span> <span class="t">LocalDate</span>.<span class="n">now</span>().<span class="n">minusDays</span>(<span class="num">1</span>);   <span class="c">// T+1</span>
-    <span class="k">var</span> <span class="n">ours</span> <span class="o">=</span> <span class="n">ledger</span>.<span class="n">capturedForDate</span>(<span class="n">date</span>);
-    <span class="k">var</span> <span class="n">theirs</span> <span class="o">=</span> <span class="n">psp</span>.<span class="n">downloadSettlement</span>(<span class="n">date</span>);
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// node-cron nightly recon job.</span>
+<span class="k">import</span> <span class="n">cron</span> <span class="k">from</span> <span class="s">"node-cron"</span>;
 
-    <span class="k">var</span> <span class="n">unmatched</span> <span class="o">=</span> <span class="n">ours</span>.<span class="n">entrySet</span>().<span class="n">stream</span>()
-        .<span class="n">filter</span>(<span class="n">e</span> <span class="o">-&gt;</span> <span class="o">!</span><span class="n">e</span>.<span class="n">getValue</span>().<span class="n">equals</span>(<span class="n">theirs</span>.<span class="n">get</span>(<span class="n">e</span>.<span class="n">getKey</span>())))
-        .<span class="n">toList</span>();
-    <span class="k">if</span> (<span class="o">!</span><span class="n">unmatched</span>.<span class="n">isEmpty</span>())
-        <span class="n">alertService</span>.<span class="n">fire</span>(<span class="s">"Recon mismatch: "</span> <span class="o">+</span> <span class="n">unmatched</span>.<span class="n">size</span>());
-}</pre></div>
+<span class="n">cron</span>.<span class="n">schedule</span>(<span class="s">"0 6 * * *"</span>, <span class="k">async</span> () <span class="o">=&gt;</span> {   <span class="c">// 6am daily</span>
+    <span class="k">const</span> <span class="n">date</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Date</span>(<span class="t">Date</span>.<span class="n">now</span>() <span class="o">-</span> <span class="num">24</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">1000</span>);   <span class="c">// T+1</span>
+    <span class="k">const</span> <span class="n">ours</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ledger</span>.<span class="n">capturedForDate</span>(<span class="n">date</span>);   <span class="c">// Map&lt;pspRef, amount&gt;</span>
+    <span class="k">const</span> <span class="n">theirs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">psp</span>.<span class="n">downloadSettlement</span>(<span class="n">date</span>);
+
+    <span class="k">const</span> <span class="n">unmatched</span> <span class="o">=</span> [<span class="o">...</span><span class="n">ours</span>]
+        .<span class="n">filter</span>(([<span class="n">ref</span>, <span class="n">amount</span>]) <span class="o">=&gt;</span> <span class="n">theirs</span>.<span class="n">get</span>(<span class="n">ref</span>) <span class="o">!==</span> <span class="n">amount</span>);
+    <span class="k">if</span> (<span class="n">unmatched</span>.<span class="n">length</span> <span class="o">&gt;</span> <span class="num">0</span>)
+        <span class="k">await</span> <span class="n">alertService</span>.<span class="n">fire</span>(<span class="s">"Recon mismatch: "</span> <span class="o">+</span> <span class="n">unmatched</span>.<span class="n">length</span>);
+});</pre></div>
     </div>
   </section>
 
@@ -1044,7 +1053,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab java" data-target="c8-java">Java</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Webhook sender — HMAC-signed, retried, idempotent event_id.</span>
 <span class="k">func</span> <span class="n">SendWebhook</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">endpoint</span> <span class="t">string</span>, <span class="n">event</span> <span class="t">Event</span>) <span class="t">error</span> {
     <span class="n">body</span>, <span class="n">_</span> <span class="o">:=</span> <span class="n">json</span>.<span class="n">Marshal</span>(<span class="n">event</span>)
@@ -1079,17 +1088,21 @@
             <span class="s">"Webhook-ID"</span>: <span class="n">event</span>[<span class="s">"id"</span>],
         }, <span class="n">timeout</span><span class="o">=</span><span class="num">5</span>)
     <span class="n">resp</span>.<span class="n">raise_for_status</span>()</pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring — webhook sender with HMAC.</span>
-<span class="k">public void</span> <span class="n">send</span>(<span class="t">String</span> <span class="n">url</span>, <span class="t">Event</span> <span class="n">event</span>, <span class="t">String</span> <span class="n">secret</span>) {
-    <span class="t">String</span> <span class="n">body</span> <span class="o">=</span> <span class="n">objectMapper</span>.<span class="n">writeValueAsString</span>(<span class="n">event</span>);
-    <span class="k">long</span> <span class="n">ts</span> <span class="o">=</span> <span class="t">Instant</span>.<span class="n">now</span>().<span class="n">getEpochSecond</span>();
-    <span class="t">String</span> <span class="n">sig</span> <span class="o">=</span> <span class="n">hmacSha256</span>(<span class="n">secret</span>, <span class="n">ts</span> <span class="o">+</span> <span class="s">"."</span> <span class="o">+</span> <span class="n">body</span>);
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// fetch — webhook sender with HMAC.</span>
+<span class="k">import</span> { <span class="n">createHmac</span> } <span class="k">from</span> <span class="s">"node:crypto"</span>;
 
-    <span class="n">restClient</span>.<span class="n">post</span>().<span class="n">uri</span>(<span class="n">url</span>)
-        .<span class="n">header</span>(<span class="s">"Webhook-Signature"</span>, <span class="s">"t="</span> <span class="o">+</span> <span class="n">ts</span> <span class="o">+</span> <span class="s">",v1="</span> <span class="o">+</span> <span class="n">sig</span>)
-        .<span class="n">header</span>(<span class="s">"Webhook-ID"</span>, <span class="n">event</span>.<span class="n">id</span>())
-        .<span class="n">body</span>(<span class="n">body</span>)
-        .<span class="n">retrieve</span>();
+<span class="k">export async function</span> <span class="n">send</span>(<span class="n">url</span>: <span class="t">string</span>, <span class="n">event</span>: <span class="t">WebhookEvent</span>, <span class="n">secret</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">const</span> <span class="n">body</span> <span class="o">=</span> <span class="t">JSON</span>.<span class="n">stringify</span>(<span class="n">event</span>);
+    <span class="k">const</span> <span class="n">ts</span> <span class="o">=</span> <span class="t">Math</span>.<span class="n">floor</span>(<span class="t">Date</span>.<span class="n">now</span>() <span class="o">/</span> <span class="num">1000</span>);
+    <span class="k">const</span> <span class="n">sig</span> <span class="o">=</span> <span class="n">createHmac</span>(<span class="s">"sha256"</span>, <span class="n">secret</span>).<span class="n">update</span>(<span class="n">ts</span> <span class="o">+</span> <span class="s">"."</span> <span class="o">+</span> <span class="n">body</span>).<span class="n">digest</span>(<span class="s">"hex"</span>);
+
+    <span class="k">const</span> <span class="n">res</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span>(<span class="n">url</span>, {
+        <span class="n">method</span>: <span class="s">"POST"</span>,
+        <span class="n">headers</span>: { <span class="s">"Webhook-Signature"</span>: <span class="s">"t="</span> <span class="o">+</span> <span class="n">ts</span> <span class="o">+</span> <span class="s">",v1="</span> <span class="o">+</span> <span class="n">sig</span>, <span class="s">"Webhook-ID"</span>: <span class="n">event</span>.<span class="n">id</span> },
+        <span class="n">body</span>,
+        <span class="n">signal</span>: <span class="t">AbortSignal</span>.<span class="n">timeout</span>(<span class="num">5000</span>),
+    });
+    <span class="k">if</span> (<span class="o">!</span><span class="n">res</span>.<span class="n">ok</span>) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">"delivery failed: "</span> <span class="o">+</span> <span class="n">res</span>.<span class="n">status</span>);   <span class="c">// caller retries</span>
 }</pre></div>
     </div>
   </section>

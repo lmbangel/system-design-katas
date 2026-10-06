@@ -99,7 +99,7 @@
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">40 min</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · Java</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">Go · Python · TypeScript</span></div>
         </div>
       </header>
 
@@ -225,7 +225,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
         <button class="tab py" data-target="c1-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c1-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// SLI: ratio of "good" to "total" requests, exposed for Prometheus.</span>
 <span class="k">var</span> (
@@ -287,36 +287,33 @@
 
 <span class="c"># 14.4x for 1h or 6x for 6h triggers a fast-burn page.</span>
 <span class="k">assert</span> <span class="n">burn_rate</span>(<span class="num">0.999</span>, <span class="n">observed_err_rate</span><span class="o">=</span><span class="num">0.0144</span>) <span class="o">==</span> <span class="num">14.4</span></pre></div>
-      <div class="code-pane" id="c1-java"><pre><span class="c">// Spring Actuator + Micrometer auto-emit http.server.requests with</span>
-<span class="c">// status, uri, method, exception. Compute SLI with PromQL.</span>
+      <div class="code-pane" id="c1-ts"><pre><span class="c">// prom-client + an Express middleware emit http_server_requests_seconds</span>
+<span class="c">// with status, route, method. Compute SLI with PromQL.</span>
+<span class="k">import</span> { <span class="t">Histogram</span> } <span class="k">from</span> <span class="s">"prom-client"</span>;
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">SloConfig</span> {
+<span class="c">// Route normalisation — keep cardinality low</span>
+<span class="k">function</span> <span class="n">normaliseRoute</span>(<span class="n">req</span>: <span class="t">Request</span>): <span class="t">string</span> {
+    <span class="k">if</span> (<span class="s">/^\/v\d+\/orders\/[^/]+$/</span>.<span class="n">test</span>(<span class="n">req</span>.<span class="n">path</span>)) <span class="k">return</span> <span class="s">"/v{}/orders/{id}"</span>;
+    <span class="k">return</span> <span class="n">req</span>.<span class="n">route</span> <span class="o">?</span> <span class="n">req</span>.<span class="n">baseUrl</span> <span class="o">+</span> <span class="n">req</span>.<span class="n">route</span>.<span class="n">path</span> : <span class="s">"unmatched"</span>;
+}
 
-    <span class="c">// Tag uri normalization — keep cardinality low</span>
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">MeterFilter</span> <span class="n">normaliseUri</span>() {
-        <span class="k">return</span> <span class="t">MeterFilter</span>.<span class="n">replaceTagValues</span>(<span class="s">"uri"</span>, <span class="n">v</span> <span class="o">-&gt;</span> {
-            <span class="k">if</span> (<span class="n">v</span>.<span class="n">matches</span>(<span class="s">"/v\\d+/orders/[^/]+"</span>)) <span class="k">return</span> <span class="s">"/v{}/orders/{id}"</span>;
-            <span class="k">return</span> <span class="n">v</span>;
-        });
-    }
+<span class="c">// Histogram buckets sized for &lt; 200ms SLO</span>
+<span class="k">const</span> <span class="n">requests</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Histogram</span>({
+    <span class="n">name</span>: <span class="s">"http_server_requests_seconds"</span>,
+    <span class="n">help</span>: <span class="s">"HTTP server request latency"</span>,
+    <span class="n">labelNames</span>: [<span class="s">"method"</span>, <span class="s">"route"</span>, <span class="s">"status"</span>] <span class="k">as</span> <span class="t">const</span>,
+    <span class="n">buckets</span>: [<span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.2</span>, <span class="num">0.5</span>, <span class="num">1</span>, <span class="num">2</span>],                <span class="c">// seconds</span>
+});
 
-    <span class="c">// Histogram buckets sized for &lt; 200ms SLO</span>
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">MeterFilter</span> <span class="n">latencyBuckets</span>() {
-        <span class="k">return</span> <span class="k">new</span> <span class="t">MeterFilter</span>() {
-            <span class="o">@</span><span class="t">Override</span>
-            <span class="k">public</span> <span class="t">DistributionStatisticConfig</span> <span class="n">configure</span>(
-                <span class="t">Meter.Id</span> <span class="n">id</span>, <span class="t">DistributionStatisticConfig</span> <span class="n">cfg</span>) {
-                <span class="k">return</span> <span class="t">DistributionStatisticConfig</span>.<span class="k">builder</span>()
-                    .<span class="n">percentiles</span>(<span class="num">0.5</span>, <span class="num">0.95</span>, <span class="num">0.99</span>)
-                    .<span class="n">serviceLevelObjectives</span>(<span class="num">50e6</span>, <span class="num">100e6</span>,
-                        <span class="num">200e6</span>, <span class="num">500e6</span>, <span class="num">1e9</span>, <span class="num">2e9</span>)              <span class="c">// nanos</span>
-                    .<span class="n">build</span>().<span class="n">merge</span>(<span class="n">cfg</span>);
-            }
-        };
-    }
+<span class="k">export function</span> <span class="n">sloMetrics</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="k">void</span> {
+    <span class="k">const</span> <span class="n">end</span> <span class="o">=</span> <span class="n">requests</span>.<span class="n">startTimer</span>();
+    <span class="n">res</span>.<span class="n">on</span>(<span class="s">"finish"</span>, () <span class="o">=&gt;</span> <span class="n">end</span>({
+        <span class="n">method</span>: <span class="n">req</span>.<span class="n">method</span>,
+        <span class="n">route</span>: <span class="n">normaliseRoute</span>(<span class="n">req</span>),
+        <span class="n">status</span>: <span class="t">String</span>(<span class="n">res</span>.<span class="n">statusCode</span>),
+    }));
+    <span class="n">next</span>();
 }
 
 <span class="c">// PromQL: 1-h fast burn alert</span>
@@ -447,7 +444,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
         <button class="tab py" data-target="c2-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c2-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// All four golden signals from one middleware.</span>
 <span class="k">var</span> (
@@ -524,25 +521,31 @@
     <span class="k">if</span> <span class="n">resp</span>.<span class="n">status_code</span> <span class="o">&gt;=</span> <span class="num">500</span>:
         <span class="n">ERRORS</span>.<span class="n">labels</span>(<span class="n">route</span>, <span class="n">str</span>(<span class="n">resp</span>.<span class="n">status_code</span>)).<span class="n">inc</span>()
     <span class="k">return</span> <span class="n">resp</span></pre></div>
-      <div class="code-pane" id="c2-java"><pre><span class="c">// Spring Actuator auto-exposes latency, traffic, errors via</span>
-<span class="c">// http.server.requests. Add saturation yourself:</span>
+      <div class="code-pane" id="c2-ts"><pre><span class="c">// The prom-client HTTP middleware covers latency, traffic, errors via</span>
+<span class="c">// http_server_requests_seconds. Add saturation yourself:</span>
+<span class="k">import</span> { <span class="t">Gauge</span> } <span class="k">from</span> <span class="s">"prom-client"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">SaturationMetrics</span> {
-    <span class="k">private final</span> <span class="t">DataSource</span> <span class="n">ds</span>;
-    <span class="k">private final</span> <span class="t">MeterRegistry</span> <span class="n">registry</span>;
+<span class="k">export class</span> <span class="t">SaturationMetrics</span> {
+    <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">pool</span>: <span class="t">Pool</span>) {}
 
-    <span class="o">@</span><span class="t">PostConstruct</span>
-    <span class="k">void</span> <span class="n">register</span>() {
-        <span class="k">if</span> (<span class="n">ds</span> <span class="k">instanceof</span> <span class="t">HikariDataSource</span> <span class="n">hds</span>) {
-            <span class="t">HikariPoolMXBean</span> <span class="n">pool</span> <span class="o">=</span> <span class="n">hds</span>.<span class="n">getHikariPoolMXBean</span>();
-            <span class="t">Gauge</span>.<span class="n">builder</span>(<span class="s">"golden.db.active_connections"</span>,
-                <span class="n">pool</span>, <span class="t">HikariPoolMXBean</span>::<span class="n">getActiveConnections</span>)
-                .<span class="n">register</span>(<span class="n">registry</span>);
-            <span class="t">Gauge</span>.<span class="n">builder</span>(<span class="s">"golden.db.pending_threads"</span>,
-                <span class="n">pool</span>, <span class="t">HikariPoolMXBean</span>::<span class="n">getThreadsAwaitingConnection</span>)
-                .<span class="n">register</span>(<span class="n">registry</span>);
-        }
+    <span class="n">register</span>(): <span class="k">void</span> {
+        <span class="k">const</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">pool</span>;
+        <span class="c">// collect() runs on every scrape — reads live pg.Pool counters</span>
+        <span class="k">new</span> <span class="t">Gauge</span>({
+            <span class="n">name</span>: <span class="s">"golden_db_active_connections"</span>,
+            <span class="n">help</span>: <span class="s">"Checked-out pg connections"</span>,
+            <span class="n">collect</span>() {
+                <span class="k">this</span>.<span class="n">set</span>(<span class="n">pool</span>.<span class="n">totalCount</span> <span class="o">-</span> <span class="n">pool</span>.<span class="n">idleCount</span>);
+            },
+        });
+        <span class="k">new</span> <span class="t">Gauge</span>({
+            <span class="n">name</span>: <span class="s">"golden_db_pending_clients"</span>,
+            <span class="n">help</span>: <span class="s">"Callers waiting for a pg connection"</span>,
+            <span class="n">collect</span>() {
+                <span class="k">this</span>.<span class="n">set</span>(<span class="n">pool</span>.<span class="n">waitingCount</span>);
+            },
+        });
     }
 }
 
@@ -661,7 +664,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
         <button class="tab py" data-target="c3-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c3-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// slog (Go 1.21+) — structured, context-aware logging.</span>
 <span class="k">import</span> <span class="s">"log/slog"</span>
@@ -731,40 +734,38 @@
     <span class="k">except</span> <span class="t">InsufficientFunds</span> <span class="k">as</span> <span class="n">e</span>:
         <span class="n">log</span>.<span class="n">error</span>(<span class="s">"charge_failed"</span>, <span class="n">order_id</span><span class="o">=</span><span class="n">order</span>.<span class="n">id</span>, <span class="n">error</span><span class="o">=</span><span class="n">str</span>(<span class="n">e</span>))
         <span class="k">raise</span></pre></div>
-      <div class="code-pane" id="c3-java"><pre><span class="c">// Logback + MDC — trace_id auto-included in every log line.</span>
+      <div class="code-pane" id="c3-ts"><pre><span class="c">// pino + AsyncLocalStorage — trace_id auto-included in every log line.</span>
+<span class="k">import</span> <span class="n">pino</span> <span class="k">from</span> <span class="s">"pino"</span>;
+<span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">"node:async_hooks"</span>;
+<span class="k">import</span> { <span class="n">trace</span> } <span class="k">from</span> <span class="s">"@opentelemetry/api"</span>;
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="c">// 1. logback-spring.xml — JSON encoder, MDC fields auto-emitted</span>
-<span class="c">//   &lt;encoder class="...JsonEncoder"&gt;</span>
-<span class="c">//     &lt;pattern&gt;ts,level,logger,msg,mdc,trace_id&lt;/pattern&gt;</span>
-<span class="c">//   &lt;/encoder&gt;</span>
+<span class="c">// 1. pino logger — JSON output; mixin() merges the request context</span>
+<span class="c">//    into every line (the MDC equivalent)</span>
+<span class="k">const</span> <span class="n">context</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AsyncLocalStorage</span>&lt;{ <span class="n">trace_id</span>: <span class="t">string</span> }&gt;();
+<span class="k">export const</span> <span class="n">log</span> <span class="o">=</span> <span class="n">pino</span>({
+    <span class="n">timestamp</span>: <span class="n">pino</span>.<span class="n">stdTimeFunctions</span>.<span class="n">isoTime</span>,
+    <span class="n">mixin</span>: () <span class="o">=&gt;</span> <span class="n">context</span>.<span class="n">getStore</span>() <span class="o">??</span> {},
+});
 
-<span class="c">// 2. Filter binds traceId from OpenTelemetry to MDC.</span>
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">TraceIdFilter</span> <span class="k">extends</span> <span class="t">OncePerRequestFilter</span> {
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected void</span> <span class="n">doFilterInternal</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                                    <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                                    <span class="t">FilterChain</span> <span class="n">chain</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="t">String</span> <span class="n">traceId</span> <span class="o">=</span> <span class="t">Span</span>.<span class="n">current</span>().<span class="n">getSpanContext</span>().<span class="n">getTraceId</span>();
-        <span class="t">MDC</span>.<span class="n">put</span>(<span class="s">"trace_id"</span>, <span class="n">traceId</span>);
-        <span class="k">try</span> {
-            <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>);
-        } <span class="k">finally</span> {
-            <span class="t">MDC</span>.<span class="n">clear</span>();
-        }
-    }
+<span class="c">// 2. Middleware binds traceId from OpenTelemetry to the async context.</span>
+<span class="k">export function</span> <span class="n">traceIdMiddleware</span>(<span class="n">req</span>: <span class="t">Request</span>,
+                                  <span class="n">res</span>: <span class="t">Response</span>,
+                                  <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="k">void</span> {
+    <span class="k">const</span> <span class="n">traceId</span> <span class="o">=</span> <span class="n">trace</span>.<span class="n">getActiveSpan</span>()<span class="o">?.</span><span class="n">spanContext</span>().<span class="n">traceId</span> <span class="o">??</span> <span class="s">"none"</span>;
+    <span class="c">// Scoped to this request's async chain — nothing to clear afterwards</span>
+    <span class="n">context</span>.<span class="n">run</span>({ <span class="n">trace_id</span>: <span class="n">traceId</span> }, <span class="n">next</span>);
 }
 
-<span class="c">// 3. Business code — just log. MDC carries trace_id.</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrderService</span> {
-    <span class="k">private static final</span> <span class="t">Logger</span> <span class="n">log</span> <span class="o">=</span> <span class="t">LoggerFactory</span>.<span class="n">getLogger</span>(<span class="t">OrderService</span>.<span class="k">class</span>);
-
-    <span class="k">public void</span> <span class="n">charge</span>(<span class="t">Order</span> <span class="n">o</span>) {
-        <span class="n">log</span>.<span class="n">info</span>(<span class="s">"charging order_id={} amount={} user={}"</span>,
-                 <span class="n">o</span>.<span class="n">id</span>(), <span class="n">o</span>.<span class="n">total</span>(), <span class="n">o</span>.<span class="n">userId</span>());
+<span class="c">// 3. Business code — just log. The async context carries trace_id.</span>
+<span class="k">export class</span> <span class="t">OrderService</span> {
+    <span class="n">charge</span>(<span class="n">o</span>: <span class="t">Order</span>): <span class="k">void</span> {
+        <span class="n">log</span>.<span class="n">info</span>({ <span class="n">order_id</span>: <span class="n">o</span>.<span class="n">id</span>, <span class="n">amount</span>: <span class="n">o</span>.<span class="n">total</span>, <span class="n">user</span>: <span class="n">o</span>.<span class="n">userId</span> },
+                 <span class="s">"charging order"</span>);
     }
-}</pre></div>
+}
+<span class="c">// Output: {"level":30,"time":"...","trace_id":"ab12",</span>
+<span class="c">//          "order_id":42,"amount":99.5,"user":"u7","msg":"charging order"}</span></pre></div>
     </div>
   </section>
 
@@ -862,7 +863,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
         <button class="tab py" data-target="c4-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c4-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// OpenTelemetry: auto-instrument HTTP + a custom span for business logic.</span>
 <span class="k">import</span> (
@@ -912,32 +913,32 @@
     <span class="k">with</span> <span class="n">tracer</span>.<span class="n">start_as_current_span</span>(<span class="s">"charge_order"</span>) <span class="k">as</span> <span class="n">span</span>:
         <span class="n">span</span>.<span class="n">set_attribute</span>(<span class="s">"order.id"</span>, <span class="n">order</span>.<span class="n">id</span>)
         <span class="k">await</span> <span class="n">payments</span>.<span class="n">charge</span>(<span class="n">order</span>)</pre></div>
-      <div class="code-pane" id="c4-java"><pre><span class="c">// Spring Boot + OTel agent — zero-code auto-instrumentation.</span>
-<span class="c">// Add the OTel Java agent at startup:</span>
-<span class="c">//   java -javaagent:opentelemetry-javaagent.jar \</span>
-<span class="c">//        -Dotel.service.name=orders \</span>
-<span class="c">//        -Dotel.exporter.otlp.endpoint=http://collector:4318 \</span>
-<span class="c">//        -jar app.jar</span>
+      <div class="code-pane" id="c4-ts"><pre><span class="c">// Node + OTel auto-instrumentations — zero-code HTTP / pg / Redis spans.</span>
+<span class="c">// Register the SDK before the app loads at startup:</span>
+<span class="c">//   OTEL_SERVICE_NAME=orders \</span>
+<span class="c">//   OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 \</span>
+<span class="c">//   node --import @opentelemetry/auto-instrumentations-node/register app.js</span>
 
 <span class="c">// Custom spans when you need them:</span>
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">OrderService</span> {
-    <span class="k">private final</span> <span class="t">Tracer</span> <span class="n">tracer</span> <span class="o">=</span>
-        <span class="t">GlobalOpenTelemetry</span>.<span class="n">getTracer</span>(<span class="s">"orders"</span>);
+<span class="k">import</span> { <span class="n">trace</span>, <span class="t">SpanStatusCode</span> } <span class="k">from</span> <span class="s">"@opentelemetry/api"</span>;
 
-    <span class="k">public void</span> <span class="n">charge</span>(<span class="t">Order</span> <span class="n">o</span>) {
-        <span class="t">Span</span> <span class="n">span</span> <span class="o">=</span> <span class="n">tracer</span>.<span class="n">spanBuilder</span>(<span class="s">"charge_order"</span>)
-            .<span class="n">setAttribute</span>(<span class="s">"order.id"</span>, <span class="n">o</span>.<span class="n">id</span>())
-            .<span class="n">startSpan</span>();
-        <span class="k">try</span> (<span class="t">Scope</span> <span class="n">scope</span> <span class="o">=</span> <span class="n">span</span>.<span class="n">makeCurrent</span>()) {
-            <span class="n">payments</span>.<span class="n">charge</span>(<span class="n">o</span>);
-        } <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">e</span>) {
-            <span class="n">span</span>.<span class="n">recordException</span>(<span class="n">e</span>);
-            <span class="n">span</span>.<span class="n">setStatus</span>(<span class="t">StatusCode</span>.<span class="n">ERROR</span>);
-            <span class="k">throw</span> <span class="n">e</span>;
-        } <span class="k">finally</span> {
-            <span class="n">span</span>.<span class="n">end</span>();
-        }
+<span class="k">export class</span> <span class="t">OrderService</span> {
+    <span class="k">private readonly</span> <span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span>.<span class="n">getTracer</span>(<span class="s">"orders"</span>);
+
+    <span class="k">async</span> <span class="n">charge</span>(<span class="n">o</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="c">// startActiveSpan makes the span current for awaited child calls</span>
+        <span class="k">return this</span>.<span class="n">tracer</span>.<span class="n">startActiveSpan</span>(<span class="s">"charge_order"</span>, <span class="k">async</span> (<span class="n">span</span>) <span class="o">=&gt;</span> {
+            <span class="n">span</span>.<span class="n">setAttribute</span>(<span class="s">"order.id"</span>, <span class="n">o</span>.<span class="n">id</span>);
+            <span class="k">try</span> {
+                <span class="k">await</span> <span class="n">payments</span>.<span class="n">charge</span>(<span class="n">o</span>);
+            } <span class="k">catch</span> (<span class="n">e</span>) {
+                <span class="n">span</span>.<span class="n">recordException</span>(<span class="n">e</span> <span class="k">as</span> <span class="t">Error</span>);
+                <span class="n">span</span>.<span class="n">setStatus</span>({ <span class="n">code</span>: <span class="t">SpanStatusCode</span>.<span class="n">ERROR</span> });
+                <span class="k">throw</span> <span class="n">e</span>;
+            } <span class="k">finally</span> {
+                <span class="n">span</span>.<span class="n">end</span>();
+            }
+        });
     }
 }</pre></div>
     </div>
@@ -1036,7 +1037,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
         <button class="tab py" data-target="c5-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c5-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Bounded labels — route templates, status class, top-N tenants.</span>
 <span class="k">var</span> <span class="n">topTenants</span> <span class="o">=</span> <span class="k">map</span>[<span class="t">string</span>]<span class="t">bool</span>{
@@ -1103,42 +1104,44 @@
 <span class="n">log</span>.<span class="n">info</span>(<span class="s">"request_completed"</span>,
          <span class="n">user_id</span><span class="o">=</span><span class="n">req</span>.<span class="n">state</span>.<span class="n">user_id</span>,           <span class="c"># OK in logs</span>
          <span class="n">route</span><span class="o">=</span><span class="n">route_path</span>, <span class="n">latency_ms</span><span class="o">=</span><span class="n">dur</span> <span class="o">*</span> <span class="num">1000</span>)</pre></div>
-      <div class="code-pane" id="c5-java"><pre><span class="c">// Micrometer: tag normalisation + cardinality limits.</span>
+      <div class="code-pane" id="c5-ts"><pre><span class="c">// prom-client: bounded label values + route templates, not raw paths.</span>
+<span class="k">import</span> { <span class="t">Counter</span> } <span class="k">from</span> <span class="s">"prom-client"</span>;
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">CardinalityConfig</span> {
+<span class="k">const</span> <span class="n">requests</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Counter</span>({
+    <span class="n">name</span>: <span class="s">"http_server_requests_total"</span>,
+    <span class="n">help</span>: <span class="s">"HTTP requests"</span>,
+    <span class="n">labelNames</span>: [<span class="s">"route"</span>, <span class="s">"method"</span>, <span class="s">"status"</span>, <span class="s">"tenant"</span>] <span class="k">as</span> <span class="t">const</span>,
+});
 
-    <span class="c">// Cap unique tag values per meter — drop overflow into "_other_"</span>
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">MeterFilter</span> <span class="n">limitTenants</span>() {
-        <span class="k">return</span> <span class="t">MeterFilter</span>.<span class="n">maximumAllowableTags</span>(
-            <span class="s">"http.server.requests"</span>, <span class="s">"tenant"</span>, <span class="num">100</span>,
-            <span class="t">MeterFilter</span>.<span class="n">deny</span>());
-    }
+<span class="c">// Cap unique tag values per metric — drop overflow series entirely</span>
+<span class="k">const</span> <span class="n">MAX_TENANTS</span> <span class="o">=</span> <span class="num">100</span>;
+<span class="k">const</span> <span class="n">seenTenants</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Set</span>&lt;<span class="t">string</span>&gt;();
+<span class="k">function</span> <span class="n">withinCap</span>(<span class="n">tenant</span>: <span class="t">string</span>): <span class="t">boolean</span> {
+    <span class="k">if</span> (<span class="n">seenTenants</span>.<span class="n">has</span>(<span class="n">tenant</span>)) <span class="k">return true</span>;
+    <span class="k">if</span> (<span class="n">seenTenants</span>.<span class="n">size</span> <span class="o">&gt;=</span> <span class="n">MAX_TENANTS</span>) <span class="k">return false</span>;
+    <span class="n">seenTenants</span>.<span class="n">add</span>(<span class="n">tenant</span>);
+    <span class="k">return true</span>;
+}
 
-    <span class="c">// Use registered URI templates, not raw paths</span>
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">WebMvcTagsContributor</span> <span class="n">tenantTag</span>() {
-        <span class="k">return</span> <span class="k">new</span> <span class="t">WebMvcTagsContributor</span>() {
-            <span class="o">@</span><span class="t">Override</span>
-            <span class="k">public</span> <span class="t">Iterable</span><span class="o">&lt;</span><span class="t">Tag</span><span class="o">&gt;</span> <span class="n">getTags</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                                          <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                                          <span class="t">Object</span> <span class="n">handler</span>, <span class="t">Throwable</span> <span class="n">ex</span>) {
-                <span class="t">String</span> <span class="n">tenant</span> <span class="o">=</span> (<span class="t">String</span>) <span class="n">req</span>.<span class="n">getAttribute</span>(<span class="s">"tenantId"</span>);
-                <span class="k">return</span> <span class="t">List</span>.<span class="n">of</span>(<span class="t">Tag</span>.<span class="n">of</span>(<span class="s">"tenant"</span>, <span class="n">topOrOther</span>(<span class="n">tenant</span>)));
-            }
-            <span class="o">@</span><span class="t">Override</span>
-            <span class="k">public</span> <span class="t">Iterable</span><span class="o">&lt;</span><span class="t">Tag</span><span class="o">&gt;</span> <span class="n">getLongRequestTags</span>(
-                <span class="t">HttpServletRequest</span> <span class="n">r</span>, <span class="t">Object</span> <span class="n">h</span>) { <span class="k">return</span> <span class="t">List</span>.<span class="n">of</span>(); }
-        };
-    }
+<span class="k">const</span> <span class="n">TOP</span>: <span class="t">ReadonlySet</span>&lt;<span class="t">string</span>&gt; <span class="o">=</span> <span class="k">new</span> <span class="t">Set</span>([<span class="s">"acme"</span>, <span class="s">"globex"</span>, <span class="s">"initech"</span>]);
+<span class="k">function</span> <span class="n">topOrOther</span>(<span class="n">t</span>: <span class="t">string</span> | <span class="k">undefined</span>): <span class="t">string</span> {
+    <span class="k">return</span> <span class="n">t</span> <span class="o">!==</span> <span class="k">undefined</span> <span class="o">&amp;&amp;</span> <span class="n">TOP</span>.<span class="n">has</span>(<span class="n">t</span>) <span class="o">?</span> <span class="n">t</span> : <span class="s">"other"</span>;
+}
 
-    <span class="k">private static final</span> <span class="t">Set</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">TOP</span> <span class="o">=</span>
-        <span class="t">Set</span>.<span class="n">of</span>(<span class="s">"acme"</span>, <span class="s">"globex"</span>, <span class="s">"initech"</span>);
-
-    <span class="k">private static</span> <span class="t">String</span> <span class="n">topOrOther</span>(<span class="t">String</span> <span class="n">t</span>) {
-        <span class="k">return</span> <span class="n">t</span> <span class="o">!=</span> <span class="k">null</span> <span class="o">&amp;&amp;</span> <span class="n">TOP</span>.<span class="n">contains</span>(<span class="n">t</span>) <span class="o">?</span> <span class="n">t</span> : <span class="s">"other"</span>;
-    }
+<span class="c">// Use the matched Express route template, not req.path</span>
+<span class="k">export function</span> <span class="n">recordRequest</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="k">void</span> {
+    <span class="n">res</span>.<span class="n">on</span>(<span class="s">"finish"</span>, () <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">tenant</span> <span class="o">=</span> <span class="n">topOrOther</span>(<span class="n">res</span>.<span class="n">locals</span>.<span class="n">tenantId</span> <span class="k">as</span> <span class="t">string</span> | <span class="k">undefined</span>);
+        <span class="k">if</span> (<span class="o">!</span><span class="n">withinCap</span>(<span class="n">tenant</span>)) <span class="k">return</span>;                   <span class="c">// deny overflow</span>
+        <span class="n">requests</span>.<span class="n">inc</span>({
+            <span class="n">route</span>: <span class="n">req</span>.<span class="n">route</span> <span class="o">?</span> <span class="n">req</span>.<span class="n">baseUrl</span> <span class="o">+</span> <span class="n">req</span>.<span class="n">route</span>.<span class="n">path</span> : <span class="s">"unmatched"</span>,  <span class="c">// "/orders/:id"</span>
+            <span class="n">method</span>: <span class="n">req</span>.<span class="n">method</span>,
+            <span class="n">status</span>: <span class="t">String</span>(<span class="n">res</span>.<span class="n">statusCode</span>),
+            <span class="n">tenant</span>,
+        });
+    });
+    <span class="n">next</span>();
 }</pre></div>
     </div>
   </section>
@@ -1272,7 +1275,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c6-go">Go</button>
         <button class="tab py" data-target="c6-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c6-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c6-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Graceful degradation: feature flags + bounded fallbacks.</span>
 <span class="k">type</span> <span class="t">FeatureFlags</span> <span class="k">struct</span> {
@@ -1348,33 +1351,37 @@
     <span class="k">return</span> {<span class="s">"product"</span>: <span class="n">product</span>, <span class="s">"price"</span>: <span class="n">price</span>,
             <span class="s">"recommendations"</span>: <span class="n">recs_data</span>,
             <span class="s">"reviews"</span>: <span class="n">rev_data</span>, <span class="s">"degraded"</span>: <span class="n">degraded</span>}</pre></div>
-      <div class="code-pane" id="c6-java"><pre><span class="c">// Resilience4j: timeout + fallback per optional dependency.</span>
+      <div class="code-pane" id="c6-ts"><pre><span class="c">// opossum: timeout + circuit breaker + fallback per optional dependency.</span>
+<span class="k">import</span> <span class="t">CircuitBreaker</span> <span class="k">from</span> <span class="s">"opossum"</span>;
 
-<span class="o">@</span><span class="t">Service</span>
-<span class="k">public class</span> <span class="t">ProductPageService</span> {
-    <span class="k">private final</span> <span class="t">FeatureFlags</span> <span class="n">flags</span>;
-    <span class="k">private final</span> <span class="t">RecommendationClient</span> <span class="n">recsClient</span>;
+<span class="k">export class</span> <span class="t">ProductPageService</span> {
+    <span class="k">private readonly</span> <span class="n">recsBreaker</span>: <span class="t">CircuitBreaker</span>&lt;[<span class="t">string</span>], <span class="t">Product</span>[]&gt;;
 
-    <span class="o">@</span><span class="t">TimeLimiter</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"recs"</span>, <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">"recsFallback"</span>)
-    <span class="o">@</span><span class="t">CircuitBreaker</span>(<span class="n">name</span> <span class="o">=</span> <span class="s">"recs"</span>, <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">"recsFallback"</span>)
-    <span class="k">public</span> <span class="t">CompletableFuture</span><span class="o">&lt;</span><span class="t">List</span><span class="o">&lt;</span><span class="t">Product</span><span class="o">&gt;&gt;</span> <span class="n">recommendations</span>(<span class="t">String</span> <span class="n">id</span>) {
-        <span class="k">return</span> <span class="n">recsClient</span>.<span class="n">getAsync</span>(<span class="n">id</span>);
+    <span class="k">constructor</span>(
+        <span class="k">private readonly</span> <span class="n">flags</span>: <span class="t">FeatureFlags</span>,
+        <span class="k">private readonly</span> <span class="n">recsClient</span>: <span class="t">RecommendationClient</span>,
+    ) {
+        <span class="k">this</span>.<span class="n">recsBreaker</span> <span class="o">=</span> <span class="k">new</span> <span class="t">CircuitBreaker</span>((<span class="n">id</span>: <span class="t">string</span>) <span class="o">=&gt;</span> <span class="n">recsClient</span>.<span class="n">get</span>(<span class="n">id</span>), {
+            <span class="n">timeout</span>: <span class="num">100</span>,                        <span class="c">// ms — the time limiter</span>
+            <span class="n">errorThresholdPercentage</span>: <span class="num">50</span>,        <span class="c">// open after 50% failures</span>
+            <span class="n">resetTimeout</span>: <span class="num">10_000</span>,                <span class="c">// half-open after 10s</span>
+        });
+        <span class="c">// Fallback runs on timeout, error, or while the circuit is open</span>
+        <span class="k">this</span>.<span class="n">recsBreaker</span>.<span class="n">fallback</span>(() <span class="o">=&gt;</span> {
+            <span class="n">degraded</span>.<span class="n">inc</span>();
+            <span class="k">return</span> [];                           <span class="c">// empty</span>
+        });
     }
 
-    <span class="k">public</span> <span class="t">CompletableFuture</span><span class="o">&lt;</span><span class="t">List</span><span class="o">&lt;</span><span class="t">Product</span><span class="o">&gt;&gt;</span> <span class="n">recsFallback</span>(<span class="t">String</span> <span class="n">id</span>, <span class="t">Throwable</span> <span class="n">t</span>) {
-        <span class="n">degraded</span>.<span class="n">incrementAndGet</span>();
-        <span class="k">return</span> <span class="t">CompletableFuture</span>.<span class="n">completedFuture</span>(<span class="t">List</span>.<span class="n">of</span>());     <span class="c">// empty</span>
-    }
+    <span class="k">async</span> <span class="n">render</span>(<span class="n">id</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="t">ProductPage</span>&gt; {
+        <span class="k">const</span> <span class="n">product</span> <span class="o">=</span> <span class="k">await</span> <span class="n">products</span>.<span class="n">get</span>(<span class="n">id</span>);          <span class="c">// critical</span>
+        <span class="k">const</span> <span class="n">price</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pricing</span>.<span class="n">get</span>(<span class="n">id</span>);             <span class="c">// critical</span>
 
-    <span class="k">public</span> <span class="t">ProductPage</span> <span class="n">render</span>(<span class="t">String</span> <span class="n">id</span>) {
-        <span class="t">Product</span> <span class="n">product</span> <span class="o">=</span> <span class="n">products</span>.<span class="n">get</span>(<span class="n">id</span>);              <span class="c">// critical</span>
-        <span class="t">Price</span>   <span class="n">price</span>   <span class="o">=</span> <span class="n">pricing</span>.<span class="n">get</span>(<span class="n">id</span>);               <span class="c">// critical</span>
+        <span class="k">const</span> <span class="n">recs</span>: <span class="t">Product</span>[] <span class="o">=</span> <span class="k">this</span>.<span class="n">flags</span>.<span class="n">recsEnabled</span>()
+            <span class="o">?</span> <span class="k">await this</span>.<span class="n">recsBreaker</span>.<span class="n">fire</span>(<span class="n">id</span>)
+            : [];
 
-        <span class="t">List</span><span class="o">&lt;</span><span class="t">Product</span><span class="o">&gt;</span> <span class="n">recs</span> <span class="o">=</span> <span class="n">flags</span>.<span class="n">recsEnabled</span>()
-            <span class="o">?</span> <span class="n">recommendations</span>(<span class="n">id</span>).<span class="n">join</span>()
-            : <span class="t">List</span>.<span class="n">of</span>();
-
-        <span class="k">return</span> <span class="k">new</span> <span class="t">ProductPage</span>(<span class="n">product</span>, <span class="n">price</span>, <span class="n">recs</span>);
+        <span class="k">return</span> { <span class="n">product</span>, <span class="n">price</span>, <span class="n">recs</span> };
     }
 }</pre></div>
     </div>
@@ -1503,7 +1510,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
         <button class="tab py" data-target="c7-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c7-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Bounded concurrency + load shedding via semaphore.</span>
 <span class="k">type</span> <span class="t">SheddingHandler</span> <span class="k">struct</span> {
@@ -1579,46 +1586,53 @@
     <span class="k">if</span> <span class="n">req</span>.<span class="n">url</span>.<span class="n">path</span>.<span class="n">startswith</span>(<span class="s">"/v1/checkout"</span>): <span class="k">return</span> <span class="num">0</span>
     <span class="k">if</span> <span class="n">req</span>.<span class="n">url</span>.<span class="n">path</span>.<span class="n">startswith</span>(<span class="s">"/v1/analytics"</span>): <span class="k">return</span> <span class="num">9</span>
     <span class="k">return</span> <span class="num">5</span></pre></div>
-      <div class="code-pane" id="c7-java"><pre><span class="c">// Resilience4j Bulkhead — semaphore-bounded concurrency.</span>
+      <div class="code-pane" id="c7-ts"><pre><span class="c">// Bulkhead middleware — semaphore-bounded concurrency with a short wait.</span>
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">BulkheadConfig</span> {
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">BulkheadRegistry</span> <span class="n">bulkheads</span>() {
-        <span class="t">io.github.resilience4j.bulkhead.BulkheadConfig</span> <span class="n">cfg</span> <span class="o">=</span>
-            <span class="t">io.github.resilience4j.bulkhead.BulkheadConfig</span>.<span class="k">custom</span>()
-                .<span class="n">maxConcurrentCalls</span>(<span class="num">100</span>)
-                .<span class="n">maxWaitDuration</span>(<span class="t">Duration</span>.<span class="n">ofMillis</span>(<span class="num">50</span>))
-                .<span class="n">build</span>();
-        <span class="k">return</span> <span class="t">BulkheadRegistry</span>.<span class="n">of</span>(<span class="n">cfg</span>);
+<span class="k">class</span> <span class="t">Bulkhead</span> {
+    <span class="k">private</span> <span class="n">inFlight</span> <span class="o">=</span> <span class="num">0</span>;
+    <span class="k">private readonly</span> <span class="n">waiters</span>: <span class="t">Array</span>&lt;() <span class="o">=&gt;</span> <span class="k">void</span>&gt; <span class="o">=</span> [];
+
+    <span class="k">constructor</span>(
+        <span class="k">private readonly</span> <span class="n">maxConcurrentCalls</span>: <span class="t">number</span>,
+        <span class="k">private readonly</span> <span class="n">maxWaitMs</span>: <span class="t">number</span>,
+    ) {}
+
+    <span class="c">// true if a slot is free now or frees up within maxWaitMs</span>
+    <span class="n">tryAcquirePermission</span>(): <span class="t">Promise</span>&lt;<span class="t">boolean</span>&gt; {
+        <span class="k">if</span> (<span class="k">this</span>.<span class="n">inFlight</span> <span class="o">&lt;</span> <span class="k">this</span>.<span class="n">maxConcurrentCalls</span>) {
+            <span class="k">this</span>.<span class="n">inFlight</span><span class="o">++</span>;
+            <span class="k">return</span> <span class="t">Promise</span>.<span class="n">resolve</span>(<span class="k">true</span>);
+        }
+        <span class="k">return new</span> <span class="t">Promise</span>((<span class="n">resolve</span>) <span class="o">=&gt;</span> {
+            <span class="k">const</span> <span class="n">grant</span> <span class="o">=</span> () <span class="o">=&gt;</span> { <span class="n">clearTimeout</span>(<span class="n">timer</span>); <span class="n">resolve</span>(<span class="k">true</span>); };
+            <span class="k">const</span> <span class="n">timer</span> <span class="o">=</span> <span class="n">setTimeout</span>(() <span class="o">=&gt;</span> {
+                <span class="k">this</span>.<span class="n">waiters</span>.<span class="n">splice</span>(<span class="k">this</span>.<span class="n">waiters</span>.<span class="n">indexOf</span>(<span class="n">grant</span>), <span class="num">1</span>);
+                <span class="n">resolve</span>(<span class="k">false</span>);
+            }, <span class="k">this</span>.<span class="n">maxWaitMs</span>);
+            <span class="k">this</span>.<span class="n">waiters</span>.<span class="n">push</span>(<span class="n">grant</span>);
+        });
+    }
+
+    <span class="n">onComplete</span>(): <span class="k">void</span> {
+        <span class="k">const</span> <span class="n">next</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">waiters</span>.<span class="n">shift</span>();
+        <span class="k">if</span> (<span class="n">next</span>) <span class="n">next</span>();                    <span class="c">// hand the slot straight over</span>
+        <span class="k">else this</span>.<span class="n">inFlight</span><span class="o">--</span>;
     }
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">LoadShedder</span> <span class="k">implements</span> <span class="t">Filter</span> {
-    <span class="k">private final</span> <span class="t">Bulkhead</span> <span class="n">bulkhead</span>;
+<span class="k">const</span> <span class="n">bulkhead</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Bulkhead</span>(<span class="num">100</span>, <span class="num">50</span>);   <span class="c">// maxConcurrentCalls, maxWait ms</span>
 
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">public void</span> <span class="n">doFilter</span>(<span class="t">ServletRequest</span> <span class="n">req</span>, <span class="t">ServletResponse</span> <span class="n">res</span>,
-                         <span class="t">FilterChain</span> <span class="n">chain</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="t">HttpServletRequest</span>  <span class="n">hreq</span> <span class="o">=</span> (<span class="t">HttpServletRequest</span>)  <span class="n">req</span>;
-        <span class="t">HttpServletResponse</span> <span class="n">hres</span> <span class="o">=</span> (<span class="t">HttpServletResponse</span>) <span class="n">res</span>;
-
-        <span class="c">// Health probes bypass the bulkhead</span>
-        <span class="k">if</span> (<span class="n">hreq</span>.<span class="n">getRequestURI</span>().<span class="n">startsWith</span>(<span class="s">"/actuator/"</span>)) {
-            <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>); <span class="k">return</span>;
-        }
-        <span class="k">if</span> (<span class="o">!</span><span class="n">bulkhead</span>.<span class="n">tryAcquirePermission</span>()) {
-            <span class="n">hres</span>.<span class="n">setHeader</span>(<span class="s">"Retry-After"</span>, <span class="s">"1"</span>);
-            <span class="n">hres</span>.<span class="n">sendError</span>(<span class="num">503</span>, <span class="s">"overloaded"</span>);
-            <span class="k">return</span>;
-        }
-        <span class="k">try</span> {
-            <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>);
-        } <span class="k">finally</span> {
-            <span class="n">bulkhead</span>.<span class="n">onComplete</span>();
-        }
+<span class="k">export async function</span> <span class="n">loadShedder</span>(<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>,
+                                  <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="c">// Health probes bypass the bulkhead</span>
+    <span class="k">if</span> (<span class="n">req</span>.<span class="n">path</span>.<span class="n">startsWith</span>(<span class="s">"/health/"</span>)) <span class="k">return</span> <span class="n">next</span>();
+    <span class="k">if</span> (<span class="o">!</span>(<span class="k">await</span> <span class="n">bulkhead</span>.<span class="n">tryAcquirePermission</span>())) {
+        <span class="n">res</span>.<span class="n">set</span>(<span class="s">"Retry-After"</span>, <span class="s">"1"</span>).<span class="n">status</span>(<span class="num">503</span>).<span class="n">send</span>(<span class="s">"overloaded"</span>);
+        <span class="k">return</span>;
     }
+    <span class="n">res</span>.<span class="n">on</span>(<span class="s">"close"</span>, () <span class="o">=&gt;</span> <span class="n">bulkhead</span>.<span class="n">onComplete</span>());   <span class="c">// fires once per request</span>
+    <span class="n">next</span>();
 }</pre></div>
     </div>
   </section>
@@ -1720,7 +1734,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c8-go">Go</button>
         <button class="tab py" data-target="c8-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c8-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c8-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Argo Rollouts CRD — declarative canary with auto-promote.</span>
 <span class="c">// rollout.yaml</span>
@@ -1811,40 +1825,46 @@
     <span class="k">global</span> <span class="n">_warmed</span>
     <span class="n">_warmed</span> <span class="o">=</span> <span class="k">False</span>
     <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>(<span class="num">10</span>)              <span class="c"># let in-flight finish</span></pre></div>
-      <div class="code-pane" id="c8-java"><pre><span class="c">// Spring Boot Actuator + Kubernetes-aware probes.</span>
+      <div class="code-pane" id="c8-ts"><pre><span class="c">// Express health endpoints + Kubernetes-aware probes.</span>
+<span class="k">import</span> { <span class="t">Router</span> } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
-<span class="o">@</span><span class="t">Configuration</span>
-<span class="k">public class</span> <span class="t">HealthProbes</span> {
+<span class="k">export function</span> <span class="n">healthProbes</span>(<span class="n">db</span>: <span class="t">Pool</span>, <span class="n">cache</span>: <span class="t">ProductCache</span>): <span class="t">Router</span> {
+    <span class="k">let</span> <span class="n">warmed</span> <span class="o">=</span> <span class="k">false</span>;
 
-    <span class="o">@</span><span class="t">Bean</span>
-    <span class="k">public</span> <span class="t">HealthIndicator</span> <span class="n">readinessWarmup</span>(<span class="t">DataSource</span> <span class="n">ds</span>,
-                                              <span class="t">CacheManager</span> <span class="n">cache</span>) {
-        <span class="t">AtomicBoolean</span> <span class="n">warmed</span> <span class="o">=</span> <span class="k">new</span> <span class="t">AtomicBoolean</span>(<span class="k">false</span>);
-        <span class="t">CompletableFuture</span>.<span class="n">runAsync</span>(() <span class="o">-&gt;</span> {
-            <span class="k">try</span> (<span class="t">var</span> <span class="n">c</span> <span class="o">=</span> <span class="n">ds</span>.<span class="n">getConnection</span>()) {
-                <span class="n">c</span>.<span class="n">isValid</span>(<span class="num">2</span>);
-                <span class="n">cache</span>.<span class="n">getCache</span>(<span class="s">"products"</span>);
-                <span class="n">warmed</span>.<span class="n">set</span>(<span class="k">true</span>);
-            } <span class="k">catch</span> (<span class="t">Exception</span> <span class="n">e</span>) { <span class="c">/* keep retrying */</span> }
-        });
+    <span class="c">// Warm up in the background: validate a pg connection, prefill cache</span>
+    <span class="k">void</span> (<span class="k">async</span> () <span class="o">=&gt;</span> {
+        <span class="k">try</span> {
+            <span class="k">const</span> <span class="n">c</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">connect</span>();
+            <span class="k">try</span> {
+                <span class="k">await</span> <span class="n">c</span>.<span class="n">query</span>(<span class="s">"SELECT 1"</span>);
+                <span class="k">await</span> <span class="n">cache</span>.<span class="n">prefill</span>(<span class="s">"products"</span>);
+                <span class="n">warmed</span> <span class="o">=</span> <span class="k">true</span>;
+            } <span class="k">finally</span> {
+                <span class="n">c</span>.<span class="n">release</span>();
+            }
+        } <span class="k">catch</span> { <span class="c">/* keep retrying */</span> }
+    })();
 
-        <span class="k">return</span> () <span class="o">-&gt;</span> <span class="n">warmed</span>.<span class="n">get</span>()
-            <span class="o">?</span> <span class="t">Health</span>.<span class="n">up</span>().<span class="n">build</span>()
-            : <span class="t">Health</span>.<span class="n">outOfService</span>().<span class="n">withDetail</span>(<span class="s">"phase"</span>, <span class="s">"warming"</span>).<span class="n">build</span>();
-    }
+    <span class="k">const</span> <span class="n">router</span> <span class="o">=</span> <span class="t">Router</span>();
+    <span class="c">// Liveness — only fails if the Node process itself is broken</span>
+    <span class="n">router</span>.<span class="n">get</span>(<span class="s">"/health/live"</span>, (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+        <span class="n">res</span>.<span class="n">json</span>({ <span class="n">status</span>: <span class="s">"UP"</span> });
+    });
+    <span class="c">// Readiness — no traffic until db, cache and warm-up are OK</span>
+    <span class="n">router</span>.<span class="n">get</span>(<span class="s">"/health/ready"</span>, (<span class="n">_req</span>, <span class="n">res</span>) <span class="o">=&gt;</span> {
+        <span class="k">if</span> (<span class="o">!</span><span class="n">warmed</span>) {
+            <span class="n">res</span>.<span class="n">status</span>(<span class="num">503</span>).<span class="n">json</span>({ <span class="n">status</span>: <span class="s">"OUT_OF_SERVICE"</span>, <span class="n">phase</span>: <span class="s">"warming"</span> });
+            <span class="k">return</span>;
+        }
+        <span class="n">res</span>.<span class="n">json</span>({ <span class="n">status</span>: <span class="s">"UP"</span> });
+    });
+    <span class="k">return</span> <span class="n">router</span>;
 }
 
-<span class="c">// application.yaml — separate liveness vs readiness</span>
-<span class="c">// management:</span>
-<span class="c">//   endpoint:</span>
-<span class="c">//     health:</span>
-<span class="c">//       probes:</span>
-<span class="c">//         enabled: true</span>
-<span class="c">//       group:</span>
-<span class="c">//         readiness:</span>
-<span class="c">//           include: db, redis, readinessWarmup</span>
-<span class="c">//         liveness:</span>
-<span class="c">//           include: ping             # only fails if the JVM is broken</span></pre></div>
+<span class="c">// deployment.yaml — separate liveness vs readiness</span>
+<span class="c">//   livenessProbe:  { httpGet: { path: /health/live,  port: 8080 } }</span>
+<span class="c">//   readinessProbe: { httpGet: { path: /health/ready, port: 8080 } }</span></pre></div>
     </div>
   </section>
 
@@ -1973,8 +1993,8 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c9-java">Java · Spring Boot</button>
+        <button class="tab py" data-target="c9-py">Python · Alembic</button>
+        <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Phase 2: dual-write while a backfill job runs in the background.</span>
 
@@ -2054,53 +2074,55 @@
 <span class="c"># --- 003_contract.py · Phase 4, AFTER all reads switched ---</span>
 <span class="k">def</span> <span class="n">upgrade</span>():
     <span class="n">op</span>.<span class="n">drop_column</span>(<span class="s">"users"</span>, <span class="s">"email_old"</span>)              <span class="c"># at last</span></pre></div>
-      <div class="code-pane" id="c9-java"><pre><span class="c">// Liquibase changesets — one per phase, run at separate deploys.</span>
+      <div class="code-pane" id="c9-ts"><pre><span class="c">// node-pg-migrate migrations — one per phase, run at separate deploys.</span>
 
-<span class="c">// --- 001-expand.xml · Phase 1: add nullable column ---</span>
-<span class="c">// &lt;changeSet id="add-email-new" author="ops"&gt;</span>
-<span class="c">//   &lt;addColumn tableName="users"&gt;</span>
-<span class="c">//     &lt;column name="email_new" type="varchar(255)"/&gt;</span>
-<span class="c">//   &lt;/addColumn&gt;</span>
-<span class="c">// &lt;/changeSet&gt;</span>
+<span class="c">// --- 001_expand.ts · Phase 1: add nullable column ---</span>
+<span class="c">// export const up = (pgm: MigrationBuilder) =&gt;</span>
+<span class="c">//     pgm.addColumn("users", { email_new: { type: "varchar(255)" } });</span>
 
 <span class="c">// --- App layer: dual-write + flag-gated read ---</span>
-<span class="o">@</span><span class="t">Repository</span>
-<span class="k">public class</span> <span class="t">UserRepo</span> {
-    <span class="k">private final</span> <span class="t">JdbcTemplate</span> <span class="n">jdbc</span>;
-    <span class="k">private final</span> <span class="t">FeatureFlags</span> <span class="n">flags</span>;
+<span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
+<span class="k">import</span> { <span class="n">setTimeout</span> <span class="k">as</span> <span class="n">sleep</span> } <span class="k">from</span> <span class="s">"node:timers/promises"</span>;
 
-    <span class="k">public void</span> <span class="n">updateEmail</span>(<span class="k">long</span> <span class="n">id</span>, <span class="t">String</span> <span class="n">email</span>) {
-        <span class="n">jdbc</span>.<span class="n">update</span>(
-            <span class="s">"UPDATE users SET email_old = ?, email_new = ? WHERE id = ?"</span>,
-            <span class="n">email</span>, <span class="n">email</span>, <span class="n">id</span>);
+<span class="k">export class</span> <span class="t">UserRepo</span> {
+    <span class="k">constructor</span>(
+        <span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>,
+        <span class="k">private readonly</span> <span class="n">flags</span>: <span class="t">FeatureFlags</span>,
+    ) {}
+
+    <span class="k">async</span> <span class="n">updateEmail</span>(<span class="n">id</span>: <span class="t">number</span>, <span class="n">email</span>: <span class="t">string</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+        <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>(
+            <span class="s">"UPDATE users SET email_old = $1, email_new = $1 WHERE id = $2"</span>,
+            [<span class="n">email</span>, <span class="n">id</span>]);
     }
 
-    <span class="k">public</span> <span class="t">String</span> <span class="n">getEmail</span>(<span class="k">long</span> <span class="n">id</span>) {
-        <span class="t">String</span> <span class="n">col</span> <span class="o">=</span> <span class="n">flags</span>.<span class="n">enabled</span>(<span class="s">"users.read_email_new"</span>)
-            <span class="o">?</span> <span class="s">"email_new"</span> <span class="o">:</span> <span class="s">"email_old"</span>;
-        <span class="k">return</span> <span class="n">jdbc</span>.<span class="n">queryForObject</span>(
-            <span class="s">"SELECT "</span> <span class="o">+</span> <span class="n">col</span> <span class="o">+</span> <span class="s">" FROM users WHERE id = ?"</span>,
-            <span class="t">String</span>.<span class="k">class</span>, <span class="n">id</span>);
+    <span class="k">async</span> <span class="n">getEmail</span>(<span class="n">id</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="t">string</span>&gt; {
+        <span class="k">const</span> <span class="n">col</span> <span class="o">=</span> <span class="k">this</span>.<span class="n">flags</span>.<span class="n">enabled</span>(<span class="s">"users.read_email_new"</span>)
+            <span class="o">?</span> <span class="s">"email_new"</span> : <span class="s">"email_old"</span>;
+        <span class="k">const</span> { <span class="n">rows</span> } <span class="o">=</span> <span class="k">await this</span>.<span class="n">db</span>.<span class="n">query</span>&lt;{ <span class="n">email</span>: <span class="t">string</span> }&gt;(
+            <span class="s">`SELECT ${</span><span class="n">col</span><span class="s">} AS email FROM users WHERE id = $1`</span>, [<span class="n">id</span>]);
+        <span class="k">return</span> <span class="n">rows</span>[<span class="num">0</span>].<span class="n">email</span>;
     }
 }
 
-<span class="c">// --- Backfill: Spring Batch / scheduled job ---</span>
-<span class="o">@</span><span class="t">Scheduled</span>(<span class="n">fixedDelay</span> <span class="o">=</span> <span class="num">100</span>)
-<span class="k">public void</span> <span class="n">backfill</span>() {
-    <span class="k">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">jdbc</span>.<span class="n">update</span>(<span class="s">"""
-        UPDATE users SET email_new = email_old
-         WHERE id IN (
-             SELECT id FROM users WHERE email_new IS NULL
-             ORDER BY id LIMIT 1000
-         )
-    """</span>);
-    <span class="k">if</span> (<span class="n">n</span> <span class="o">==</span> <span class="num">0</span>) <span class="n">scheduler</span>.<span class="n">cancel</span>(<span class="s">"backfill"</span>);
+<span class="c">// --- Backfill: background job, small batches ---</span>
+<span class="k">export async function</span> <span class="n">backfill</span>(<span class="n">db</span>: <span class="t">Pool</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">for</span> (;;) {
+        <span class="k">const</span> { <span class="n">rowCount</span> } <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">query</span>(<span class="s">`
+            UPDATE users SET email_new = email_old
+             WHERE id IN (
+                 SELECT id FROM users WHERE email_new IS NULL
+                 ORDER BY id LIMIT 1000
+             )
+        `</span>);
+        <span class="k">if</span> (<span class="n">rowCount</span> <span class="o">===</span> <span class="num">0</span>) <span class="k">return</span>;                  <span class="c">// done</span>
+        <span class="k">await</span> <span class="n">sleep</span>(<span class="num">100</span>);                            <span class="c">// don't saturate I/O</span>
+    }
 }
 
-<span class="c">// --- 004-contract.xml · Phase 4: drop old column ---</span>
-<span class="c">// &lt;changeSet id="drop-email-old" author="ops"&gt;</span>
-<span class="c">//   &lt;dropColumn tableName="users" columnName="email_old"/&gt;</span>
-<span class="c">// &lt;/changeSet&gt;</span></pre></div>
+<span class="c">// --- 004_contract.ts · Phase 4: drop old column ---</span>
+<span class="c">// export const up = (pgm: MigrationBuilder) =&gt;</span>
+<span class="c">//     pgm.dropColumn("users", "email_old");</span></pre></div>
     </div>
   </section>
 
@@ -2232,7 +2254,7 @@
       <div class="code-tabs">
         <button class="tab go active" data-target="c10-go">Go</button>
         <button class="tab py" data-target="c10-py">Python · FastAPI</button>
-        <button class="tab java" data-target="c10-java">Java · Spring Boot</button>
+        <button class="tab ts" data-target="c10-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// Mitigation toggle: a single env-var flip can disable an offending feature</span>
 <span class="c">// or whole tenant during an incident. The on-call doesn't deploy code at 3am.</span>
@@ -2299,44 +2321,45 @@
             <span class="s">"text"</span>: <span class="n">f</span><span class="s">"🚨 {severity} · {title}\nIC: claim with /ic"</span>,
         })
     <span class="n">log</span>.<span class="n">error</span>(<span class="s">"incident_opened"</span>, <span class="n">title</span><span class="o">=</span><span class="n">title</span>, <span class="n">severity</span><span class="o">=</span><span class="n">severity</span>)</pre></div>
-      <div class="code-pane" id="c10-java"><pre><span class="c">// Spring kill switch + scheduled postmortem reminder.</span>
+      <div class="code-pane" id="c10-ts"><pre><span class="c">// Express kill switch + scheduled postmortem reminder.</span>
+<span class="k">import</span> <span class="n">cron</span> <span class="k">from</span> <span class="s">"node-cron"</span>;
+<span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="o">@</span><span class="t">ConfigurationProperties</span>(<span class="n">prefix</span> <span class="o">=</span> <span class="s">"incident"</span>)
-<span class="k">public class</span> <span class="t">KillSwitch</span> {
-    <span class="k">private volatile boolean</span> <span class="n">disabled</span> <span class="o">=</span> <span class="k">false</span>;
-    <span class="k">private volatile</span> <span class="t">Set</span><span class="o">&lt;</span><span class="t">String</span><span class="o">&gt;</span> <span class="n">disabledTenants</span> <span class="o">=</span> <span class="t">Set</span>.<span class="n">of</span>();
+<span class="k">export class</span> <span class="t">KillSwitch</span> {
+    <span class="k">private</span> <span class="n">disabled</span> <span class="o">=</span> <span class="k">false</span>;
+    <span class="k">private</span> <span class="n">disabledTenants</span>: <span class="t">ReadonlySet</span>&lt;<span class="t">string</span>&gt; <span class="o">=</span> <span class="k">new</span> <span class="t">Set</span>();
 
-    <span class="k">public boolean</span> <span class="n">allow</span>(<span class="t">String</span> <span class="n">tenant</span>) {
-        <span class="k">return</span> <span class="o">!</span><span class="n">disabled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">disabledTenants</span>.<span class="n">contains</span>(<span class="n">tenant</span>);
+    <span class="n">allow</span>(<span class="n">tenant</span>: <span class="t">string</span>): <span class="t">boolean</span> {
+        <span class="k">return</span> <span class="o">!</span><span class="k">this</span>.<span class="n">disabled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span>.<span class="n">disabledTenants</span>.<span class="n">has</span>(<span class="n">tenant</span>);
     }
-    <span class="c">// Setters re-bind on @RefreshScope events from config server</span>
+
+    <span class="c">// Re-bind on change events from the config store — no redeploy</span>
+    <span class="n">update</span>(<span class="n">cfg</span>: { <span class="n">disabled</span>: <span class="t">boolean</span>; <span class="n">disabledTenants</span>: <span class="t">string</span>[] }): <span class="k">void</span> {
+        <span class="k">this</span>.<span class="n">disabled</span> <span class="o">=</span> <span class="n">cfg</span>.<span class="n">disabled</span>;
+        <span class="k">this</span>.<span class="n">disabledTenants</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Set</span>(<span class="n">cfg</span>.<span class="n">disabledTenants</span>);
+    }
 }
 
-<span class="o">@</span><span class="t">Component</span>
-<span class="k">public class</span> <span class="t">KillFilter</span> <span class="k">extends</span> <span class="t">OncePerRequestFilter</span> {
-    <span class="k">private final</span> <span class="t">KillSwitch</span> <span class="n">kill</span>;
-
-    <span class="o">@</span><span class="t">Override</span>
-    <span class="k">protected void</span> <span class="n">doFilterInternal</span>(<span class="t">HttpServletRequest</span> <span class="n">req</span>,
-                                    <span class="t">HttpServletResponse</span> <span class="n">res</span>,
-                                    <span class="t">FilterChain</span> <span class="n">chain</span>) <span class="k">throws</span> <span class="t">Exception</span> {
-        <span class="t">String</span> <span class="n">tenant</span> <span class="o">=</span> (<span class="t">String</span>) <span class="n">req</span>.<span class="n">getAttribute</span>(<span class="s">"tenantId"</span>);
+<span class="k">export function</span> <span class="n">killFilter</span>(<span class="n">kill</span>: <span class="t">KillSwitch</span>) {
+    <span class="k">return</span> (<span class="n">req</span>: <span class="t">Request</span>, <span class="n">res</span>: <span class="t">Response</span>, <span class="n">next</span>: <span class="t">NextFunction</span>): <span class="k">void</span> <span class="o">=&gt;</span> {
+        <span class="k">const</span> <span class="n">tenant</span> <span class="o">=</span> <span class="n">res</span>.<span class="n">locals</span>.<span class="n">tenantId</span> <span class="k">as</span> <span class="t">string</span>;
         <span class="k">if</span> (<span class="o">!</span><span class="n">kill</span>.<span class="n">allow</span>(<span class="n">tenant</span>)) {
-            <span class="n">res</span>.<span class="n">setHeader</span>(<span class="s">"Retry-After"</span>, <span class="s">"60"</span>);
-            <span class="n">res</span>.<span class="n">sendError</span>(<span class="num">503</span>, <span class="s">"temporarily unavailable"</span>); <span class="k">return</span>;
+            <span class="n">res</span>.<span class="n">set</span>(<span class="s">"Retry-After"</span>, <span class="s">"60"</span>).<span class="n">status</span>(<span class="num">503</span>)
+                .<span class="n">send</span>(<span class="s">"temporarily unavailable"</span>);
+            <span class="k">return</span>;
         }
-        <span class="n">chain</span>.<span class="n">doFilter</span>(<span class="n">req</span>, <span class="n">res</span>);
-    }
+        <span class="n">next</span>();
+    };
 }
 
 <span class="c">// Postmortem reminder — every Mon 9am, ping owners of open incidents.</span>
-<span class="o">@</span><span class="t">Scheduled</span>(<span class="n">cron</span> <span class="o">=</span> <span class="s">"0 0 9 * * MON"</span>)
-<span class="k">public void</span> <span class="n">remindOpenPostmortems</span>() {
-    <span class="n">incidentRepo</span>.<span class="n">findByPostmortemMissing</span>(<span class="t">Duration</span>.<span class="n">ofDays</span>(<span class="num">5</span>))
-        .<span class="n">forEach</span>(<span class="n">i</span> <span class="o">-&gt;</span> <span class="n">slack</span>.<span class="n">remind</span>(<span class="n">i</span>.<span class="n">commander</span>(),
-            <span class="s">"Postmortem due for INC-"</span> <span class="o">+</span> <span class="n">i</span>.<span class="n">id</span>()));
-}</pre></div>
+<span class="k">const</span> <span class="n">FIVE_DAYS_MS</span> <span class="o">=</span> <span class="num">5</span> <span class="o">*</span> <span class="num">24</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">60</span> <span class="o">*</span> <span class="num">1000</span>;
+<span class="n">cron</span>.<span class="n">schedule</span>(<span class="s">"0 9 * * MON"</span>, <span class="k">async</span> () <span class="o">=&gt;</span> {
+    <span class="k">const</span> <span class="n">open</span> <span class="o">=</span> <span class="k">await</span> <span class="n">incidentRepo</span>.<span class="n">findByPostmortemMissing</span>(<span class="n">FIVE_DAYS_MS</span>);
+    <span class="k">for</span> (<span class="k">const</span> <span class="n">i</span> <span class="k">of</span> <span class="n">open</span>) {
+        <span class="k">await</span> <span class="n">slack</span>.<span class="n">remind</span>(<span class="n">i</span>.<span class="n">commander</span>, <span class="s">`Postmortem due for INC-${</span><span class="n">i</span>.<span class="n">id</span><span class="s">}`</span>);
+    }
+});</pre></div>
     </div>
   </section>
 
