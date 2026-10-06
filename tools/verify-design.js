@@ -16,7 +16,8 @@
    6  Every page carries the shell: sidebar toggle, and the scripts in order.
    7  No fourth navigation tier.
    8  Diagrams use tokens: no hex colours in SVG attributes.
-   9  Vendored files are byte-identical to the system (hashes below).        */
+   9  Vendored files are byte-identical to the system (hashes below).
+  10  Every page links the site icon, and the icon files exist.              */
 
 'use strict';
 const fs = require('fs');
@@ -66,10 +67,18 @@ for (const f of pages) {
 
   if (/hf-nav__link--t4/.test(html)) fail(7, `${f}: fourth nav tier`);
 
+  for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/apple-touch-icon.png']) {
+    if (!html.includes(`href="${icon}"`)) fail(10, `${f}: does not link ${icon}`);
+  }
+
   for (const svg of html.match(/<svg[\s\S]*?<\/svg>/g) || []) {
     const hex = svg.match(/\b(?:fill|stroke|stop-color)="#[0-9a-fA-F]{3,8}"/g);
     if (hex) { fail(8, `${f}: hex colour in a diagram: ${hex[0]}`); break; }
   }
+}
+
+for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/apple-touch-icon.png']) {
+  if (!fs.existsSync(rel(icon))) fail(10, `${icon} is missing -- run python tools/build-icons.py`);
 }
 
 /* 9 ----------------------------------------------------------------------- */
