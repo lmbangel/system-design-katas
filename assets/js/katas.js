@@ -33,6 +33,28 @@
     b.classList.add('is-current-parent');
   });
 
+  // The sidebar is the site's navigation, so "where am I" must be visible in
+  // it. Scroll the nav -- only the nav, never the page -- to bring an item in.
+  var nav = document.querySelector('.hf-nav');
+  function revealInNav(el, align) {
+    if (!nav || !el) return;
+    var n = nav.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if (align === 'top') {
+      nav.scrollTop += r.top - n.top - 8;
+    } else if (r.top < n.top) {
+      nav.scrollTop -= n.top - r.top + 8;
+    } else if (r.bottom > n.bottom) {
+      nav.scrollTop += r.bottom - n.bottom + 8;
+    }
+  }
+  var here = document.querySelector('.hf-nav [aria-current="page"]');
+  if (here) {
+    var rect = here.getBoundingClientRect(), box = nav.getBoundingClientRect();
+    // Pages low in the list open with their item at the top of the nav, so
+    // their expanded sections are on screen; pages already visible stay put.
+    if (rect.bottom > box.bottom - box.height / 3) revealInNav(here, 'top');
+  }
+
   /* -------------------------------------------------------- 2 code tabs */
 
   document.querySelectorAll('.code-block').forEach(function (block) {
@@ -82,6 +104,7 @@
       if (spyLinks[id]) {
         spyLinks[id].classList.add('is-active');
         spyLinks[id].setAttribute('aria-current', 'location');
+        revealInNav(spyLinks[id]);
       }
     };
 

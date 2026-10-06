@@ -42,8 +42,25 @@
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
-      <div class="hf-nav__section">Prepare</div>
-      <div class="hf-nav__item"><a class="hf-nav__link is-active" aria-current="page" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="prep-checklist.html" aria-current="page">
+          <i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#coverage-area" title="Your coverage"><span class="hf-nav__text">Your coverage</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-1" title="1. System Design"><span class="hf-nav__text">1. System Design</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-2" title="2. Coding Rounds"><span class="hf-nav__text">2. Coding Rounds</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-3" title="3. Behavioural &amp; Leadership"><span class="hf-nav__text">3. Behavioural &amp; Leadership</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-4" title="4. Back-of-Envelope Estimation"><span class="hf-nav__text">4. Back-of-Envelope Estimation</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-5" title="5. Networking &amp; Infrastructure"><span class="hf-nav__text">5. Networking &amp; Infrastructure</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-6" title="6. SQL &amp; Schema Design"><span class="hf-nav__text">6. SQL &amp; Schema Design</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#study-plan" title="Four-week plan"><span class="hf-nav__text">Four-week plan</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#reminders-area" title="Interview day reminders"><span class="hf-nav__text">Interview day reminders</span></a></div>
+        </div>
+      </div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
     </nav>
 
     <div class="hf-sidebar__foot">
@@ -66,8 +83,8 @@
       <div class="hf-header__spacer"></div>
 
       <div class="hf-header__actions">
-        <a class="hf-iconbtn" href="order-fulfilment.html" aria-label="Previous: B · Order fulfilment" title="Previous: B · Order fulfilment"><i class="bi bi-arrow-left"></i></a>
-        <a class="hf-iconbtn" href="index.html" aria-label="Next: Overview" title="Next: Overview"><i class="bi bi-arrow-right"></i></a>
+        <a class="hf-iconbtn" href="order-fulfilment.html" aria-label="Previous: Order fulfilment" title="Previous: Order fulfilment"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="books.html" aria-label="Next: Recommended books" title="Next: Recommended books"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
 
@@ -89,7 +106,7 @@
   <!-- COVERAGE SCORECARD                                      -->
   <!-- ═══════════════════════════════════════════════════════ -->
 
-  <section class="hf-section kt-coverage" aria-labelledby="coverage">
+  <section class="hf-section kt-coverage" id="coverage-area" data-nav="Your coverage" aria-labelledby="coverage">
     <div class="hf-section__head">
       <h2 class="hf-section__title" id="coverage">Your coverage right now</h2>
       <p class="hf-meta">Based on the 9 pages in this guide and the 4 recommended books.</p>
@@ -140,7 +157,7 @@
 
   <div class="checklist">
 
-    <div class="check-section">
+    <div class="check-section" id="area-1" data-nav="1. System Design">
       <h3><span class="hf-status hf-status--success">Covered</span> 1. System Design</h3>
       <div class="sub">The core of senior interviews. You're strong here — review, don't re-learn.</div>
 
@@ -185,7 +202,7 @@
     <!-- AREA 2: CODING                                         -->
     <!-- ═══════════════════════════════════════════════════════ -->
 
-    <div class="check-section">
+    <div class="check-section" id="area-2" data-nav="2. Coding Rounds">
       <h3><span class="hf-status hf-status--danger">Gap</span> 2. Coding Rounds</h3>
       <div class="sub">The biggest gap. Senior coding rounds test practical problem-solving, not LeetCode hards. Focus on medium-level problems in your primary language.</div>
 
@@ -248,7 +265,7 @@
     <!-- AREA 3: BEHAVIOURAL                                    -->
     <!-- ═══════════════════════════════════════════════════════ -->
 
-    <div class="check-section">
+    <div class="check-section" id="area-3" data-nav="3. Behavioural &amp; Leadership">
       <h3><span class="hf-status hf-status--danger">Gap</span> 3. Behavioural &amp; Leadership</h3>
       <div class="sub">Every company has 1-2 behavioural rounds. You can't cram these — you need to mine your own experience for stories. Prepare 6-8 stories that cover the themes below.</div>
 
@@ -314,7 +331,7 @@
     <!-- AREA 4: ESTIMATION                                     -->
     <!-- ═══════════════════════════════════════════════════════ -->
 
-    <div class="check-section">
+    <div class="check-section" id="area-4" data-nav="4. Back-of-Envelope Estimation">
       <h3><span class="hf-status hf-status--warning">Partial</span> 4. Back-of-Envelope Estimation</h3>
       <div class="sub">Comes up in the first 5 minutes of every system design round. You know the latency numbers (page 06) — now learn the framework.</div>
 
@@ -357,7 +374,7 @@
     <!-- AREA 5: NETWORKING & INFRA                             -->
     <!-- ═══════════════════════════════════════════════════════ -->
 
-    <div class="check-section">
+    <div class="check-section" id="area-5" data-nav="5. Networking &amp; Infrastructure">
       <h3><span class="hf-status hf-status--warning">Partial</span> 5. Networking &amp; Infrastructure</h3>
       <div class="sub">Not usually a dedicated round, but comes up in system design deep-dives. "What happens when the user clicks submit?" is a classic probe.</div>
 
@@ -416,7 +433,7 @@
     <!-- AREA 6: SQL & SCHEMA DESIGN                            -->
     <!-- ═══════════════════════════════════════════════════════ -->
 
-    <div class="check-section">
+    <div class="check-section" id="area-6" data-nav="6. SQL &amp; Schema Design">
       <h3><span class="hf-status hf-status--warning">Partial</span> 6. SQL &amp; Schema Design</h3>
       <div class="sub">Some companies have a dedicated "design the schema" round. Others probe it during system design. Your page 02 covers concepts; this is about practical skill.</div>
 
@@ -462,6 +479,7 @@
   <!-- 4-WEEK STUDY PLAN                                       -->
   <!-- ═══════════════════════════════════════════════════════ -->
 
+  <section class="hf-section" id="study-plan" data-nav="Four-week plan" aria-labelledby="plan">
   <div class="hf-section__head">
     <h2 class="hf-section__title" id="plan">Four weeks to interview-ready</h2>
     <p class="hf-meta">Assumes 2-3 hours/day. Adjust the pace to your timeline. The order matters — week 1 fills the biggest gap (coding), week 4 is polish.</p>
@@ -520,12 +538,13 @@
     </div>
 
   </div>
+  </section>
 
   <!-- ═══════════════════════════════════════════════════════ -->
   <!-- FINAL TIPS                                              -->
   <!-- ═══════════════════════════════════════════════════════ -->
 
-  <section class="card kt-reminders" aria-labelledby="reminders">
+  <section class="card kt-reminders" id="reminders-area" data-nav="Interview day reminders" aria-labelledby="reminders">
     <div class="card-header" id="reminders">Interview day reminders</div>
     <div class="card-body">
       <dl>
@@ -541,16 +560,6 @@
     </div>
   </section>
 
-  <nav class="pageend-nav" aria-label="Previous and next">
-    <a class="prev" href="order-fulfilment.html">
-      <div class="label"><i class="bi bi-arrow-left"></i> Previous</div>
-      <div class="title-line">B · Order fulfilment</div>
-    </a>
-    <a class="next" href="index.html">
-      <div class="label">Back to <i class="bi bi-arrow-right"></i></div>
-      <div class="title-line">Overview</div>
-    </a>
-  </nav>
 
   <footer>
     <p class="big">Prepare like a senior. Interview like a senior.</p>

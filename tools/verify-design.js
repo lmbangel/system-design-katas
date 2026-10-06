@@ -17,7 +17,9 @@
    7  No fourth navigation tier.
    8  Diagrams use tokens: no hex colours in SVG attributes.
    9  Vendored files are byte-identical to the system (hashes below).
-  10  Every page links the site icon, and the icon files exist.              */
+  10  Every page links the site icon, and the icon files exist.
+  11  Navigation matches the site map: every page is in tools/build-nav.js and
+      its sidebar and header are what that script writes.                   */
 
 'use strict';
 const fs = require('fs');
@@ -79,6 +81,16 @@ for (const f of pages) {
 
 for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/apple-touch-icon.png']) {
   if (!fs.existsSync(rel(icon))) fail(10, `${icon} is missing -- run python tools/build-icons.py`);
+}
+
+/* 11 ---------------------------------------------------------------------- */
+{
+  const { execFileSync } = require('child_process');
+  try {
+    execFileSync(process.execPath, [path.join(__dirname, 'build-nav.js'), '--check'], { stdio: 'pipe' });
+  } catch (e) {
+    String(e.stdout).trim().split(/\r?\n/).filter(Boolean).forEach(l => fail(11, l.trim()));
+  }
 }
 
 /* 9 ----------------------------------------------------------------------- */
