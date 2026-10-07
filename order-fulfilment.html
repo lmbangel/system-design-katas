@@ -193,7 +193,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python</button><button class="tab ts" data-target="c1-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python · FastAPI + SQLAlchemy</button><button class="tab ts" data-target="c1-ts">TypeScript</button></div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Order entity — the central aggregate.</span>
 <span class="k">type</span> <span class="t">Order</span> <span class="k">struct</span> {
     <span class="n">ID</span>           <span class="t">string</span>       <span class="s">`json:"id"`</span>
@@ -214,6 +214,12 @@
     <span class="n">Price</span>    <span class="t">int64</span>  <span class="s">`json:"price_cents"`</span>  <span class="c">// integer cents</span>
 }</pre></div>
       <div class="code-pane" id="c1-py"><pre><span class="c"># Order model — Pydantic for API, SQLAlchemy for persistence.</span>
+<span class="k">from</span> <span class="n">enum</span> <span class="k">import</span> <span class="t">Enum</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">ConfigDict</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">ext</span>.<span class="n">asyncio</span> <span class="k">import</span> <span class="t">AsyncSession</span>
+
 <span class="k">class</span> <span class="t">OrderState</span>(<span class="t">str</span>, <span class="t">Enum</span>):
     <span class="n">PLACED</span>      <span class="o">=</span> <span class="s">"placed"</span>
     <span class="n">RESERVED</span>    <span class="o">=</span> <span class="s">"reserved"</span>
@@ -224,7 +230,23 @@
     <span class="n">IN_TRANSIT</span>  <span class="o">=</span> <span class="s">"in_transit"</span>
     <span class="n">DELIVERED</span>   <span class="o">=</span> <span class="s">"delivered"</span>
     <span class="n">CANCELLED</span>   <span class="o">=</span> <span class="s">"cancelled"</span>
-    <span class="n">RETURNED</span>    <span class="o">=</span> <span class="s">"returned"</span></pre></div>
+    <span class="n">RETURNED</span>    <span class="o">=</span> <span class="s">"returned"</span>
+
+<span class="k">class</span> <span class="t">OrderOut</span>(<span class="t">BaseModel</span>):
+    <span class="n">model_config</span> <span class="o">=</span> <span class="t">ConfigDict</span>(<span class="n">from_attributes</span><span class="o">=</span><span class="k">True</span>)  <span class="c"># read straight off the ORM row</span>
+    <span class="n">id</span>: <span class="t">str</span>
+    <span class="n">customer_id</span>: <span class="t">str</span>
+    <span class="n">state</span>: <span class="t">OrderState</span>
+    <span class="n">warehouse_id</span>: <span class="t">str</span> | <span class="k">None</span> <span class="o">=</span> <span class="k">None</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/orders/{order_id}"</span>)
+<span class="k">async def</span> <span class="n">get_order</span>(<span class="n">order_id</span>: <span class="t">str</span>, <span class="n">db</span>: <span class="t">Annotated</span>[<span class="t">AsyncSession</span>, <span class="t">Depends</span>(<span class="n">get_db</span>)]) <span class="o">-&gt;</span> <span class="t">OrderOut</span>:
+    <span class="n">order</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">get</span>(<span class="t">Order</span>, <span class="n">order_id</span>)  <span class="c"># SQLAlchemy model, same OrderState enum</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="k">is None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"order not found"</span>)
+    <span class="k">return</span> <span class="t">OrderOut</span>.<span class="n">model_validate</span>(<span class="n">order</span>)</pre></div>
       <div class="code-pane" id="c1-ts"><pre><span class="c">// Drizzle ORM order table — schema as plain code, no decorators.</span>
 <span class="k">import</span> { <span class="n">pgTable</span>, <span class="n">pgEnum</span>, <span class="n">text</span>, <span class="n">jsonb</span> } <span class="k">from</span> <span class="s">"drizzle-orm/pg-core"</span>;
 <span class="k">import</span> { <span class="n">relations</span> } <span class="k">from</span> <span class="s">"drizzle-orm"</span>;
@@ -297,7 +319,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python · FastAPI + redis</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Atomic reservation — single UPDATE, no race condition.</span>
 <span class="k">func</span> (<span class="n">r</span> <span class="o">*</span><span class="t">InventoryRepo</span>) <span class="n">Reserve</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">sku</span> <span class="t">string</span>, <span class="n">qty</span> <span class="t">int</span>) <span class="t">error</span> {
     <span class="n">res</span>, <span class="n">err</span> <span class="o">:=</span> <span class="n">r</span>.<span class="n">db</span>.<span class="n">Exec</span>(<span class="n">ctx</span>, <span class="s">`
@@ -322,16 +344,28 @@
     `</span>)
 }</pre></div>
       <div class="code-pane" id="c2-py"><pre><span class="c"># Redis DECR for flash sales + async DB sync.</span>
-<span class="k">async def</span> <span class="n">reserve_fast</span>(<span class="n">redis</span>, <span class="n">sku</span>: <span class="t">str</span>, <span class="n">qty</span>: <span class="t">int</span>) <span class="o">-></span> <span class="t">bool</span>:
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>, <span class="t">Request</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">Field</span>
+
+<span class="k">class</span> <span class="t">ReserveIn</span>(<span class="t">BaseModel</span>):
+    <span class="n">order_id</span>: <span class="t">str</span>
+    <span class="n">sku</span>: <span class="t">str</span>
+    <span class="n">qty</span>: <span class="t">int</span> <span class="o">=</span> <span class="t">Field</span>(<span class="n">gt</span><span class="o">=</span><span class="num">0</span>)
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)  <span class="c"># lifespan opens redis.asyncio + Kafka producer</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/reservations"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">reserve_fast</span>(<span class="n">body</span>: <span class="t">ReserveIn</span>, <span class="n">request</span>: <span class="t">Request</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="n">redis</span>, <span class="n">kafka</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span>, <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">kafka</span>
     <span class="c"># Atomic decrement — if result goes below 0, roll back</span>
-    <span class="n">remaining</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">decrby</span>(<span class="n">f</span><span class="s">"stock:{sku}"</span>, <span class="n">qty</span>)
+    <span class="n">remaining</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">decrby</span>(<span class="s">f"stock:{body.sku}"</span>, <span class="n">body</span>.<span class="n">qty</span>)
     <span class="k">if</span> <span class="n">remaining</span> <span class="o">&lt;</span> <span class="num">0</span>:
-        <span class="k">await</span> <span class="n">redis</span>.<span class="n">incrby</span>(<span class="n">f</span><span class="s">"stock:{sku}"</span>, <span class="n">qty</span>)  <span class="c"># roll back</span>
-        <span class="k">return</span> <span class="k">False</span>
+        <span class="k">await</span> <span class="n">redis</span>.<span class="n">incrby</span>(<span class="s">f"stock:{body.sku}"</span>, <span class="n">body</span>.<span class="n">qty</span>)  <span class="c"># roll back</span>
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">"out of stock"</span>)
     <span class="c"># Publish event for DB sync</span>
     <span class="k">await</span> <span class="n">kafka</span>.<span class="n">produce</span>(<span class="s">"inventory.reserved"</span>,
-        {<span class="s">"sku"</span>: <span class="n">sku</span>, <span class="s">"qty"</span>: <span class="n">qty</span>, <span class="s">"order_id"</span>: <span class="n">order_id</span>})
-    <span class="k">return</span> <span class="k">True</span></pre></div>
+        {<span class="s">"sku"</span>: <span class="n">body</span>.<span class="n">sku</span>, <span class="s">"qty"</span>: <span class="n">body</span>.<span class="n">qty</span>, <span class="s">"order_id"</span>: <span class="n">body</span>.<span class="n">order_id</span>})
+    <span class="k">return</span> {<span class="s">"order_id"</span>: <span class="n">body</span>.<span class="n">order_id</span>, <span class="s">"remaining"</span>: <span class="n">remaining</span>}</pre></div>
       <div class="code-pane" id="c2-ts"><pre><span class="c">// pg — pessimistic lock for reservation, in an explicit transaction.</span>
 <span class="k">export async function</span> <span class="n">reserve</span>(<span class="n">sku</span>: <span class="t">string</span>, <span class="n">qty</span>: <span class="t">number</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
     <span class="k">const</span> <span class="n">tx</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">connect</span>();
@@ -399,7 +433,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go (PostGIS)</button><button class="tab py" data-target="c3-py">Python</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go (PostGIS)</button><button class="tab py" data-target="c3-py">Python · FastAPI + asyncpg</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// PostGIS query: nearest warehouse with stock for all SKUs.</span>
 <span class="k">func</span> <span class="n">AssignWarehouse</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">db</span> <span class="o">*</span><span class="t">pgxpool.Pool</span>,
     <span class="n">items</span> []<span class="t">OrderItem</span>, <span class="n">addr</span> <span class="t">Address</span>) (<span class="t">string</span>, <span class="t">error</span>) {
@@ -424,18 +458,39 @@
     <span class="k">return</span> <span class="n">whID</span>, <span class="n">row</span>.<span class="n">Scan</span>(<span class="o">&amp;</span><span class="n">whID</span>, <span class="o">&amp;</span><span class="n">dist</span>)
 }</pre></div>
       <div class="code-pane" id="c3-py"><pre><span class="c"># PostGIS via asyncpg — nearest warehouse with stock.</span>
-<span class="k">async def</span> <span class="n">assign_warehouse</span>(<span class="n">db</span>, <span class="n">items</span>, <span class="n">lat</span>: <span class="t">float</span>, <span class="n">lng</span>: <span class="t">float</span>) <span class="o">-></span> <span class="t">str</span>:
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+
+<span class="k">class</span> <span class="t">Item</span>(<span class="t">BaseModel</span>):
+    <span class="n">sku</span>: <span class="t">str</span>
+    <span class="n">qty</span>: <span class="t">int</span>
+
+<span class="k">class</span> <span class="t">AssignIn</span>(<span class="t">BaseModel</span>):
+    <span class="n">items</span>: <span class="t">list</span>[<span class="t">Item</span>]
+    <span class="n">lat</span>: <span class="t">float</span>
+    <span class="n">lng</span>: <span class="t">float</span>
+
+<span class="t">Conn</span> <span class="o">=</span> <span class="t">Annotated</span>[<span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_conn</span>)]  <span class="c"># pooled conn from lifespan</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/orders/{order_id}/assign"</span>)
+<span class="k">async def</span> <span class="n">assign_warehouse</span>(<span class="n">order_id</span>: <span class="t">str</span>, <span class="n">body</span>: <span class="t">AssignIn</span>, <span class="n">db</span>: <span class="t">Conn</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="n">skus</span> <span class="o">=</span> [<span class="n">i</span>.<span class="n">sku</span> <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">body</span>.<span class="n">items</span>]
+    <span class="n">qtys</span> <span class="o">=</span> [<span class="n">i</span>.<span class="n">qty</span> <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">body</span>.<span class="n">items</span>]
     <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"""
         SELECT w.id FROM warehouses w
         WHERE w.operational
           AND (SELECT bool_and(
-                 (SELECT (physical - reserved) >= qty
+                 (SELECT (physical - reserved) &gt;= qty
                     FROM inventory WHERE warehouse_id = w.id AND sku = t.sku))
                FROM unnest($3::text[], $4::int[]) AS t(sku, qty))
         ORDER BY ST_Distance(w.location, ST_Point($1,$2)::geography)
         LIMIT 1
-    """</span>, <span class="n">lng</span>, <span class="n">lat</span>, <span class="n">skus</span>, <span class="n">qtys</span>)
-    <span class="k">return</span> <span class="n">row</span>[<span class="s">"id"</span>]</pre></div>
+    """</span>, <span class="n">body</span>.<span class="n">lng</span>, <span class="n">body</span>.<span class="n">lat</span>, <span class="n">skus</span>, <span class="n">qtys</span>)
+    <span class="k">if</span> <span class="n">row</span> <span class="k">is None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">"no warehouse has stock for every item"</span>)
+    <span class="k">return</span> {<span class="s">"order_id"</span>: <span class="n">order_id</span>, <span class="s">"warehouse_id"</span>: <span class="n">row</span>[<span class="s">"id"</span>]}</pre></div>
       <div class="code-pane" id="c3-ts"><pre><span class="c">// pg + native PostGIS query.</span>
 <span class="k">export async function</span> <span class="n">findNearestWithStock</span>(
     <span class="n">orderId</span>: <span class="t">string</span>, <span class="n">lat</span>: <span class="t">number</span>, <span class="n">lng</span>: <span class="t">number</span>,
@@ -521,7 +576,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python</button><button class="tab ts" data-target="c4-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python · FastAPI</button><button class="tab ts" data-target="c4-ts">TypeScript</button></div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Order state transitions — same pattern as payment.</span>
 <span class="k">var</span> <span class="n">orderTransitions</span> <span class="o">=</span> <span class="k">map</span>[<span class="t">OrderState</span>][]<span class="t">OrderState</span>{
     <span class="n">Placed</span>:    {<span class="n">Reserved</span>, <span class="n">Cancelled</span>},
@@ -544,6 +599,8 @@
     <span class="k">return</span> <span class="n">saga</span>.<span class="n">Execute</span>(<span class="n">ctx</span>, <span class="n">order</span>)
 }</pre></div>
       <div class="code-pane" id="c4-py"><pre><span class="c"># Fulfilment saga — sequential with compensations.</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">BackgroundTasks</span>, <span class="t">HTTPException</span>
+
 <span class="n">TRANSITIONS</span> <span class="o">=</span> {
     <span class="s">"placed"</span>:    [<span class="s">"reserved"</span>, <span class="s">"cancelled"</span>],
     <span class="s">"reserved"</span>:  [<span class="s">"assigned"</span>, <span class="s">"cancelled"</span>],
@@ -561,7 +618,26 @@
         (<span class="n">capture_payment</span>,   <span class="n">refund_payment</span>),
         (<span class="n">assign_warehouse</span>,  <span class="n">unassign_warehouse</span>),
         (<span class="n">create_shipment</span>,   <span class="n">cancel_shipment</span>),
-    ]</pre></div>
+    ]
+
+    <span class="k">async def</span> <span class="n">run</span>(<span class="n">self</span>, <span class="n">order</span>) <span class="o">-&gt;</span> <span class="k">None</span>:
+        <span class="n">undo</span> <span class="o">=</span> []
+        <span class="k">try</span>:
+            <span class="k">for</span> <span class="n">action</span>, <span class="n">compensate</span> <span class="k">in</span> <span class="n">self</span>.<span class="n">steps</span>:
+                <span class="k">await</span> <span class="n">action</span>(<span class="n">order</span>)
+                <span class="n">undo</span>.<span class="n">insert</span>(<span class="num">0</span>, <span class="n">compensate</span>)  <span class="c"># newest first</span>
+        <span class="k">except</span> <span class="t">Exception</span>:
+            <span class="k">for</span> <span class="n">compensate</span> <span class="k">in</span> <span class="n">undo</span>:
+                <span class="k">await</span> <span class="n">compensate</span>(<span class="n">order</span>)
+            <span class="k">raise</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/orders/{order_id}/fulfil"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">202</span>)
+<span class="k">async def</span> <span class="n">fulfil</span>(<span class="n">order_id</span>: <span class="t">str</span>, <span class="n">tasks</span>: <span class="t">BackgroundTasks</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="n">order</span> <span class="o">=</span> <span class="k">await</span> <span class="n">orders</span>.<span class="n">get</span>(<span class="n">order_id</span>)
+    <span class="k">if</span> <span class="s">"reserved"</span> <span class="k">not in</span> <span class="n">TRANSITIONS</span>.<span class="n">get</span>(<span class="n">order</span>.<span class="n">state</span>, []):
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">f"cannot fulfil an order that is {order.state}"</span>)
+    <span class="n">tasks</span>.<span class="n">add_task</span>(<span class="t">FulfilmentSaga</span>().<span class="n">run</span>, <span class="n">order</span>)  <span class="c"># runs after the 202 is sent</span>
+    <span class="k">return</span> {<span class="s">"order_id"</span>: <span class="n">order_id</span>, <span class="s">"status"</span>: <span class="s">"fulfilling"</span>}</pre></div>
       <div class="code-pane" id="c4-ts"><pre><span class="c">// Same saga pattern as payment, applied to fulfilment.</span>
 <span class="k">export async function</span> <span class="n">fulfil</span>(<span class="n">order</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="t">Order</span>&gt; {
     <span class="k">const</span> <span class="n">comps</span>: <span class="t">Array</span>&lt;() <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;&gt; <span class="o">=</span> [];
@@ -649,7 +725,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (H3)</button><button class="tab py" data-target="c5-py">Python</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (H3)</button><button class="tab py" data-target="c5-py">Python · FastAPI + H3</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// H3 — convert lat/lng to hex cell, find nearby drivers.</span>
 <span class="k">import</span> <span class="s">"github.com/uber/h3-go/v4"</span>
 
@@ -666,14 +742,21 @@
     <span class="k">return</span> <span class="n">drivers</span>
 }</pre></div>
       <div class="code-pane" id="c5-py"><pre><span class="c"># H3 Python — hex indexing for driver lookup.</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
 <span class="k">import</span> <span class="n">h3</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Query</span>, <span class="t">Request</span>
 
-<span class="k">async def</span> <span class="n">nearby_drivers</span>(<span class="n">lat</span>, <span class="n">lng</span>, <span class="n">ring</span><span class="o">=</span><span class="num">2</span>):
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)  <span class="c"># lifespan opens the redis.asyncio client</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/drivers/nearby"</span>)
+<span class="k">async def</span> <span class="n">nearby_drivers</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">lat</span>: <span class="t">float</span>, <span class="n">lng</span>: <span class="t">float</span>,
+                         <span class="n">ring</span>: <span class="t">Annotated</span>[<span class="t">int</span>, <span class="t">Query</span>(<span class="n">ge</span><span class="o">=</span><span class="num">0</span>, <span class="n">le</span><span class="o">=</span><span class="num">5</span>)] <span class="o">=</span> <span class="num">2</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">str</span>]:
+    <span class="n">redis</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span>
     <span class="n">center</span> <span class="o">=</span> <span class="n">h3</span>.<span class="n">latlng_to_cell</span>(<span class="n">lat</span>, <span class="n">lng</span>, <span class="n">res</span><span class="o">=</span><span class="num">9</span>)
     <span class="n">hexes</span> <span class="o">=</span> <span class="n">h3</span>.<span class="n">grid_disk</span>(<span class="n">center</span>, <span class="n">ring</span>)
     <span class="n">drivers</span> <span class="o">=</span> []
     <span class="k">for</span> <span class="n">hx</span> <span class="k">in</span> <span class="n">hexes</span>:
-        <span class="n">ids</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">smembers</span>(<span class="n">f</span><span class="s">"drivers:hex:{hx}"</span>)
+        <span class="n">ids</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">smembers</span>(<span class="s">f"drivers:hex:{hx}"</span>)
         <span class="n">drivers</span>.<span class="n">extend</span>(<span class="n">ids</span>)
     <span class="k">return</span> <span class="n">drivers</span></pre></div>
       <div class="code-pane" id="c5-ts"><pre><span class="c">// H3 JS — h3-js</span>
@@ -735,7 +818,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Go (v1)</button><button class="tab py" data-target="c6-py">Python (v2)</button><button class="tab ts" data-target="c6-ts">TypeScript (v1)</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Go (v1)</button><button class="tab py" data-target="c6-py">Python · FastAPI (v2)</button><button class="tab ts" data-target="c6-ts">TypeScript (v1)</button></div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// V1 ETA: carrier SLA + warehouse processing average.</span>
 <span class="k">func</span> <span class="n">EstimateETA</span>(<span class="n">wh</span> <span class="t">Warehouse</span>, <span class="n">carrier</span> <span class="t">string</span>, <span class="n">zone</span> <span class="t">string</span>) <span class="t">ETARange</span> {
     <span class="n">processing</span> <span class="o">:=</span> <span class="n">wh</span>.<span class="n">AvgProcessingHours</span>       <span class="c">// e.g. 12h</span>
@@ -746,15 +829,28 @@
     }
 }</pre></div>
       <div class="code-pane" id="c6-py"><pre><span class="c"># V2 ETA: historical lane performance (p50/p90).</span>
-<span class="k">async def</span> <span class="n">estimate_eta_v2</span>(<span class="n">db</span>, <span class="n">wh_id</span>: <span class="t">str</span>, <span class="n">zone</span>: <span class="t">str</span>):
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+
+<span class="k">class</span> <span class="t">ETAOut</span>(<span class="t">BaseModel</span>):
+    <span class="n">min_hours</span>: <span class="t">float</span>
+    <span class="n">max_hours</span>: <span class="t">float</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/eta"</span>)
+<span class="k">async def</span> <span class="n">estimate_eta_v2</span>(<span class="n">wh_id</span>: <span class="t">str</span>, <span class="n">zone</span>: <span class="t">str</span>,
+                          <span class="n">db</span>: <span class="t">Annotated</span>[<span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_conn</span>)]) <span class="o">-&gt;</span> <span class="t">ETAOut</span>:
     <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"""
         SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY delivery_hours) AS p50,
                percentile_cont(0.9) WITHIN GROUP (ORDER BY delivery_hours) AS p90
           FROM deliveries
          WHERE warehouse_id = $1 AND zone = $2
-           AND shipped_at > NOW() - INTERVAL '30 days'
+           AND shipped_at &gt; NOW() - INTERVAL '30 days'
     """</span>, <span class="n">wh_id</span>, <span class="n">zone</span>)
-    <span class="k">return</span> {<span class="s">"min_hours"</span>: <span class="n">row</span>[<span class="s">"p50"</span>], <span class="s">"max_hours"</span>: <span class="n">row</span>[<span class="s">"p90"</span>]}</pre></div>
+    <span class="k">if</span> <span class="n">row</span>[<span class="s">"p50"</span>] <span class="k">is None</span>:  <span class="c"># no deliveries on this lane in 30 days</span>
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"no delivery history for this lane"</span>)
+    <span class="k">return</span> <span class="t">ETAOut</span>(<span class="n">min_hours</span><span class="o">=</span><span class="n">row</span>[<span class="s">"p50"</span>], <span class="n">max_hours</span><span class="o">=</span><span class="n">row</span>[<span class="s">"p90"</span>])</pre></div>
       <div class="code-pane" id="c6-ts"><pre><span class="c">// V1 ETA: lookup table.</span>
 <span class="k">export async function</span> <span class="n">estimate</span>(
     <span class="n">warehouseId</span>: <span class="t">string</span>, <span class="n">carrier</span>: <span class="t">string</span>, <span class="n">zone</span>: <span class="t">string</span>,
@@ -827,7 +923,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python · FastAPI</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Return processing: inspect → restock or dispose.</span>
 <span class="k">func</span> (<span class="n">s</span> <span class="o">*</span><span class="t">ReturnService</span>) <span class="n">ProcessInspection</span>(<span class="n">ctx</span> <span class="t">context.Context</span>,
     <span class="n">ret</span> <span class="o">*</span><span class="t">Return</span>, <span class="n">grade</span> <span class="t">InspectionGrade</span>) <span class="t">error</span> {
@@ -849,15 +945,28 @@
     <span class="k">return</span> <span class="n">s</span>.<span class="n">store</span>.<span class="n">Save</span>(<span class="n">ctx</span>, <span class="n">ret</span>)
 }</pre></div>
       <div class="code-pane" id="c7-py"><pre><span class="c"># Return inspection → restock or dispose.</span>
-<span class="k">async def</span> <span class="n">process_inspection</span>(<span class="n">ret</span>: <span class="t">Return</span>, <span class="n">grade</span>: <span class="t">str</span>):
-    <span class="k">if</span> <span class="n">grade</span> <span class="o">==</span> <span class="s">"A"</span>:
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Literal</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+
+<span class="k">class</span> <span class="t">InspectionIn</span>(<span class="t">BaseModel</span>):
+    <span class="n">grade</span>: <span class="t">Literal</span>[<span class="s">"A"</span>, <span class="s">"B"</span>, <span class="s">"C"</span>]
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/returns/{return_id}/inspection"</span>)
+<span class="k">async def</span> <span class="n">process_inspection</span>(<span class="n">return_id</span>: <span class="t">str</span>, <span class="n">body</span>: <span class="t">InspectionIn</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="n">ret</span> <span class="o">=</span> <span class="k">await</span> <span class="n">returns</span>.<span class="n">get</span>(<span class="n">return_id</span>)
+    <span class="k">if</span> <span class="n">ret</span> <span class="k">is None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"return not found"</span>)
+    <span class="k">if</span> <span class="n">body</span>.<span class="n">grade</span> <span class="o">==</span> <span class="s">"A"</span>:
         <span class="k">await</span> <span class="n">inventory</span>.<span class="n">add_physical</span>(<span class="n">ret</span>.<span class="n">sku</span>, <span class="n">ret</span>.<span class="n">qty</span>)
         <span class="n">ret</span>.<span class="n">state</span> <span class="o">=</span> <span class="s">"restocked"</span>
-    <span class="k">elif</span> <span class="n">grade</span> <span class="o">==</span> <span class="s">"C"</span>:
+    <span class="k">elif</span> <span class="n">body</span>.<span class="n">grade</span> <span class="o">==</span> <span class="s">"C"</span>:
         <span class="k">await</span> <span class="n">ledger</span>.<span class="n">write_off</span>(<span class="n">ret</span>.<span class="n">sku</span>, <span class="n">ret</span>.<span class="n">qty</span>)
         <span class="n">ret</span>.<span class="n">state</span> <span class="o">=</span> <span class="s">"disposed"</span>
     <span class="k">if not</span> <span class="n">ret</span>.<span class="n">refund_issued</span>:
-        <span class="k">await</span> <span class="n">payment</span>.<span class="n">refund</span>(<span class="n">ret</span>.<span class="n">order_id</span>, <span class="n">ret</span>.<span class="n">amount</span>)</pre></div>
+        <span class="k">await</span> <span class="n">payment</span>.<span class="n">refund</span>(<span class="n">ret</span>.<span class="n">order_id</span>, <span class="n">ret</span>.<span class="n">amount</span>)
+    <span class="k">await</span> <span class="n">returns</span>.<span class="n">save</span>(<span class="n">ret</span>)
+    <span class="k">return</span> {<span class="s">"return_id"</span>: <span class="n">return_id</span>, <span class="s">"state"</span>: <span class="n">ret</span>.<span class="n">state</span>}</pre></div>
       <div class="code-pane" id="c7-ts"><pre><span class="c">// pg — return inspection processing in one transaction.</span>
 <span class="k">export async function</span> <span class="n">processInspection</span>(<span class="n">ret</span>: <span class="t">Return</span>, <span class="n">grade</span>: <span class="t">Grade</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
     <span class="k">const</span> <span class="n">tx</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">connect</span>();
@@ -948,7 +1057,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python · FastAPI + aiokafka</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Kafka consumer → project tracking events into ES.</span>
 <span class="k">func</span> (<span class="n">p</span> <span class="o">*</span><span class="t">Projector</span>) <span class="n">HandleTrackingEvent</span>(<span class="n">msg</span> <span class="o">*</span><span class="t">kafka.Message</span>) <span class="t">error</span> {
     <span class="k">var</span> <span class="n">evt</span> <span class="t">TrackingEvent</span>
@@ -968,6 +1077,12 @@
     <span class="k">return</span> <span class="n">err</span>
 }</pre></div>
       <div class="code-pane" id="c8-py"><pre><span class="c"># Kafka consumer → project into Elasticsearch.</span>
+<span class="k">import</span> <span class="n">asyncio</span>, <span class="n">json</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="n">aiokafka</span> <span class="k">import</span> <span class="t">AIOKafkaConsumer</span>
+<span class="k">from</span> <span class="n">elasticsearch</span> <span class="k">import</span> <span class="t">NotFoundError</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+
 <span class="k">async def</span> <span class="n">handle_tracking_event</span>(<span class="n">msg</span>):
     <span class="n">evt</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">msg</span>.<span class="n">value</span>)
     <span class="k">await</span> <span class="n">es</span>.<span class="n">update</span>(<span class="n">index</span><span class="o">=</span><span class="s">"tracking"</span>, <span class="n">id</span><span class="o">=</span><span class="n">evt</span>[<span class="s">"order_id"</span>],
@@ -979,9 +1094,28 @@
             <span class="s">"upsert"</span>: {<span class="s">"order_id"</span>: <span class="n">evt</span>[<span class="s">"order_id"</span>], <span class="s">"events"</span>: [<span class="n">evt</span>]},
         })
 
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">consumer</span> <span class="o">=</span> <span class="t">AIOKafkaConsumer</span>(<span class="s">"tracking-events"</span>, <span class="n">bootstrap_servers</span><span class="o">=</span><span class="n">KAFKA</span>)
+    <span class="k">await</span> <span class="n">consumer</span>.<span class="n">start</span>()
+    <span class="k">async def</span> <span class="n">project</span>():  <span class="c"># write side: Kafka → ES, inside the API process</span>
+        <span class="k">async for</span> <span class="n">msg</span> <span class="k">in</span> <span class="n">consumer</span>:
+            <span class="k">await</span> <span class="n">handle_tracking_event</span>(<span class="n">msg</span>)
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">project</span>())
+    <span class="k">yield</span>
+    <span class="n">task</span>.<span class="n">cancel</span>()
+    <span class="k">await</span> <span class="n">consumer</span>.<span class="n">stop</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+
 <span class="c"># Query: get tracking timeline for an order</span>
-<span class="k">async def</span> <span class="n">get_tracking</span>(<span class="n">order_id</span>: <span class="t">str</span>):
-    <span class="k">return</span> <span class="k">await</span> <span class="n">es</span>.<span class="n">get</span>(<span class="n">index</span><span class="o">=</span><span class="s">"tracking"</span>, <span class="n">id</span><span class="o">=</span><span class="n">order_id</span>)</pre></div>
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/orders/{order_id}/tracking"</span>)
+<span class="k">async def</span> <span class="n">get_tracking</span>(<span class="n">order_id</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="k">try</span>:
+        <span class="n">doc</span> <span class="o">=</span> <span class="k">await</span> <span class="n">es</span>.<span class="n">get</span>(<span class="n">index</span><span class="o">=</span><span class="s">"tracking"</span>, <span class="n">id</span><span class="o">=</span><span class="n">order_id</span>)
+    <span class="k">except</span> <span class="t">NotFoundError</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"no tracking events yet"</span>)
+    <span class="k">return</span> <span class="n">doc</span>[<span class="s">"_source"</span>]</pre></div>
       <div class="code-pane" id="c8-ts"><pre><span class="c">// KafkaJS consumer → ES projection.</span>
 <span class="k">await</span> <span class="n">consumer</span>.<span class="n">subscribe</span>({ <span class="n">topics</span>: [<span class="s">"tracking-events"</span>] });
 <span class="k">await</span> <span class="n">consumer</span>.<span class="n">run</span>({

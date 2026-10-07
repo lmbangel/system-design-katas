@@ -210,7 +210,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
-        <button class="tab py" data-target="c1-py">Python · SQLAlchemy</button>
+        <button class="tab py" data-target="c1-py">Python · FastAPI + SQLAlchemy</button>
         <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Picking the right index for the query, not the other way around.</span>
@@ -239,8 +239,13 @@
 <span class="c">// — Leftmost prefix wins on composite indexes</span>
 <span class="c">// — Every extra index taxes writes; measure before adding</span></pre></div>
       <div class="code-pane" id="c1-py"><pre><span class="c"># SQLAlchemy — declaring the right index for each query pattern.</span>
-<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="t">Column</span>, <span class="t">Integer</span>, <span class="t">DateTime</span>, <span class="t">Index</span>, <span class="t">String</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="t">Column</span>, <span class="t">Integer</span>, <span class="t">DateTime</span>, <span class="t">Index</span>, <span class="t">String</span>, <span class="n">select</span>
 <span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">dialects</span>.<span class="n">postgresql</span> <span class="k">import</span> <span class="t">JSONB</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">ext</span>.<span class="n">asyncio</span> <span class="k">import</span> <span class="t">AsyncSession</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 
 <span class="k">class</span> <span class="t">Order</span>(<span class="t">Base</span>):
     <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">"orders"</span>
@@ -264,6 +269,14 @@
         <span class="c"># GIN over JSONB tags — equality / containment, not ranges</span>
         <span class="t">Index</span>(<span class="s">"idx_orders_tags"</span>, <span class="s">"tags"</span>, <span class="n">postgresql_using</span><span class="o">=</span><span class="s">"gin"</span>),
     )
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/{user_id}/orders"</span>, <span class="n">response_model</span><span class="o">=</span><span class="t">list</span>[<span class="t">OrderOut</span>])
+<span class="k">async def</span> <span class="n">recent_orders</span>(<span class="n">user_id</span>: <span class="t">int</span>,
+                        <span class="n">db</span>: <span class="t">Annotated</span>[<span class="t">AsyncSession</span>, <span class="t">Depends</span>(<span class="n">get_db</span>)]):
+    <span class="c"># Served by idx_orders_user_created: seek user_id, walk created_at DESC</span>
+    <span class="n">stmt</span> <span class="o">=</span> (<span class="n">select</span>(<span class="t">Order</span>).<span class="n">where</span>(<span class="t">Order</span>.<span class="n">user_id</span> <span class="o">==</span> <span class="n">user_id</span>)
+            .<span class="n">order_by</span>(<span class="t">Order</span>.<span class="n">created_at</span>.<span class="n">desc</span>()).<span class="n">limit</span>(<span class="num">20</span>))
+    <span class="k">return</span> (<span class="k">await</span> <span class="n">db</span>.<span class="n">scalars</span>(<span class="n">stmt</span>)).<span class="n">all</span>()
 
 <span class="c"># Each extra index slows writes. Drop the ones EXPLAIN doesn't use.</span></pre></div>
       <div class="code-pane" id="c1-ts"><pre><span class="c">// Drizzle ORM — declaring indexes that match the query patterns.</span>
@@ -371,7 +384,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
-        <button class="tab py" data-target="c2-py">Python · asyncpg</button>
+        <button class="tab py" data-target="c2-py">Python · FastAPI + asyncpg</button>
         <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Programmatic EXPLAIN — useful in slow-query logging middleware.</span>
@@ -403,13 +416,16 @@
 }</pre></div>
       <div class="code-pane" id="c2-py"><pre><span class="c"># Read the plan, log it on slow queries.</span>
 <span class="k">import</span> <span class="n">json</span>, <span class="n">time</span>, <span class="n">logging</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
 <span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">Request</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span>.<span class="n">getLogger</span>(<span class="n">__name__</span>)
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)   <span class="c"># lifespan puts an asyncpg pool on app.state</span>
 
 <span class="k">async def</span> <span class="n">explain</span>(<span class="n">conn</span>: <span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="n">sql</span>: <span class="t">str</span>, <span class="o">*</span><span class="n">args</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
     <span class="n">rows</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetch</span>(
-        <span class="n">f</span><span class="s">"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {sql}"</span>, <span class="o">*</span><span class="n">args</span>)
+        <span class="s">f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {sql}"</span>, <span class="o">*</span><span class="n">args</span>)
     <span class="k">return</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">rows</span>[<span class="num">0</span>][<span class="num">0</span>])[<span class="num">0</span>][<span class="s">"Plan"</span>]
 
 <span class="k">async def</span> <span class="n">query_with_explain</span>(<span class="n">conn</span>, <span class="n">sql</span>: <span class="t">str</span>, <span class="o">*</span><span class="n">args</span>, <span class="n">slow_ms</span><span class="o">=</span><span class="num">200</span>):
@@ -426,6 +442,17 @@
                    <span class="s">"estimated_rows"</span>: <span class="n">plan</span>[<span class="s">"Plan Rows"</span>]},
         )
     <span class="k">return</span> <span class="n">rows</span>
+
+<span class="k">async def</span> <span class="n">get_conn</span>(<span class="n">request</span>: <span class="t">Request</span>):
+    <span class="k">async with</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">conn</span>:
+        <span class="k">yield</span> <span class="n">conn</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/{user_id}/orders"</span>)
+<span class="k">async def</span> <span class="n">user_orders</span>(<span class="n">user_id</span>: <span class="t">int</span>,
+                      <span class="n">conn</span>: <span class="t">Annotated</span>[<span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_conn</span>)]):
+    <span class="n">rows</span> <span class="o">=</span> <span class="k">await</span> <span class="n">query_with_explain</span>(
+        <span class="n">conn</span>, <span class="s">"SELECT id, total FROM orders WHERE user_id = $1"</span>, <span class="n">user_id</span>)
+    <span class="k">return</span> [<span class="t">dict</span>(<span class="n">r</span>) <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>]
 
 <span class="c"># Estimated vs actual mismatch &gt; 10× → ANALYZE the table or rewrite the query.</span></pre></div>
       <div class="code-pane" id="c2-ts"><pre><span class="c">// pg + pino — log the plan when a query goes slow.</span>
@@ -533,7 +560,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · SQLAlchemy</button>
+        <button class="tab py" data-target="c3-py">Python · FastAPI + SQLAlchemy</button>
         <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// A real ACID transaction — atomic, durable, with explicit isolation.</span>
@@ -562,32 +589,43 @@
     <span class="k">return</span> <span class="n">tx</span>.<span class="n">Commit</span>()
 }</pre></div>
       <div class="code-pane" id="c3-py"><pre><span class="c"># SQLAlchemy with explicit isolation level.</span>
-<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="n">create_engine</span>, <span class="n">text</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="n">text</span>
 <span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">exc</span> <span class="k">import</span> <span class="t">OperationalError</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">ext</span>.<span class="n">asyncio</span> <span class="k">import</span> <span class="n">create_async_engine</span>
 
 <span class="c"># Connection-level: every transaction here runs SERIALIZABLE.</span>
-<span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span>(<span class="s">"postgresql+psycopg://..."</span>,
-                       <span class="n">isolation_level</span><span class="o">=</span><span class="s">"SERIALIZABLE"</span>)
+<span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span>(<span class="s">"postgresql+psycopg://..."</span>,
+                             <span class="n">isolation_level</span><span class="o">=</span><span class="s">"SERIALIZABLE"</span>)
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 
-<span class="k">def</span> <span class="n">transfer</span>(<span class="n">from_id</span>: <span class="t">int</span>, <span class="n">to_id</span>: <span class="t">int</span>, <span class="n">cents</span>: <span class="t">int</span>):
+<span class="k">class</span> <span class="t">TransferIn</span>(<span class="t">BaseModel</span>):
+    <span class="n">from_id</span>: <span class="t">int</span>
+    <span class="n">to_id</span>: <span class="t">int</span>
+    <span class="n">cents</span>: <span class="t">int</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/transfers"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">204</span>)
+<span class="k">async def</span> <span class="n">transfer</span>(<span class="n">t</span>: <span class="t">TransferIn</span>):
     <span class="c"># Retry serialization failures (40001) — it's expected at this level</span>
     <span class="k">for</span> <span class="n">attempt</span> <span class="k">in</span> <span class="n">range</span>(<span class="num">3</span>):
         <span class="k">try</span>:
-            <span class="k">with</span> <span class="n">engine</span>.<span class="n">begin</span>() <span class="k">as</span> <span class="n">conn</span>:
-                <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
+            <span class="k">async with</span> <span class="n">engine</span>.<span class="n">begin</span>() <span class="k">as</span> <span class="n">conn</span>:
+                <span class="k">await</span> <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
                     UPDATE accounts SET balance = balance - :c
                     WHERE id = :from
-                """</span>), {<span class="s">"c"</span>: <span class="n">cents</span>, <span class="s">"from"</span>: <span class="n">from_id</span>})
-                <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
+                """</span>), {<span class="s">"c"</span>: <span class="n">t</span>.<span class="n">cents</span>, <span class="s">"from"</span>: <span class="n">t</span>.<span class="n">from_id</span>})
+                <span class="k">await</span> <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
                     UPDATE accounts SET balance = balance + :c
                     WHERE id = :to
-                """</span>), {<span class="s">"c"</span>: <span class="n">cents</span>, <span class="s">"to"</span>: <span class="n">to_id</span>})
+                """</span>), {<span class="s">"c"</span>: <span class="n">t</span>.<span class="n">cents</span>, <span class="s">"to"</span>: <span class="n">t</span>.<span class="n">to_id</span>})
                 <span class="c"># commit on context exit; rollback on any exception</span>
             <span class="k">return</span>
         <span class="k">except</span> <span class="t">OperationalError</span> <span class="k">as</span> <span class="n">e</span>:
-            <span class="k">if</span> <span class="s">"40001"</span> <span class="k">in</span> <span class="n">str</span>(<span class="n">e</span>.<span class="n">orig</span>) <span class="k">and</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="num">2</span>:
-                <span class="k">continue</span>           <span class="c"># serialization failure — retry</span>
-            <span class="k">raise</span>
+            <span class="k">if</span> <span class="n">e</span>.<span class="n">orig</span>.<span class="n">sqlstate</span> <span class="o">!=</span> <span class="s">"40001"</span>:
+                <span class="k">raise</span>
+            <span class="c"># serialization failure — loop and retry</span>
+    <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">"transfer kept conflicting, try again"</span>)
 
 <span class="c"># C is enforced by CHECK (balance &gt;= 0). D is the engine's WAL fsync.</span></pre></div>
       <div class="code-pane" id="c3-ts"><pre><span class="c">// BEGIN/COMMIT on one PoolClient is the transaction boundary.</span>
@@ -709,7 +747,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
-        <button class="tab py" data-target="c4-py">Python · SQLAlchemy</button>
+        <button class="tab py" data-target="c4-py">Python · FastAPI + SQLAlchemy</button>
         <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// The classic write-skew bug: two doctors going off-call at once.</span>
@@ -740,25 +778,41 @@
     <span class="k">return</span> <span class="n">tx</span>.<span class="n">Commit</span>()
 }</pre></div>
       <div class="code-pane" id="c4-py"><pre><span class="c"># Pessimistic locking: SELECT ... FOR UPDATE locks the rows you read.</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
 <span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="n">text</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">ext</span>.<span class="n">asyncio</span> <span class="k">import</span> <span class="t">AsyncConnection</span>
 
-<span class="k">def</span> <span class="n">withdraw</span>(<span class="n">conn</span>, <span class="n">account_id</span>: <span class="t">int</span>, <span class="n">cents</span>: <span class="t">int</span>) <span class="o">-&gt;</span> <span class="t">bool</span>:
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
+<span class="k">class</span> <span class="t">Withdrawal</span>(<span class="t">BaseModel</span>):
+    <span class="n">cents</span>: <span class="t">int</span>
+
+<span class="k">async def</span> <span class="n">get_tx</span>():
+    <span class="k">async with</span> <span class="n">engine</span>.<span class="n">begin</span>() <span class="k">as</span> <span class="n">conn</span>:   <span class="c"># commit on success, rollback on raise</span>
+        <span class="k">yield</span> <span class="n">conn</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/accounts/{account_id}/withdraw"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">204</span>)
+<span class="k">async def</span> <span class="n">withdraw</span>(<span class="n">account_id</span>: <span class="t">int</span>, <span class="n">body</span>: <span class="t">Withdrawal</span>,
+                   <span class="n">conn</span>: <span class="t">Annotated</span>[<span class="t">AsyncConnection</span>, <span class="t">Depends</span>(<span class="n">get_tx</span>)]):
     <span class="c"># FOR UPDATE = "lock this row until I commit/rollback".</span>
     <span class="c"># Other transactions trying to lock the same row block here.</span>
-    <span class="n">row</span> <span class="o">=</span> <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
+    <span class="n">row</span> <span class="o">=</span> (<span class="k">await</span> <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
         SELECT balance FROM accounts
          WHERE id = :id
          FOR UPDATE
-    """</span>), {<span class="s">"id"</span>: <span class="n">account_id</span>}).<span class="n">fetchone</span>()
+    """</span>), {<span class="s">"id"</span>: <span class="n">account_id</span>})).<span class="n">fetchone</span>()
 
-    <span class="k">if</span> <span class="n">row</span>.<span class="n">balance</span> <span class="o">&lt;</span> <span class="n">cents</span>:
-        <span class="k">return</span> <span class="k">False</span>                          <span class="c"># insufficient funds</span>
+    <span class="k">if</span> <span class="n">row</span> <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"no such account"</span>)
+    <span class="k">if</span> <span class="n">row</span>.<span class="n">balance</span> <span class="o">&lt;</span> <span class="n">body</span>.<span class="n">cents</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">"insufficient funds"</span>)
 
-    <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
+    <span class="k">await</span> <span class="n">conn</span>.<span class="n">execute</span>(<span class="n">text</span>(<span class="s">"""
         UPDATE accounts SET balance = balance - :c
          WHERE id = :id
-    """</span>), {<span class="s">"c"</span>: <span class="n">cents</span>, <span class="s">"id"</span>: <span class="n">account_id</span>})
-    <span class="k">return</span> <span class="k">True</span>
+    """</span>), {<span class="s">"c"</span>: <span class="n">body</span>.<span class="n">cents</span>, <span class="s">"id"</span>: <span class="n">account_id</span>})
 
 <span class="c"># Optimistic alternative — version column, no locks held during the work:</span>
 <span class="c">#   UPDATE accounts SET balance = balance - :c, version = version + 1</span>
@@ -868,7 +922,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
-        <button class="tab py" data-target="c5-py">Python · asyncpg</button>
+        <button class="tab py" data-target="c5-py">Python · FastAPI + asyncpg</button>
         <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Find long-running transactions that block vacuum (the MVCC enemy).</span>
@@ -905,9 +959,15 @@
      ORDER BY n_dead_tup DESC LIMIT 20
 `</span></pre></div>
       <div class="code-pane" id="c5-py"><pre><span class="c"># MVCC bloat monitor — alert when dead-tuple ratio gets bad.</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
 <span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>
 
-<span class="k">async def</span> <span class="n">bloat_report</span>(<span class="n">conn</span>: <span class="n">asyncpg</span>.<span class="t">Connection</span>):
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="t">Conn</span> <span class="o">=</span> <span class="t">Annotated</span>[<span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_conn</span>)]   <span class="c"># pool.acquire() dep</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/admin/db/bloat"</span>)
+<span class="k">async def</span> <span class="n">bloat_report</span>(<span class="n">conn</span>: <span class="t">Conn</span>):
     <span class="n">rows</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetch</span>(<span class="s">"""
         SELECT relname,
                n_live_tup,
@@ -917,21 +977,26 @@
          WHERE n_dead_tup &gt; 10000
          ORDER BY n_dead_tup DESC
     """</span>)
+    <span class="n">report</span> <span class="o">=</span> []
     <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>:
         <span class="n">total</span> <span class="o">=</span> <span class="n">r</span>[<span class="s">"n_live_tup"</span>] <span class="o">+</span> <span class="n">r</span>[<span class="s">"n_dead_tup"</span>]
         <span class="n">dead_pct</span> <span class="o">=</span> <span class="num">100</span> <span class="o">*</span> <span class="n">r</span>[<span class="s">"n_dead_tup"</span>] <span class="o">/</span> <span class="n">total</span>
-        <span class="k">if</span> <span class="n">dead_pct</span> <span class="o">&gt;</span> <span class="num">30</span>:
-            <span class="k">print</span>(<span class="n">f</span><span class="s">"⚠ {r['relname']:30s} {dead_pct:5.1f}% dead, "</span>
-                  <span class="n">f</span><span class="s">"last vacuum: {r['last_autovacuum']}"</span>)
+        <span class="k">if</span> <span class="n">dead_pct</span> <span class="o">&gt;</span> <span class="num">30</span>:   <span class="c"># ⚠ worth an alert</span>
+            <span class="n">report</span>.<span class="n">append</span>({<span class="s">"table"</span>: <span class="n">r</span>[<span class="s">"relname"</span>],
+                           <span class="s">"dead_pct"</span>: <span class="n">round</span>(<span class="n">dead_pct</span>, <span class="num">1</span>),
+                           <span class="s">"last_vacuum"</span>: <span class="n">r</span>[<span class="s">"last_autovacuum"</span>]})
+    <span class="k">return</span> <span class="n">report</span>
 
-<span class="k">async def</span> <span class="n">find_idle_in_transaction</span>(<span class="n">conn</span>):
-    <span class="c"># &quot;idle in transaction&quot; for &gt; 5 min = vacuum killer.</span>
-    <span class="k">return</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetch</span>(<span class="s">"""
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/admin/db/idle-in-transaction"</span>)
+<span class="k">async def</span> <span class="n">find_idle_in_transaction</span>(<span class="n">conn</span>: <span class="t">Conn</span>):
+    <span class="c"># "idle in transaction" for &gt; 5 min = vacuum killer.</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetch</span>(<span class="s">"""
         SELECT pid, usename, state, now() - xact_start AS age
           FROM pg_stat_activity
          WHERE state = 'idle in transaction'
            AND now() - xact_start &gt; interval '5 minutes'
-    """</span>)</pre></div>
+    """</span>)
+    <span class="k">return</span> [<span class="t">dict</span>(<span class="n">r</span>) <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>]</pre></div>
       <div class="code-pane" id="c5-ts"><pre><span class="c">// Express health endpoint — surface MVCC bloat as an ops signal.</span>
 <span class="k">import</span> { <span class="t">Router</span> } <span class="k">from</span> <span class="s">"express"</span>;
 <span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
@@ -1072,7 +1137,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c6-go">Go</button>
-        <button class="tab py" data-target="c6-py">Python · asyncpg</button>
+        <button class="tab py" data-target="c6-py">Python · FastAPI + asyncpg</button>
         <button class="tab ts" data-target="c6-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Read/write split — writes to primary, reads to followers.</span>
@@ -1101,7 +1166,9 @@
 }</pre></div>
       <div class="code-pane" id="c6-py"><pre><span class="c"># Read/write split with replication-lag awareness.</span>
 <span class="k">import</span> <span class="n">random</span>, <span class="n">time</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
 <span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Request</span>
 
 <span class="k">class</span> <span class="t">SplitDB</span>:
     <span class="k">def</span> <span class="n">__init__</span>(<span class="n">self</span>, <span class="n">primary</span>, <span class="n">replicas</span>):
@@ -1124,7 +1191,29 @@
         <span class="k">try</span>:
             <span class="k">return</span> <span class="k">await</span> <span class="n">replica</span>.<span class="n">fetch</span>(<span class="n">sql</span>, <span class="o">*</span><span class="n">args</span>)
         <span class="k">except</span> <span class="t">Exception</span>:
-            <span class="k">return</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">primary</span>.<span class="n">fetch</span>(<span class="n">sql</span>, <span class="o">*</span><span class="n">args</span>)</pre></div>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">primary</span>.<span class="n">fetch</span>(<span class="n">sql</span>, <span class="o">*</span><span class="n">args</span>)
+
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">pools</span> <span class="o">=</span> [<span class="k">await</span> <span class="n">asyncpg</span>.<span class="n">create_pool</span>(<span class="n">dsn</span>) <span class="k">for</span> <span class="n">dsn</span> <span class="k">in</span> [<span class="n">PRIMARY</span>, <span class="o">*</span><span class="n">REPLICAS</span>]]
+    <span class="n">app</span>.<span class="n">state</span>.<span class="n">db</span> <span class="o">=</span> <span class="t">SplitDB</span>(<span class="n">pools</span>[<span class="num">0</span>], <span class="n">pools</span>[<span class="num">1</span>:])
+    <span class="k">yield</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="k">in</span> <span class="n">pools</span>:
+        <span class="k">await</span> <span class="n">p</span>.<span class="n">close</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">put</span>(<span class="s">"/users/{user_id}/name"</span>)
+<span class="k">async def</span> <span class="n">rename</span>(<span class="n">user_id</span>: <span class="t">str</span>, <span class="n">name</span>: <span class="t">str</span>, <span class="n">request</span>: <span class="t">Request</span>):
+    <span class="k">await</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">db</span>.<span class="n">write</span>(
+        <span class="n">user_id</span>, <span class="s">"UPDATE users SET name = $2 WHERE id = $1"</span>, <span class="n">user_id</span>, <span class="n">name</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/{user_id}"</span>)
+<span class="k">async def</span> <span class="n">profile</span>(<span class="n">user_id</span>: <span class="t">str</span>, <span class="n">request</span>: <span class="t">Request</span>):
+    <span class="c"># Right after rename() this hits the primary, so the user sees the new name</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="k">await</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">db</span>.<span class="n">read</span>(
+        <span class="n">user_id</span>, <span class="s">"SELECT id, name FROM users WHERE id = $1"</span>, <span class="n">user_id</span>)
+    <span class="k">return</span> [<span class="t">dict</span>(<span class="n">r</span>) <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>]</pre></div>
       <div class="code-pane" id="c6-ts"><pre><span class="c">// pg — two pools; a readOnly flag routes to the replica, the rest to primary.</span>
 <span class="k">import</span> { <span class="t">Pool</span>, <span class="k">type</span> <span class="t">PoolClient</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
@@ -1249,7 +1338,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
-        <button class="tab py" data-target="c7-py">Python</button>
+        <button class="tab py" data-target="c7-py">Python · FastAPI</button>
         <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Consistent hashing — adding/removing a node moves ~1/N of keys.</span>
@@ -1283,6 +1372,7 @@
       <div class="code-pane" id="c7-py"><pre><span class="c"># Application-level sharding — pick a shard, route the query.</span>
 <span class="k">import</span> <span class="n">hashlib</span>
 <span class="k">from</span> <span class="n">bisect</span> <span class="k">import</span> <span class="n">bisect</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>, <span class="t">Request</span>
 
 <span class="k">class</span> <span class="t">Ring</span>:
     <span class="k">def</span> <span class="n">__init__</span>(<span class="n">self</span>, <span class="n">vnodes</span><span class="o">=</span><span class="num">128</span>):
@@ -1295,7 +1385,7 @@
 
     <span class="k">def</span> <span class="n">add</span>(<span class="n">self</span>, <span class="n">node</span>: <span class="t">str</span>):
         <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">range</span>(<span class="n">self</span>.<span class="n">vnodes</span>):
-            <span class="n">h</span> <span class="o">=</span> <span class="n">self</span>.<span class="n">_hash</span>(<span class="n">f</span><span class="s">"{node}#{i}"</span>)
+            <span class="n">h</span> <span class="o">=</span> <span class="n">self</span>.<span class="n">_hash</span>(<span class="s">f"{node}#{i}"</span>)
             <span class="n">self</span>.<span class="n">ring</span>[<span class="n">h</span>] <span class="o">=</span> <span class="n">node</span>
         <span class="n">self</span>.<span class="n">sorted</span> <span class="o">=</span> <span class="n">sorted</span>(<span class="n">self</span>.<span class="n">ring</span>.<span class="n">keys</span>())
 
@@ -1305,6 +1395,20 @@
         <span class="n">h</span> <span class="o">=</span> <span class="n">self</span>.<span class="n">_hash</span>(<span class="n">key</span>)
         <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span>(<span class="n">self</span>.<span class="n">sorted</span>, <span class="n">h</span>) <span class="o">%</span> <span class="n">len</span>(<span class="n">self</span>.<span class="n">sorted</span>)
         <span class="k">return</span> <span class="n">self</span>.<span class="n">ring</span>[<span class="n">self</span>.<span class="n">sorted</span>[<span class="n">i</span>]]
+
+<span class="n">ring</span> <span class="o">=</span> <span class="t">Ring</span>()
+<span class="k">for</span> <span class="n">shard</span> <span class="k">in</span> (<span class="s">"shard-a"</span>, <span class="s">"shard-b"</span>, <span class="s">"shard-c"</span>):
+    <span class="n">ring</span>.<span class="n">add</span>(<span class="n">shard</span>)
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)   <span class="c"># lifespan opens one asyncpg pool per shard</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/{user_id}"</span>)
+<span class="k">async def</span> <span class="n">get_user</span>(<span class="n">user_id</span>: <span class="t">str</span>, <span class="n">request</span>: <span class="t">Request</span>):
+    <span class="n">shard</span> <span class="o">=</span> <span class="n">ring</span>.<span class="n">pick</span>(<span class="n">user_id</span>)                    <span class="c"># same key → same shard</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">pools</span>[<span class="n">shard</span>]
+    <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pool</span>.<span class="n">fetchrow</span>(<span class="s">"SELECT * FROM users WHERE id = $1"</span>, <span class="n">user_id</span>)
+    <span class="k">if</span> <span class="n">row</span> <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"user not found"</span>)
+    <span class="k">return</span> {<span class="s">"shard"</span>: <span class="n">shard</span>, <span class="o">**</span><span class="t">dict</span>(<span class="n">row</span>)}
 
 <span class="c"># Adding a node migrates only ~1/N of keys.</span>
 <span class="c"># Real systems (Vitess, Citus) handle the migration plumbing for you.</span></pre></div>
@@ -1427,7 +1531,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c8-go">Go</button>
-        <button class="tab py" data-target="c8-py">Python · aiokafka</button>
+        <button class="tab py" data-target="c8-py">Python · aiokafka worker</button>
         <button class="tab ts" data-target="c8-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Postgres logical replication consumer — reads change events directly.</span>
@@ -1594,7 +1698,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python</button>
+        <button class="tab py" data-target="c9-py">Python · FastAPI</button>
         <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Layered storage — system of record + caches + search, kept in sync via CDC.</span>
@@ -1628,20 +1732,25 @@
     <span class="c">// Debezium picks up the WAL change and updates Redis + ES</span>
 }</pre></div>
       <div class="code-pane" id="c9-py"><pre><span class="c"># One service, three stores, one source of truth.</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">HTTPException</span>, <span class="t">Request</span>
+
 <span class="k">class</span> <span class="t">UserService</span>:
     <span class="k">def</span> <span class="n">__init__</span>(<span class="n">self</span>, <span class="n">pg</span>, <span class="n">redis</span>, <span class="n">es</span>):
         <span class="n">self</span>.<span class="n">pg</span>    <span class="o">=</span> <span class="n">pg</span>     <span class="c"># source of truth — Postgres</span>
         <span class="n">self</span>.<span class="n">redis</span> <span class="o">=</span> <span class="n">redis</span>  <span class="c"># cache for hot reads</span>
         <span class="n">self</span>.<span class="n">es</span>    <span class="o">=</span> <span class="n">es</span>     <span class="c"># Elasticsearch for full-text</span>
 
-    <span class="k">async def</span> <span class="n">get_by_id</span>(<span class="n">self</span>, <span class="n">user_id</span>: <span class="t">int</span>) <span class="o">-&gt;</span> <span class="t">User</span> <span class="o">|</span> <span class="k">None</span>:
+    <span class="k">async def</span> <span class="n">get_by_id</span>(<span class="n">self</span>, <span class="n">user_id</span>: <span class="t">int</span>) <span class="o">-&gt;</span> <span class="t">User</span> | <span class="k">None</span>:
         <span class="c"># Cache-aside: hit Redis first</span>
-        <span class="k">if</span> <span class="n">cached</span> <span class="o">:=</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="n">f</span><span class="s">"u:{user_id}"</span>):
-            <span class="k">return</span> <span class="t">User</span>.<span class="n">parse_raw</span>(<span class="n">cached</span>)
-        <span class="n">user</span> <span class="o">=</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">pg</span>.<span class="n">fetchrow</span>(
+        <span class="k">if</span> <span class="n">cached</span> <span class="o">:=</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="s">f"u:{user_id}"</span>):
+            <span class="k">return</span> <span class="t">User</span>.<span class="n">model_validate_json</span>(<span class="n">cached</span>)
+        <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">self</span>.<span class="n">pg</span>.<span class="n">fetchrow</span>(
             <span class="s">"SELECT * FROM users WHERE id = $1"</span>, <span class="n">user_id</span>)
-        <span class="k">if</span> <span class="n">user</span>:
-            <span class="k">await</span> <span class="n">self</span>.<span class="n">redis</span>.<span class="n">setex</span>(<span class="n">f</span><span class="s">"u:{user_id}"</span>, <span class="num">300</span>, <span class="t">User</span>(<span class="o">**</span><span class="n">user</span>).<span class="n">json</span>())
+        <span class="k">if</span> <span class="n">row</span> <span class="k">is</span> <span class="k">None</span>:
+            <span class="k">return</span> <span class="k">None</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="t">User</span>(<span class="o">**</span><span class="n">row</span>)
+        <span class="k">await</span> <span class="n">self</span>.<span class="n">redis</span>.<span class="n">setex</span>(<span class="s">f"u:{user_id}"</span>, <span class="num">300</span>, <span class="n">user</span>.<span class="n">model_dump_json</span>())
         <span class="k">return</span> <span class="n">user</span>
 
     <span class="k">async def</span> <span class="n">search</span>(<span class="n">self</span>, <span class="n">q</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">User</span>]:
@@ -1654,7 +1763,30 @@
 
     <span class="k">async def</span> <span class="n">save</span>(<span class="n">self</span>, <span class="n">user</span>: <span class="t">User</span>):
         <span class="c"># Write ONLY to source of truth. CDC propagates to Redis + ES.</span>
-        <span class="k">await</span> <span class="n">self</span>.<span class="n">pg</span>.<span class="n">execute</span>(<span class="s">"INSERT INTO users ..."</span>, user)</pre></div>
+        <span class="k">await</span> <span class="n">self</span>.<span class="n">pg</span>.<span class="n">execute</span>(<span class="s">"INSERT INTO users ..."</span>, <span class="o">*</span><span class="n">user</span>.<span class="n">model_dump</span>().<span class="n">values</span>())
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)   <span class="c"># lifespan opens the pg pool, Redis, ES clients</span>
+
+<span class="k">def</span> <span class="n">get_users</span>(<span class="n">request</span>: <span class="t">Request</span>) <span class="o">-&gt;</span> <span class="t">UserService</span>:
+    <span class="n">s</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>
+    <span class="k">return</span> <span class="t">UserService</span>(<span class="n">s</span>.<span class="n">pg</span>, <span class="n">s</span>.<span class="n">redis</span>, <span class="n">s</span>.<span class="n">es</span>)
+
+<span class="t">Users</span> <span class="o">=</span> <span class="t">Annotated</span>[<span class="t">UserService</span>, <span class="t">Depends</span>(<span class="n">get_users</span>)]
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/search"</span>)
+<span class="k">async def</span> <span class="n">search_users</span>(<span class="n">q</span>: <span class="t">str</span>, <span class="n">svc</span>: <span class="t">Users</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">User</span>]:
+    <span class="k">return</span> <span class="k">await</span> <span class="n">svc</span>.<span class="n">search</span>(<span class="n">q</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/users/{user_id}"</span>)
+<span class="k">async def</span> <span class="n">get_user</span>(<span class="n">user_id</span>: <span class="t">int</span>, <span class="n">svc</span>: <span class="t">Users</span>) <span class="o">-&gt;</span> <span class="t">User</span>:
+    <span class="k">if</span> <span class="n">user</span> <span class="o">:=</span> <span class="k">await</span> <span class="n">svc</span>.<span class="n">get_by_id</span>(<span class="n">user_id</span>):
+        <span class="k">return</span> <span class="n">user</span>
+    <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"user not found"</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/users"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">create_user</span>(<span class="n">user</span>: <span class="t">User</span>, <span class="n">svc</span>: <span class="t">Users</span>) <span class="o">-&gt;</span> <span class="t">User</span>:
+    <span class="k">await</span> <span class="n">svc</span>.<span class="n">save</span>(<span class="n">user</span>)
+    <span class="k">return</span> <span class="n">user</span></pre></div>
       <div class="code-pane" id="c9-ts"><pre><span class="c">// Node.js — one service, multiple stores, one source of truth.</span>
 <span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 <span class="k">import type</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
@@ -1794,7 +1926,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c10-go">Go</button>
-        <button class="tab py" data-target="c10-py">Python</button>
+        <button class="tab py" data-target="c10-py">Python · FastAPI</button>
         <button class="tab ts" data-target="c10-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c10-go"><pre><span class="c">// ✗ BROKEN — classic dual write. Crash between calls = data drift.</span>
@@ -1826,13 +1958,21 @@
     <span class="c">// A separate worker polls outbox + publishes to Kafka. At-least-once.</span>
     <span class="c">// Or: Debezium reads the WAL directly. Either way — no dual write.</span>
 }</pre></div>
-      <div class="code-pane" id="c10-py"><pre><span class="c"># ✗ BROKEN — two systems, no atomicity</span>
-<span class="k">async def</span> <span class="n">place_order_broken</span>(<span class="n">order</span>):
+      <div class="code-pane" id="c10-py"><pre><span class="k">import</span> <span class="n">asyncio</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">APIRouter</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="t">APIRouter</span>()
+
+<span class="c"># ✗ BROKEN — two systems, no atomicity</span>
+<span class="o">@</span><span class="n">router</span>.<span class="n">post</span>(<span class="s">"/orders-broken"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">place_order_broken</span>(<span class="n">order</span>: <span class="t">Order</span>):
     <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"INSERT INTO orders ..."</span>, <span class="n">order</span>)
     <span class="c"># CRASH HERE → drift. retries don't save you.</span>
     <span class="k">await</span> <span class="n">kafka</span>.<span class="n">send</span>(<span class="s">"orders"</span>, <span class="n">order</span>)
 
 <span class="c"># ✓ FIXED — outbox table, one transaction, async publisher</span>
+<span class="o">@</span><span class="n">router</span>.<span class="n">post</span>(<span class="s">"/orders"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
 <span class="k">async def</span> <span class="n">place_order</span>(<span class="n">order</span>: <span class="t">Order</span>):
     <span class="k">async with</span> <span class="n">db</span>.<span class="n">transaction</span>():
         <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(
@@ -1841,10 +1981,11 @@
         <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"""
             INSERT INTO outbox(aggregate_id, type, payload)
             VALUES ($1, 'order.placed', $2)
-        """</span>, <span class="n">order</span>.<span class="n">id</span>, <span class="n">order</span>.<span class="n">json</span>())
+        """</span>, <span class="n">order</span>.<span class="n">id</span>, <span class="n">order</span>.<span class="n">model_dump_json</span>())
     <span class="c"># Commit is atomic. Either both rows land, or neither.</span>
+    <span class="k">return</span> {<span class="s">"id"</span>: <span class="n">order</span>.<span class="n">id</span>}
 
-<span class="c"># Separate worker — runs continuously, drains the outbox</span>
+<span class="c"># Publisher — runs continuously beside the API, drains the outbox</span>
 <span class="k">async def</span> <span class="n">drain_outbox</span>():
     <span class="k">while</span> <span class="k">True</span>:
         <span class="n">events</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetch</span>(<span class="s">"""
@@ -1858,6 +1999,15 @@
                 <span class="s">"UPDATE outbox SET published_at = now() WHERE id = $1"</span>,
                 <span class="n">e</span>[<span class="s">"id"</span>])
         <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>(<span class="num">0.5</span>)
+
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">drain_outbox</span>())   <span class="c"># or its own worker process</span>
+    <span class="k">yield</span>
+    <span class="n">task</span>.<span class="n">cancel</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+<span class="n">app</span>.<span class="n">include_router</span>(<span class="n">router</span>)
 <span class="c"># Idempotent consumers downstream handle the at-least-once duplicates.</span></pre></div>
       <div class="code-pane" id="c10-ts"><pre><span class="k">import type</span> { <span class="t">Pool</span>, <span class="t">PoolClient</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 <span class="k">import type</span> { <span class="t">Producer</span> } <span class="k">from</span> <span class="s">"kafkajs"</span>;

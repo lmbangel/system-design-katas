@@ -235,7 +235,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c1-go">Go</button>
-        <button class="tab py" data-target="c1-py">Python · redis-py</button>
+        <button class="tab py" data-target="c1-py">Python · FastAPI + redis-py</button>
         <button class="tab ts" data-target="c1-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Two-tier cache: local → Redis → DB. Each tier is 100–1000× slower.</span>
@@ -267,29 +267,41 @@
     <span class="n">c</span>.<span class="n">local</span>.<span class="n">SetWithTTL</span>(<span class="n">id</span>, <span class="n">p</span>, <span class="num">1</span>, <span class="num">10</span><span class="o">*</span><span class="n">time</span>.<span class="t">Second</span>)
     <span class="k">return</span> <span class="n">p</span>, <span class="k">nil</span>
 }</pre></div>
-      <div class="code-pane" id="c1-py"><pre><span class="c"># Same two-tier pattern in Python.</span>
+      <div class="code-pane" id="c1-py"><pre><span class="c"># Same two-tier pattern in Python, behind a FastAPI route.</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
 <span class="k">from</span> <span class="n">cachetools</span> <span class="k">import</span> <span class="t">TTLCache</span>
 <span class="k">import</span> <span class="n">redis</span>.<span class="n">asyncio</span> <span class="k">as</span> <span class="n">aioredis</span>, <span class="n">json</span>
 
 <span class="n">_local</span> <span class="o">=</span> <span class="t">TTLCache</span>(<span class="n">maxsize</span><span class="o">=</span><span class="num">2048</span>, <span class="n">ttl</span><span class="o">=</span><span class="num">10</span>)           <span class="c"># in-process, ~100ns</span>
-<span class="n">_redis</span> <span class="o">=</span> <span class="n">aioredis</span>.<span class="n">from_url</span>(<span class="s">"redis://localhost"</span>)   <span class="c"># same-DC, ~0.5ms</span>
 
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span> <span class="o">=</span> <span class="n">aioredis</span>.<span class="n">from_url</span>(<span class="s">"redis://localhost"</span>)   <span class="c"># same-DC, ~0.5ms</span>
+    <span class="k">yield</span>
+    <span class="k">await</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span>.<span class="n">aclose</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/products/{pid}"</span>)
 <span class="k">async def</span> <span class="n">get_product</span>(<span class="n">pid</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
     <span class="c"># Tier 1 — local process memory</span>
     <span class="k">if</span> <span class="n">pid</span> <span class="k">in</span> <span class="n">_local</span>:
         <span class="k">return</span> <span class="n">_local</span>[<span class="n">pid</span>]
 
     <span class="c"># Tier 2 — Redis</span>
-    <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_redis</span>.<span class="n">get</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>)
+    <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span>.<span class="n">get</span>(<span class="s">f"product:{pid}"</span>)
     <span class="k">if</span> <span class="n">raw</span>:
         <span class="n">p</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">raw</span>)
         <span class="n">_local</span>[<span class="n">pid</span>] <span class="o">=</span> <span class="n">p</span>
         <span class="k">return</span> <span class="n">p</span>
 
     <span class="c"># Tier 3 — database</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"SELECT * FROM products WHERE id = $1"</span>, <span class="n">pid</span>)
-    <span class="n">p</span> <span class="o">=</span> <span class="n">dict</span>(<span class="n">p</span>)
-    <span class="k">await</span> <span class="n">_redis</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
+    <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"SELECT * FROM products WHERE id = $1"</span>, <span class="n">pid</span>)
+    <span class="k">if</span> <span class="n">row</span> <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"product not found"</span>)
+    <span class="n">p</span> <span class="o">=</span> <span class="t">dict</span>(<span class="n">row</span>)
+    <span class="k">await</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">redis</span>.<span class="n">set</span>(<span class="s">f"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
     <span class="n">_local</span>[<span class="n">pid</span>] <span class="o">=</span> <span class="n">p</span>
     <span class="k">return</span> <span class="n">p</span></pre></div>
       <div class="code-pane" id="c1-ts"><pre><span class="c">// lru-cache (local) + ioredis (shared) + pg (DB).</span>
@@ -399,7 +411,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c2-go">Go</button>
-        <button class="tab py" data-target="c2-py">Python · py-spy</button>
+        <button class="tab py" data-target="c2-py">Python · FastAPI</button>
         <button class="tab ts" data-target="c2-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// pprof — expose profiles in production. 2 lines.</span>
@@ -428,20 +440,25 @@
 <span class="c"># Or top-like live view:</span>
 <span class="c">#   py-spy top --pid $(pgrep uvicorn)</span>
 <span class="c">#</span>
-<span class="c"># For in-code profiling during dev:</span>
-<span class="k">import</span> <span class="n">cProfile</span>, <span class="n">pstats</span>, <span class="n">io</span>
+<span class="c"># For in-code profiling during dev: middleware profiles one request on demand.</span>
+<span class="k">import</span> <span class="n">cProfile</span>, <span class="n">pstats</span>, <span class="n">io</span>, <span class="n">os</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Request</span>
 
-<span class="k">def</span> <span class="n">profile_endpoint</span>(<span class="n">func</span>):
-    <span class="k">async def</span> <span class="n">wrapper</span>(<span class="o">*</span><span class="n">args</span>, <span class="o">**</span><span class="n">kwargs</span>):
-        <span class="n">pr</span> <span class="o">=</span> <span class="n">cProfile</span>.<span class="t">Profile</span>()
-        <span class="n">pr</span>.<span class="n">enable</span>()
-        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">func</span>(<span class="o">*</span><span class="n">args</span>, <span class="o">**</span><span class="n">kwargs</span>)
-        <span class="n">pr</span>.<span class="n">disable</span>()
-        <span class="n">s</span> <span class="o">=</span> <span class="n">io</span>.<span class="t">StringIO</span>()
-        <span class="n">pstats</span>.<span class="t">Stats</span>(<span class="n">pr</span>, <span class="n">stream</span><span class="o">=</span><span class="n">s</span>).<span class="n">sort_stats</span>(<span class="s">"cumulative"</span>).<span class="n">print_stats</span>(<span class="num">20</span>)
-        <span class="n">print</span>(<span class="n">s</span>.<span class="n">getvalue</span>())
-        <span class="k">return</span> <span class="n">result</span>
-    <span class="k">return</span> <span class="n">wrapper</span></pre></div>
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="n">PROFILING</span> <span class="o">=</span> <span class="n">os</span>.<span class="n">environ</span>.<span class="n">get</span>(<span class="s">"APP_ENV"</span>) <span class="o">==</span> <span class="s">"dev"</span>    <span class="c"># never in production</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">middleware</span>(<span class="s">"http"</span>)
+<span class="k">async def</span> <span class="n">profile_request</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">call_next</span>):
+    <span class="k">if</span> <span class="k">not</span> (<span class="n">PROFILING</span> <span class="k">and</span> <span class="n">request</span>.<span class="n">query_params</span>.<span class="n">get</span>(<span class="s">"profile"</span>) <span class="o">==</span> <span class="s">"1"</span>):
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span>(<span class="n">request</span>)
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">cProfile</span>.<span class="t">Profile</span>()
+    <span class="n">pr</span>.<span class="n">enable</span>()
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span>(<span class="n">request</span>)            <span class="c"># e.g. GET /orders?profile=1</span>
+    <span class="n">pr</span>.<span class="n">disable</span>()
+    <span class="n">s</span> <span class="o">=</span> <span class="n">io</span>.<span class="t">StringIO</span>()
+    <span class="n">pstats</span>.<span class="t">Stats</span>(<span class="n">pr</span>, <span class="n">stream</span><span class="o">=</span><span class="n">s</span>).<span class="n">sort_stats</span>(<span class="s">"cumulative"</span>).<span class="n">print_stats</span>(<span class="num">20</span>)
+    <span class="n">print</span>(<span class="n">s</span>.<span class="n">getvalue</span>())
+    <span class="k">return</span> <span class="n">response</span></pre></div>
       <div class="code-pane" id="c2-ts"><pre><span class="c">// 0x / clinic.js: profile a running Node app, no code changes.</span>
 <span class="c">//</span>
 <span class="c">// 1. Record CPU profile → flame graph:</span>
@@ -568,7 +585,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · SQLAlchemy</button>
+        <button class="tab py" data-target="c3-py">Python · FastAPI + SQLAlchemy</button>
         <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Fix: one JOIN query instead of N+1 separate queries.</span>
@@ -593,29 +610,40 @@
     `</span>, <span class="n">pq</span>.<span class="n">Array</span>(<span class="n">ids</span>))       <span class="c">// one round-trip for all IDs</span>
     <span class="c">// ... scan into map ...</span>
 }</pre></div>
-      <div class="code-pane" id="c3-py"><pre><span class="c"># SQLAlchemy: eager loading prevents N+1.</span>
+      <div class="code-pane" id="c3-py"><pre><span class="c"># SQLAlchemy (async) in FastAPI: eager loading prevents N+1.</span>
+<span class="k">from</span> <span class="n">contextvars</span> <span class="k">import</span> <span class="t">ContextVar</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">Request</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="n">select</span>, <span class="n">event</span>
+<span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">ext</span>.<span class="n">asyncio</span> <span class="k">import</span> <span class="t">AsyncSession</span>
 <span class="k">from</span> <span class="n">sqlalchemy</span>.<span class="n">orm</span> <span class="k">import</span> <span class="n">joinedload</span>, <span class="n">selectinload</span>
 
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
 <span class="c"># BAD — lazy loading triggers N queries inside the loop</span>
-<span class="n">orders</span> <span class="o">=</span> <span class="n">session</span>.<span class="n">query</span>(<span class="t">Order</span>).<span class="n">limit</span>(<span class="num">100</span>).<span class="n">all</span>()
-<span class="k">for</span> <span class="n">o</span> <span class="k">in</span> <span class="n">orders</span>:
-    <span class="n">print</span>(<span class="n">o</span>.<span class="n">user</span>.<span class="n">name</span>)       <span class="c"># ← triggers 1 query per order</span>
+<span class="c">#   for o in orders: o.user.name   ← 1 query per order (async: MissingGreenlet)</span>
 
-<span class="c"># GOOD — joinedload: one SQL JOIN</span>
-<span class="n">orders</span> <span class="o">=</span> (<span class="n">session</span>.<span class="n">query</span>(<span class="t">Order</span>)
-    .<span class="n">options</span>(<span class="n">joinedload</span>(<span class="t">Order</span>.<span class="n">user</span>))
-    .<span class="n">limit</span>(<span class="num">100</span>).<span class="n">all</span>())
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/orders"</span>)
+<span class="k">async def</span> <span class="n">list_orders</span>(<span class="n">db</span>: <span class="t">Annotated</span>[<span class="t">AsyncSession</span>, <span class="t">Depends</span>(<span class="n">get_db</span>)]) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">dict</span>]:
+    <span class="c"># GOOD — joinedload: one SQL JOIN</span>
+    <span class="n">orders</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">scalars</span>(
+        <span class="n">select</span>(<span class="t">Order</span>).<span class="n">options</span>(<span class="n">joinedload</span>(<span class="t">Order</span>.<span class="n">user</span>)).<span class="n">limit</span>(<span class="num">100</span>))
+    <span class="c"># ALSO GOOD — selectinload(Order.user): 1 query + 1 batch IN()</span>
+    <span class="k">return</span> [{<span class="s">"id"</span>: <span class="n">o</span>.<span class="n">id</span>, <span class="s">"user"</span>: <span class="n">o</span>.<span class="n">user</span>.<span class="n">name</span>} <span class="k">for</span> <span class="n">o</span> <span class="k">in</span> <span class="n">orders</span>]
 
-<span class="c"># ALSO GOOD — selectinload: 1 query + 1 batch IN()</span>
-<span class="n">orders</span> <span class="o">=</span> (<span class="n">session</span>.<span class="n">query</span>(<span class="t">Order</span>)
-    .<span class="n">options</span>(<span class="n">selectinload</span>(<span class="t">Order</span>.<span class="n">user</span>))
-    .<span class="n">limit</span>(<span class="num">100</span>).<span class="n">all</span>())
+<span class="c"># Dev guard: count queries per request, alert on &gt; 10</span>
+<span class="n">_queries</span>: <span class="t">ContextVar</span>[<span class="t">list</span>[<span class="t">int</span>]] <span class="o">=</span> <span class="t">ContextVar</span>(<span class="s">"queries"</span>)
 
-<span class="c"># Dev guard: log queries per request, alert on &gt; 10</span>
-<span class="k">from</span> <span class="n">sqlalchemy</span> <span class="k">import</span> <span class="n">event</span>
-<span class="n">_count</span> <span class="o">=</span> <span class="num">0</span>
-<span class="o">@</span><span class="n">event</span>.<span class="n">listens_for</span>(<span class="n">engine</span>, <span class="s">"before_cursor_execute"</span>)
-<span class="k">def</span> <span class="n">_inc</span>(<span class="o">*</span><span class="n">a</span>): <span class="k">global</span> <span class="n">_count</span>; <span class="n">_count</span> <span class="o">+=</span> <span class="num">1</span></pre></div>
+<span class="o">@</span><span class="n">event</span>.<span class="n">listens_for</span>(<span class="n">engine</span>.<span class="n">sync_engine</span>, <span class="s">"before_cursor_execute"</span>)
+<span class="k">def</span> <span class="n">_inc</span>(<span class="o">*</span><span class="n">a</span>): <span class="n">_queries</span>.<span class="n">get</span>([<span class="num">0</span>])[<span class="num">0</span>] <span class="o">+=</span> <span class="num">1</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">middleware</span>(<span class="s">"http"</span>)
+<span class="k">async def</span> <span class="n">query_guard</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">call_next</span>):
+    <span class="n">_queries</span>.<span class="n">set</span>(<span class="n">n</span> <span class="o">:=</span> [<span class="num">0</span>])
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span>(<span class="n">request</span>)
+    <span class="k">if</span> <span class="n">n</span>[<span class="num">0</span>] <span class="o">&gt;</span> <span class="num">10</span>:
+        <span class="n">log</span>.<span class="n">warning</span>(<span class="s">"N+1? %d queries on %s"</span>, <span class="n">n</span>[<span class="num">0</span>], <span class="n">request</span>.<span class="n">url</span>.<span class="n">path</span>)
+    <span class="k">return</span> <span class="n">response</span></pre></div>
       <div class="code-pane" id="c3-ts"><pre><span class="c">// pg: JOIN for list views, DataLoader to batch lazy lookups into one IN().</span>
 <span class="k">import</span> <span class="t">DataLoader</span> <span class="k">from</span> <span class="s">"dataloader"</span>;
 <span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
@@ -747,7 +775,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c4-go">Go</button>
-        <button class="tab py" data-target="c4-py">Python · redis-py</button>
+        <button class="tab py" data-target="c4-py">Python · FastAPI + redis-py</button>
         <button class="tab ts" data-target="c4-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Cache-aside with stampede protection via singleflight.</span>
@@ -781,31 +809,36 @@
 <span class="k">func</span> (<span class="n">c</span> <span class="o">*</span><span class="t">CachedProducts</span>) <span class="n">Invalidate</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">id</span> <span class="t">string</span>) {
     <span class="n">c</span>.<span class="n">cache</span>.<span class="n">Del</span>(<span class="n">ctx</span>, <span class="s">"product:"</span><span class="o">+</span><span class="n">id</span>)
 }</pre></div>
-      <div class="code-pane" id="c4-py"><pre><span class="c"># Cache-aside + asyncio.Lock for stampede protection.</span>
+      <div class="code-pane" id="c4-py"><pre><span class="c"># Cache-aside + asyncio.Lock for stampede protection, in a FastAPI route.</span>
 <span class="k">import</span> <span class="n">asyncio</span>, <span class="n">json</span>
 <span class="k">import</span> <span class="n">redis</span>.<span class="n">asyncio</span> <span class="k">as</span> <span class="n">aioredis</span>
-<span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="t">defaultdict</span>
+<span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
 
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 <span class="n">_redis</span> <span class="o">=</span> <span class="n">aioredis</span>.<span class="n">from_url</span>(<span class="s">"redis://localhost"</span>)
-<span class="n">_locks</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="n">asyncio</span>.<span class="t">Lock</span>] <span class="o">=</span> <span class="t">defaultdict</span>(<span class="n">asyncio</span>.<span class="t">Lock</span>)
+<span class="n">_locks</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="n">asyncio</span>.<span class="t">Lock</span>] <span class="o">=</span> <span class="n">defaultdict</span>(<span class="n">asyncio</span>.<span class="t">Lock</span>)
 
-<span class="k">async def</span> <span class="n">get_product</span>(<span class="n">pid</span>: <span class="t">str</span>) <span class="o">-></span> <span class="t">dict</span>:
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/products/{pid}"</span>)
+<span class="k">async def</span> <span class="n">get_product</span>(<span class="n">pid</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
     <span class="c"># 1. Check cache</span>
-    <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_redis</span>.<span class="n">get</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>)
+    <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_redis</span>.<span class="n">get</span>(<span class="s">f"product:{pid}"</span>)
     <span class="k">if</span> <span class="n">raw</span>:
         <span class="k">return</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">raw</span>)
 
-    <span class="c"># 2. Stampede guard — only one fills the cache</span>
+    <span class="c"># 2. Stampede guard — only one request per pid fills the cache</span>
     <span class="k">async with</span> <span class="n">_locks</span>[<span class="n">pid</span>]:
         <span class="c"># Double-check after acquiring lock</span>
-        <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_redis</span>.<span class="n">get</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>)
+        <span class="n">raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_redis</span>.<span class="n">get</span>(<span class="s">f"product:{pid}"</span>)
         <span class="k">if</span> <span class="n">raw</span>:
             <span class="k">return</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">raw</span>)
 
         <span class="c"># 3. Load from DB + backfill</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"SELECT * FROM products WHERE id=$1"</span>, <span class="n">pid</span>)
-        <span class="n">p</span> <span class="o">=</span> <span class="n">dict</span>(<span class="n">p</span>)
-        <span class="k">await</span> <span class="n">_redis</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
+        <span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(<span class="s">"SELECT * FROM products WHERE id=$1"</span>, <span class="n">pid</span>)
+        <span class="k">if</span> <span class="n">row</span> <span class="k">is</span> <span class="k">None</span>:
+            <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"product not found"</span>)
+        <span class="n">p</span> <span class="o">=</span> <span class="t">dict</span>(<span class="n">row</span>)
+        <span class="k">await</span> <span class="n">_redis</span>.<span class="n">set</span>(<span class="s">f"product:{pid}"</span>, <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">p</span>), <span class="n">ex</span><span class="o">=</span><span class="num">300</span>)
         <span class="k">return</span> <span class="n">p</span></pre></div>
       <div class="code-pane" id="c4-ts"><pre><span class="c">// A small higher-order helper does cache-aside.</span>
 <span class="k">import</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
@@ -928,7 +961,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c5-go">Go</button>
-        <button class="tab py" data-target="c5-py">Python · asyncpg</button>
+        <button class="tab py" data-target="c5-py">Python · FastAPI + asyncpg</button>
         <button class="tab ts" data-target="c5-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// pgxpool — bounded pool with health checks.</span>
@@ -954,23 +987,36 @@
     <span class="n">poolIdle</span>.<span class="n">Set</span>(<span class="t">float64</span>(<span class="n">s</span>.<span class="n">IdleConns</span>()))
     <span class="n">poolTotal</span>.<span class="n">Set</span>(<span class="t">float64</span>(<span class="n">s</span>.<span class="n">TotalConns</span>()))
 }</pre></div>
-      <div class="code-pane" id="c5-py"><pre><span class="c"># asyncpg — pool baked in, async-native.</span>
+      <div class="code-pane" id="c5-py"><pre><span class="c"># asyncpg — pool baked in, async-native; FastAPI owns it via lifespan.</span>
+<span class="k">import</span> <span class="n">os</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
 <span class="k">import</span> <span class="n">asyncpg</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Depends</span>, <span class="t">Request</span>
 
-<span class="k">async def</span> <span class="n">init_db</span>():
-    <span class="k">return</span> <span class="k">await</span> <span class="n">asyncpg</span>.<span class="n">create_pool</span>(
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncpg</span>.<span class="n">create_pool</span>(
         <span class="n">dsn</span><span class="o">=</span><span class="n">os</span>.<span class="n">environ</span>[<span class="s">"DATABASE_URL"</span>],
         <span class="n">min_size</span><span class="o">=</span><span class="num">4</span>,
         <span class="n">max_size</span><span class="o">=</span><span class="num">20</span>,
         <span class="n">max_inactive_connection_lifetime</span><span class="o">=</span><span class="num">300</span>,  <span class="c"># 5 min</span>
         <span class="n">command_timeout</span><span class="o">=</span><span class="num">10</span>,                    <span class="c"># 10s per query</span>
     )
+    <span class="k">yield</span>
+    <span class="k">await</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span>.<span class="n">close</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
 
 <span class="c"># Usage — pool manages borrow/return via context manager</span>
-<span class="k">async def</span> <span class="n">get_order</span>(<span class="n">pool</span>, <span class="n">order_id</span>):
-    <span class="k">async with</span> <span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">conn</span>:
-        <span class="k">return</span> <span class="k">await</span> <span class="n">conn</span>.<span class="n">fetchrow</span>(
-            <span class="s">"SELECT * FROM orders WHERE id = $1"</span>, <span class="n">order_id</span>)</pre></div>
+<span class="k">async def</span> <span class="n">get_conn</span>(<span class="n">request</span>: <span class="t">Request</span>):
+    <span class="k">async with</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">conn</span>:
+        <span class="k">yield</span> <span class="n">conn</span>                             <span class="c"># returned to the pool after the response</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/orders/{order_id}"</span>)
+<span class="k">async def</span> <span class="n">get_order</span>(<span class="n">order_id</span>: <span class="t">int</span>, <span class="n">conn</span>: <span class="t">Annotated</span>[<span class="n">asyncpg</span>.<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_conn</span>)]):
+    <span class="k">return</span> <span class="t">dict</span>(<span class="k">await</span> <span class="n">conn</span>.<span class="n">fetchrow</span>(
+        <span class="s">"SELECT * FROM orders WHERE id = $1"</span>, <span class="n">order_id</span>))</pre></div>
       <div class="code-pane" id="c5-ts"><pre><span class="c">// pg.Pool — node-postgres' built-in pool, the usual Node choice.</span>
 <span class="k">import</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 <span class="k">import</span> { <span class="t">Gauge</span> } <span class="k">from</span> <span class="s">"prom-client"</span>;
@@ -1262,7 +1308,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c7-go">Go</button>
-        <button class="tab py" data-target="c7-py">Python · asyncpg</button>
+        <button class="tab py" data-target="c7-py">Python · FastAPI + asyncpg</button>
         <button class="tab ts" data-target="c7-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Batch inserter: flush on size or interval.</span>
@@ -1308,30 +1354,52 @@
 }</pre></div>
       <div class="code-pane" id="c7-py"><pre><span class="c"># asyncio batch: collect events, flush on size or timer.</span>
 <span class="k">import</span> <span class="n">asyncio</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Request</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+
+<span class="k">class</span> <span class="t">Event</span>(<span class="t">BaseModel</span>):
+    <span class="n">id</span>: <span class="t">str</span>
+    <span class="n">type</span>: <span class="t">str</span>
+    <span class="n">data</span>: <span class="t">str</span>
 
 <span class="k">class</span> <span class="t">BatchWriter</span>:
     <span class="k">def</span> <span class="n">__init__</span>(<span class="n">self</span>, <span class="n">db</span>, <span class="n">size</span><span class="o">=</span><span class="num">500</span>, <span class="n">interval</span><span class="o">=</span><span class="num">0.1</span>):
         <span class="n">self</span>.<span class="n">db</span>, <span class="n">self</span>.<span class="n">size</span>, <span class="n">self</span>.<span class="n">interval</span> <span class="o">=</span> <span class="n">db</span>, <span class="n">size</span>, <span class="n">interval</span>
-        <span class="n">self</span>.<span class="n">buf</span>: <span class="t">list</span> <span class="o">=</span> []
-        <span class="n">self</span>.<span class="n">_task</span> <span class="o">=</span> <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">self</span>.<span class="n">_ticker</span>())
+        <span class="n">self</span>.<span class="n">buf</span>: <span class="t">list</span>[<span class="t">Event</span>] <span class="o">=</span> []
 
-    <span class="k">async def</span> <span class="n">add</span>(<span class="n">self</span>, <span class="n">event</span>):
+    <span class="k">async def</span> <span class="n">add</span>(<span class="n">self</span>, <span class="n">event</span>: <span class="t">Event</span>):
         <span class="n">self</span>.<span class="n">buf</span>.<span class="n">append</span>(<span class="n">event</span>)
         <span class="k">if</span> <span class="n">len</span>(<span class="n">self</span>.<span class="n">buf</span>) <span class="o">&gt;=</span> <span class="n">self</span>.<span class="n">size</span>:
-            <span class="k">await</span> <span class="n">self</span>.<span class="n">_flush</span>()
+            <span class="k">await</span> <span class="n">self</span>.<span class="n">flush</span>()
 
-    <span class="k">async def</span> <span class="n">_ticker</span>(<span class="n">self</span>):
+    <span class="k">async def</span> <span class="n">ticker</span>(<span class="n">self</span>):
         <span class="k">while</span> <span class="k">True</span>:
             <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>(<span class="n">self</span>.<span class="n">interval</span>)
-            <span class="k">await</span> <span class="n">self</span>.<span class="n">_flush</span>()
+            <span class="k">await</span> <span class="n">self</span>.<span class="n">flush</span>()
 
-    <span class="k">async def</span> <span class="n">_flush</span>(<span class="n">self</span>):
+    <span class="k">async def</span> <span class="n">flush</span>(<span class="n">self</span>):
         <span class="k">if</span> <span class="k">not</span> <span class="n">self</span>.<span class="n">buf</span>: <span class="k">return</span>
         <span class="n">batch</span>, <span class="n">self</span>.<span class="n">buf</span> <span class="o">=</span> <span class="n">self</span>.<span class="n">buf</span>, []
         <span class="c"># asyncpg COPY is the fastest bulk insert</span>
         <span class="k">await</span> <span class="n">self</span>.<span class="n">db</span>.<span class="n">copy_records_to_table</span>(
             <span class="s">"events"</span>, <span class="n">records</span><span class="o">=</span>[(<span class="n">e</span>.<span class="n">id</span>, <span class="n">e</span>.<span class="n">type</span>, <span class="n">e</span>.<span class="n">data</span>) <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">batch</span>],
-            <span class="n">columns</span><span class="o">=</span>[<span class="s">"id"</span>, <span class="s">"type"</span>, <span class="s">"data"</span>])</pre></div>
+            <span class="n">columns</span><span class="o">=</span>[<span class="s">"id"</span>, <span class="s">"type"</span>, <span class="s">"data"</span>])
+
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="n">app</span>.<span class="n">state</span>.<span class="n">writer</span> <span class="o">=</span> <span class="n">w</span> <span class="o">=</span> <span class="t">BatchWriter</span>(<span class="n">pool</span>)    <span class="c"># pool: asyncpg pool from startup</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">w</span>.<span class="n">ticker</span>())      <span class="c"># timer lives in the API process</span>
+    <span class="k">yield</span>
+    <span class="n">task</span>.<span class="n">cancel</span>()
+    <span class="k">await</span> <span class="n">w</span>.<span class="n">flush</span>()                             <span class="c"># drain on shutdown</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/events"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">202</span>)
+<span class="k">async def</span> <span class="n">ingest</span>(<span class="n">event</span>: <span class="t">Event</span>, <span class="n">request</span>: <span class="t">Request</span>):
+    <span class="k">await</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">writer</span>.<span class="n">add</span>(<span class="n">event</span>)   <span class="c"># buffered, not one INSERT each</span>
+    <span class="k">return</span> {<span class="s">"queued"</span>: <span class="k">True</span>}</pre></div>
       <div class="code-pane" id="c7-ts"><pre><span class="c">// Manual buffer, flushed on a setInterval timer.</span>
 <span class="k">import type</span> { <span class="t">Pool</span> } <span class="k">from</span> <span class="s">"pg"</span>;
 
@@ -1573,7 +1641,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c9-go">Go</button>
-        <button class="tab py" data-target="c9-py">Python · redis-py</button>
+        <button class="tab py" data-target="c9-py">Python · FastAPI + redis-py</button>
         <button class="tab ts" data-target="c9-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c9-go"><pre><span class="c">// Hot-key mitigation: split a hot key into N replicas.</span>
@@ -1596,18 +1664,35 @@
 }</pre></div>
       <div class="code-pane" id="c9-py"><pre><span class="c"># Same pattern: split a hot key into replicas, read random.</span>
 <span class="k">import</span> <span class="n">random</span>
+<span class="k">import</span> <span class="n">redis</span>.<span class="n">asyncio</span> <span class="k">as</span> <span class="n">aioredis</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
 
 <span class="n">HOT_KEY_REPLICAS</span> <span class="o">=</span> <span class="num">8</span>
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="n">redis</span> <span class="o">=</span> <span class="n">aioredis</span>.<span class="n">from_url</span>(<span class="s">"redis://localhost"</span>)
 
-<span class="k">async def</span> <span class="n">hot_get</span>(<span class="n">redis</span>, <span class="n">key</span>: <span class="t">str</span>) <span class="o">-></span> <span class="t">str</span> <span class="o">|</span> <span class="k">None</span>:
+<span class="k">async def</span> <span class="n">hot_get</span>(<span class="n">key</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">str</span> <span class="o">|</span> <span class="k">None</span>:
     <span class="n">shard</span> <span class="o">=</span> <span class="n">random</span>.<span class="n">randint</span>(<span class="num">0</span>, <span class="n">HOT_KEY_REPLICAS</span> <span class="o">-</span> <span class="num">1</span>)
-    <span class="k">return</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">get</span>(<span class="n">f</span><span class="s">"{key}:{shard}"</span>)
+    <span class="k">return</span> <span class="k">await</span> <span class="n">redis</span>.<span class="n">get</span>(<span class="s">f"{key}:{shard}"</span>)
 
-<span class="k">async def</span> <span class="n">hot_set</span>(<span class="n">redis</span>, <span class="n">key</span>: <span class="t">str</span>, <span class="n">val</span>: <span class="t">str</span>, <span class="n">ttl</span>: <span class="t">int</span> <span class="o">=</span> <span class="num">60</span>):
+<span class="k">async def</span> <span class="n">hot_set</span>(<span class="n">key</span>: <span class="t">str</span>, <span class="n">val</span>: <span class="t">str</span>, <span class="n">ttl</span>: <span class="t">int</span> <span class="o">=</span> <span class="num">60</span>):
     <span class="k">async with</span> <span class="n">redis</span>.<span class="n">pipeline</span>() <span class="k">as</span> <span class="n">p</span>:
         <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">range</span>(<span class="n">HOT_KEY_REPLICAS</span>):
-            <span class="n">p</span>.<span class="n">set</span>(<span class="n">f</span><span class="s">"{key}:{i}"</span>, <span class="n">val</span>, <span class="n">ex</span><span class="o">=</span><span class="n">ttl</span>)
-        <span class="k">await</span> <span class="n">p</span>.<span class="n">execute</span>()</pre></div>
+            <span class="n">p</span>.<span class="n">set</span>(<span class="s">f"{key}:{i}"</span>, <span class="n">val</span>, <span class="n">ex</span><span class="o">=</span><span class="n">ttl</span>)
+        <span class="k">await</span> <span class="n">p</span>.<span class="n">execute</span>()
+
+<span class="k">class</span> <span class="t">Flag</span>(<span class="t">BaseModel</span>):
+    <span class="n">value</span>: <span class="t">str</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/flags/{name}"</span>)
+<span class="k">async def</span> <span class="n">read_flag</span>(<span class="n">name</span>: <span class="t">str</span>):
+    <span class="k">return</span> {<span class="s">"value"</span>: <span class="k">await</span> <span class="n">hot_get</span>(<span class="s">f"flag:{name}"</span>)}   <span class="c"># load spread over 8 keys</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">put</span>(<span class="s">"/flags/{name}"</span>)
+<span class="k">async def</span> <span class="n">write_flag</span>(<span class="n">name</span>: <span class="t">str</span>, <span class="n">body</span>: <span class="t">Flag</span>):
+    <span class="k">await</span> <span class="n">hot_set</span>(<span class="s">f"flag:{name}"</span>, <span class="n">body</span>.<span class="n">value</span>)          <span class="c"># write all replicas</span>
+    <span class="k">return</span> {<span class="s">"ok"</span>: <span class="k">True</span>}</pre></div>
       <div class="code-pane" id="c9-ts"><pre><span class="c">// ioredis pipeline for hot-key fan-out.</span>
 <span class="k">import type</span> { <span class="t">Redis</span> } <span class="k">from</span> <span class="s">"ioredis"</span>;
 
@@ -1746,6 +1831,7 @@
   <span class="n">sleep</span>(<span class="num">1</span>);   <span class="c">// realistic think-time between requests</span>
 }</pre></div>
       <div class="code-pane" id="c10-py"><pre><span class="c"># Locust — Python-native load testing.</span>
+<span class="k">import</span> <span class="n">random</span>
 <span class="k">from</span> <span class="n">locust</span> <span class="k">import</span> <span class="t">HttpUser</span>, <span class="n">task</span>, <span class="n">between</span>
 
 <span class="k">class</span> <span class="t">APIUser</span>(<span class="t">HttpUser</span>):

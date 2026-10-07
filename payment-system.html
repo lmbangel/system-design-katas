@@ -189,7 +189,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python</button><button class="tab ts" data-target="c1-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c1-go">Go</button><button class="tab py" data-target="c1-py">Python · FastAPI</button><button class="tab ts" data-target="c1-ts">TypeScript</button></div>
       <div class="code-pane active" id="c1-go"><pre><span class="c">// Payment intent — the central entity in the payment lifecycle.</span>
 <span class="k">type</span> <span class="t">PaymentIntent</span> <span class="k">struct</span> {
     <span class="n">ID</span>             <span class="t">string</span>         <span class="s">`json:"id"`</span>
@@ -220,10 +220,13 @@
     <span class="c">// 3. Write to ledger + persist (in a transaction)</span>
     <span class="k">return</span> <span class="n">pi</span>, <span class="n">store</span>.<span class="n">Insert</span>(<span class="n">ctx</span>, <span class="n">pi</span>)
 }</pre></div>
-      <div class="code-pane" id="c1-py"><pre><span class="c"># Payment intent model — Pydantic for validation.</span>
-<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">Field</span>
+      <div class="code-pane" id="c1-py"><pre><span class="c"># Payment intent model — Pydantic for validation, FastAPI for the endpoint.</span>
 <span class="k">from</span> <span class="n">enum</span> <span class="k">import</span> <span class="t">Enum</span>
-<span class="k">from</span> <span class="n">decimal</span> <span class="k">import</span> <span class="t">Decimal</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Header</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">Field</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 
 <span class="k">class</span> <span class="t">PaymentState</span>(<span class="t">str</span>, <span class="t">Enum</span>):
     <span class="n">PENDING</span>    <span class="o">=</span> <span class="s">"pending"</span>
@@ -233,21 +236,23 @@
     <span class="n">FAILED</span>     <span class="o">=</span> <span class="s">"failed"</span>
     <span class="n">REFUNDED</span>   <span class="o">=</span> <span class="s">"refunded"</span>
 
-<span class="k">class</span> <span class="t">PaymentIntent</span>(<span class="t">BaseModel</span>):
-    <span class="n">id</span>: <span class="t">str</span>
-    <span class="n">idempotency_key</span>: <span class="t">str</span>
+<span class="k">class</span> <span class="t">CreatePaymentReq</span>(<span class="t">BaseModel</span>):
     <span class="n">amount_cents</span>: <span class="t">int</span> <span class="o">=</span> <span class="t">Field</span>(<span class="n">gt</span><span class="o">=</span><span class="num">0</span>)     <span class="c"># integer cents, never float</span>
     <span class="n">currency</span>: <span class="t">str</span> <span class="o">=</span> <span class="t">Field</span>(<span class="n">pattern</span><span class="o">=</span><span class="s">"^[A-Z]{3}$"</span>)
-    <span class="n">state</span>: <span class="t">PaymentState</span> <span class="o">=</span> <span class="t">PaymentState</span>.<span class="n">PENDING</span>
     <span class="n">merchant_id</span>: <span class="t">str</span>
     <span class="n">token_id</span>: <span class="t">str</span>                     <span class="c"># never raw card number</span>
 
+<span class="k">class</span> <span class="t">PaymentIntent</span>(<span class="t">CreatePaymentReq</span>):
+    <span class="n">id</span>: <span class="t">str</span>
+    <span class="n">idempotency_key</span>: <span class="t">str</span>              <span class="c"># UNIQUE index in the table</span>
+    <span class="n">state</span>: <span class="t">PaymentState</span> <span class="o">=</span> <span class="t">PaymentState</span>.<span class="n">PENDING</span>
+
 <span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/payment-intents"</span>)
 <span class="k">async def</span> <span class="n">create</span>(<span class="n">req</span>: <span class="t">CreatePaymentReq</span>,
-                 <span class="n">idem_key</span>: <span class="t">str</span> <span class="o">=</span> <span class="n">Header</span>(<span class="n">alias</span><span class="o">=</span><span class="s">"Idempotency-Key"</span>)):
+                 <span class="n">idem_key</span>: <span class="t">Annotated</span>[<span class="t">str</span>, <span class="t">Header</span>(<span class="n">alias</span><span class="o">=</span><span class="s">"Idempotency-Key"</span>)]) <span class="o">-&gt;</span> <span class="t">PaymentIntent</span>:
     <span class="n">existing</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span>.<span class="n">get_by_idem_key</span>(<span class="n">idem_key</span>)
     <span class="k">if</span> <span class="n">existing</span>: <span class="k">return</span> <span class="n">existing</span>     <span class="c"># safe replay</span>
-    <span class="n">pi</span> <span class="o">=</span> <span class="t">PaymentIntent</span>(<span class="n">id</span><span class="o">=</span><span class="n">ulid</span>(), <span class="n">idempotency_key</span><span class="o">=</span><span class="n">idem_key</span>, <span class="o">**</span><span class="n">req</span>.<span class="n">dict</span>())
+    <span class="n">pi</span> <span class="o">=</span> <span class="t">PaymentIntent</span>(<span class="n">id</span><span class="o">=</span><span class="n">ulid</span>(), <span class="n">idempotency_key</span><span class="o">=</span><span class="n">idem_key</span>, <span class="o">**</span><span class="n">req</span>.<span class="n">model_dump</span>())
     <span class="k">await</span> <span class="n">store</span>.<span class="n">insert</span>(<span class="n">pi</span>)
     <span class="k">return</span> <span class="n">pi</span></pre></div>
       <div class="code-pane" id="c1-ts"><pre><span class="c">// PaymentIntent entity — zod schema + inferred type.</span>
@@ -356,7 +361,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c2-go">Go</button><button class="tab py" data-target="c2-py">Python · FastAPI + asyncpg</button><button class="tab ts" data-target="c2-ts">TypeScript</button></div>
       <div class="code-pane active" id="c2-go"><pre><span class="c">// Double-entry ledger write — always in a transaction.</span>
 <span class="k">type</span> <span class="t">LedgerEntry</span> <span class="k">struct</span> {
     <span class="n">TxID</span>      <span class="t">string</span>
@@ -397,26 +402,43 @@
     <span class="k">return</span> <span class="n">bal</span>, <span class="n">err</span>
 }</pre></div>
       <div class="code-pane" id="c2-py"><pre><span class="c"># Double-entry ledger — append-only, invariant-checked.</span>
-<span class="k">async def</span> <span class="n">transfer</span>(<span class="n">db</span>, <span class="n">entries</span>: <span class="t">list</span>[<span class="t">LedgerEntry</span>]):
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
+<span class="k">from</span> <span class="n">asyncpg</span> <span class="k">import</span> <span class="t">Connection</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">Depends</span>, <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="t">Db</span> <span class="o">=</span> <span class="t">Annotated</span>[<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_db</span>)]   <span class="c"># pooled asyncpg connection</span>
+
+<span class="k">async def</span> <span class="n">transfer</span>(<span class="n">db</span>: <span class="t">Connection</span>, <span class="n">entries</span>: <span class="t">list</span>[<span class="t">LedgerEntry</span>]):
     <span class="n">debits</span>  <span class="o">=</span> <span class="n">sum</span>(<span class="n">e</span>.<span class="n">amount</span> <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">entries</span> <span class="k">if</span> <span class="n">e</span>.<span class="n">direction</span> <span class="o">==</span> <span class="s">"debit"</span>)
     <span class="n">credits</span> <span class="o">=</span> <span class="n">sum</span>(<span class="n">e</span>.<span class="n">amount</span> <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">entries</span> <span class="k">if</span> <span class="n">e</span>.<span class="n">direction</span> <span class="o">==</span> <span class="s">"credit"</span>)
-    <span class="k">assert</span> <span class="n">debits</span> <span class="o">==</span> <span class="n">credits</span>, <span class="s">"invariant violated"</span>
+    <span class="k">if</span> <span class="n">debits</span> <span class="o">!=</span> <span class="n">credits</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">422</span>, <span class="s">"invariant violated"</span>)
 
-    <span class="k">async with</span> <span class="n">db</span>.<span class="n">transaction</span>():
+    <span class="k">async with</span> <span class="n">db</span>.<span class="n">transaction</span>():          <span class="c"># all entries or none</span>
         <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">entries</span>:
             <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"""INSERT INTO ledger
                 (tx_id, account, direction, amount, currency)
                 VALUES ($1,$2,$3,$4,$5)"""</span>,
                 <span class="n">e</span>.<span class="n">tx_id</span>, <span class="n">e</span>.<span class="n">account</span>, <span class="n">e</span>.<span class="n">direction</span>, <span class="n">e</span>.<span class="n">amount</span>, <span class="n">e</span>.<span class="n">currency</span>)
 
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/transfers"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">post_transfer</span>(<span class="n">entries</span>: <span class="t">list</span>[<span class="t">LedgerEntry</span>], <span class="n">db</span>: <span class="t">Db</span>):
+    <span class="k">await</span> <span class="n">transfer</span>(<span class="n">db</span>, <span class="n">entries</span>)
+
 <span class="c"># Refund: just reverse the entries, append new rows.</span>
-<span class="k">async def</span> <span class="n">refund</span>(<span class="n">db</span>, <span class="n">original_tx_id</span>: <span class="t">str</span>):
-    <span class="n">original</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetch</span>(<span class="s">"SELECT * FROM ledger WHERE tx_id=$1"</span>, <span class="n">original_tx_id</span>)
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/transfers/{tx_id}/refund"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">refund</span>(<span class="n">tx_id</span>: <span class="t">str</span>, <span class="n">db</span>: <span class="t">Db</span>):
+    <span class="n">original</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetch</span>(<span class="s">"SELECT * FROM ledger WHERE tx_id=$1"</span>, <span class="n">tx_id</span>)
+    <span class="k">if not</span> <span class="n">original</span>: <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"unknown transaction"</span>)
+    <span class="n">new_tx_id</span> <span class="o">=</span> <span class="t">str</span>(<span class="n">uuid4</span>())
     <span class="n">reversed_entries</span> <span class="o">=</span> [
-        <span class="n">e</span>.<span class="n">_replace</span>(<span class="n">tx_id</span><span class="o">=</span><span class="n">new_tx_id</span>,
-                   <span class="n">direction</span><span class="o">=</span><span class="s">"credit"</span> <span class="k">if</span> <span class="n">e</span>.<span class="n">direction</span> <span class="o">==</span> <span class="s">"debit"</span> <span class="k">else</span> <span class="s">"debit"</span>)
-        <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">original</span>]
-    <span class="k">await</span> <span class="n">transfer</span>(<span class="n">db</span>, <span class="n">reversed_entries</span>)</pre></div>
+        <span class="t">LedgerEntry</span>(<span class="o">**</span>{<span class="o">**</span><span class="t">dict</span>(<span class="n">r</span>), <span class="s">"tx_id"</span>: <span class="n">new_tx_id</span>,
+                       <span class="s">"direction"</span>: <span class="s">"credit"</span> <span class="k">if</span> <span class="n">r</span>[<span class="s">"direction"</span>] <span class="o">==</span> <span class="s">"debit"</span> <span class="k">else</span> <span class="s">"debit"</span>})
+        <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">original</span>]
+    <span class="k">await</span> <span class="n">transfer</span>(<span class="n">db</span>, <span class="n">reversed_entries</span>)
+    <span class="k">return</span> {<span class="s">"tx_id"</span>: <span class="n">new_tx_id</span>}</pre></div>
       <div class="code-pane" id="c2-ts"><pre><span class="c">// pg — transactional ledger write with invariant check.</span>
 <span class="k">export class</span> <span class="t">Ledger</span> {
     <span class="k">constructor</span>(<span class="k">private readonly</span> <span class="n">db</span>: <span class="t">Pool</span>) {}
@@ -494,7 +516,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c3-go">Go</button><button class="tab py" data-target="c3-py">Python · FastAPI</button><button class="tab ts" data-target="c3-ts">TypeScript</button></div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// Idempotency middleware — check before processing, save after.</span>
 <span class="k">func</span> <span class="n">IdempotentHandler</span>(<span class="n">next</span> <span class="t">http.Handler</span>) <span class="t">http.Handler</span> {
     <span class="k">return</span> <span class="n">http</span>.<span class="n">HandlerFunc</span>(<span class="k">func</span>(<span class="n">w</span> <span class="t">http.ResponseWriter</span>, <span class="n">r</span> <span class="o">*</span><span class="t">http.Request</span>) {
@@ -520,19 +542,37 @@
         <span class="n">w</span>.<span class="n">Write</span>(<span class="n">rec</span>.<span class="n">Body</span>.<span class="n">Bytes</span>())
     })
 }</pre></div>
-      <div class="code-pane" id="c3-py"><pre><span class="c"># Idempotency — FastAPI dependency.</span>
-<span class="k">async def</span> <span class="n">idempotent</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">db</span>=<span class="n">Depends</span>(<span class="n">get_db</span>)):
-    <span class="n">key</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">headers</span>.<span class="n">get</span>(<span class="s">"Idempotency-Key"</span>)
-    <span class="k">if</span> <span class="k">not</span> <span class="n">key</span>: <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">400</span>, <span class="s">"missing idempotency key"</span>)
+      <div class="code-pane" id="c3-py"><pre><span class="c"># Idempotency — FastAPI middleware: replay the cached response, else run once.</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Request</span>, <span class="t">Response</span>
+<span class="k">from</span> <span class="n">fastapi</span>.<span class="n">responses</span> <span class="k">import</span> <span class="t">JSONResponse</span>
 
-    <span class="n">cached</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(
-        <span class="s">"SELECT status_code, body FROM idempotency WHERE key=$1"</span>, <span class="n">key</span>)
-    <span class="k">if</span> <span class="n">cached</span>:
-        <span class="k">return</span> <span class="t">JSONResponse</span>(<span class="n">json</span>.<span class="n">loads</span>(<span class="n">cached</span>[<span class="s">"body"</span>]),
-                           <span class="n">status_code</span><span class="o">=</span><span class="n">cached</span>[<span class="s">"status_code"</span>])
-    <span class="c"># Acquire advisory lock to prevent concurrent retries</span>
-    <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"SELECT pg_advisory_xact_lock(hashtext($1))"</span>, <span class="n">key</span>)
-    <span class="k">return</span> <span class="k">None</span>  <span class="c"># proceed to handler, save result after</span></pre></div>
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">middleware</span>(<span class="s">"http"</span>)
+<span class="k">async def</span> <span class="n">idempotent</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">call_next</span>):
+    <span class="k">if</span> <span class="n">request</span>.<span class="n">method</span> <span class="o">!=</span> <span class="s">"POST"</span>:
+        <span class="k">return await</span> <span class="n">call_next</span>(<span class="n">request</span>)
+    <span class="n">key</span> <span class="o">=</span> <span class="n">request</span>.<span class="n">headers</span>.<span class="n">get</span>(<span class="s">"Idempotency-Key"</span>)
+    <span class="k">if not</span> <span class="n">key</span>:
+        <span class="k">return</span> <span class="t">JSONResponse</span>({<span class="s">"detail"</span>: <span class="s">"missing idempotency key"</span>}, <span class="n">status_code</span><span class="o">=</span><span class="num">400</span>)
+
+    <span class="k">async with</span> <span class="n">request</span>.<span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">db</span>, <span class="n">db</span>.<span class="n">transaction</span>():
+        <span class="c"># Advisory lock first: a concurrent retry waits here, then sees the cache</span>
+        <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"SELECT pg_advisory_xact_lock(hashtext($1))"</span>, <span class="n">key</span>)
+        <span class="n">cached</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(
+            <span class="s">"SELECT status_code, body FROM idempotency WHERE key=$1"</span>, <span class="n">key</span>)
+        <span class="k">if</span> <span class="n">cached</span>:                                <span class="c"># replay cached response</span>
+            <span class="k">return</span> <span class="t">Response</span>(<span class="n">cached</span>[<span class="s">"body"</span>], <span class="n">status_code</span><span class="o">=</span><span class="n">cached</span>[<span class="s">"status_code"</span>],
+                            <span class="n">media_type</span><span class="o">=</span><span class="s">"application/json"</span>)
+
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span>(<span class="n">request</span>)       <span class="c"># run the handler once</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="s">b""</span>.<span class="n">join</span>([<span class="n">chunk</span> <span class="k">async for</span> <span class="n">chunk</span> <span class="k">in</span> <span class="n">response</span>.<span class="n">body_iterator</span>])
+        <span class="k">if</span> <span class="n">response</span>.<span class="n">status_code</span> <span class="o">&lt;</span> <span class="num">500</span>:            <span class="c"># 5xx stays retryable</span>
+            <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(
+                <span class="s">"INSERT INTO idempotency (key, status_code, body) VALUES ($1,$2,$3)"</span>,
+                <span class="n">key</span>, <span class="n">response</span>.<span class="n">status_code</span>, <span class="n">body</span>.<span class="n">decode</span>())
+    <span class="k">return</span> <span class="t">Response</span>(<span class="n">body</span>, <span class="n">status_code</span><span class="o">=</span><span class="n">response</span>.<span class="n">status_code</span>,
+                    <span class="n">headers</span><span class="o">=</span><span class="t">dict</span>(<span class="n">response</span>.<span class="n">headers</span>))</pre></div>
       <div class="code-pane" id="c3-ts"><pre><span class="c">// Express middleware — idempotency around the wrapped route handler.</span>
 <span class="k">import type</span> { <span class="t">Request</span>, <span class="t">Response</span>, <span class="t">NextFunction</span> } <span class="k">from</span> <span class="s">"express"</span>;
 
@@ -612,7 +652,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python</button><button class="tab ts" data-target="c4-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c4-go">Go</button><button class="tab py" data-target="c4-py">Python · FastAPI</button><button class="tab ts" data-target="c4-ts">TypeScript</button></div>
       <div class="code-pane active" id="c4-go"><pre><span class="c">// Payment state machine — explicit transitions, impossible to skip.</span>
 <span class="k">type</span> <span class="t">PaymentState</span> <span class="t">string</span>
 <span class="k">const</span> (
@@ -639,6 +679,12 @@
     <span class="k">return</span> <span class="n">fmt</span>.<span class="n">Errorf</span>(<span class="s">"illegal transition %s → %s"</span>, <span class="n">current</span>, <span class="n">next</span>)
 }</pre></div>
       <div class="code-pane" id="c4-py"><pre><span class="c"># State machine — dict of allowed transitions.</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+<span class="k">from</span> <span class="n">asyncpg</span> <span class="k">import</span> <span class="t">Connection</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">Depends</span>, <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
 <span class="n">TRANSITIONS</span> <span class="o">=</span> {
     <span class="s">"pending"</span>:    [<span class="s">"authorised"</span>, <span class="s">"failed"</span>],
     <span class="s">"authorised"</span>: [<span class="s">"captured"</span>, <span class="s">"failed"</span>, <span class="s">"cancelled"</span>],
@@ -646,20 +692,24 @@
     <span class="s">"settled"</span>:    [<span class="s">"refunded"</span>],
 }
 
-<span class="k">def</span> <span class="n">transition</span>(<span class="n">current</span>: <span class="t">str</span>, <span class="n">target</span>: <span class="t">str</span>) <span class="o">-></span> <span class="t">str</span>:
-    <span class="k">if</span> <span class="n">target</span> <span class="k">not</span> <span class="k">in</span> <span class="n">TRANSITIONS</span>.<span class="n">get</span>(<span class="n">current</span>, []):
-        <span class="k">raise</span> <span class="t">ValueError</span>(<span class="n">f</span><span class="s">"illegal: {current} → {target}"</span>)
+<span class="k">def</span> <span class="n">transition</span>(<span class="n">current</span>: <span class="t">str</span>, <span class="n">target</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">str</span>:
+    <span class="k">if</span> <span class="n">target</span> <span class="k">not in</span> <span class="n">TRANSITIONS</span>.<span class="n">get</span>(<span class="n">current</span>, []):
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">409</span>, <span class="s">f"illegal: {current} → {target}"</span>)
     <span class="k">return</span> <span class="n">target</span>
 
 <span class="c"># In the handler — atomic transition + ledger write.</span>
-<span class="k">async def</span> <span class="n">capture_payment</span>(<span class="n">db</span>, <span class="n">payment_id</span>: <span class="t">str</span>):
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/payments/{payment_id}/capture"</span>)
+<span class="k">async def</span> <span class="n">capture_payment</span>(<span class="n">payment_id</span>: <span class="t">str</span>,
+                          <span class="n">db</span>: <span class="t">Annotated</span>[<span class="t">Connection</span>, <span class="t">Depends</span>(<span class="n">get_db</span>)]):
     <span class="k">async with</span> <span class="n">db</span>.<span class="n">transaction</span>():
         <span class="n">pi</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span>.<span class="n">fetchrow</span>(
             <span class="s">"SELECT * FROM payments WHERE id=$1 FOR UPDATE"</span>, <span class="n">payment_id</span>)
+        <span class="k">if</span> <span class="n">pi</span> <span class="k">is None</span>: <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">404</span>, <span class="s">"unknown payment"</span>)
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">transition</span>(<span class="n">pi</span>[<span class="s">"state"</span>], <span class="s">"captured"</span>)
         <span class="k">await</span> <span class="n">db</span>.<span class="n">execute</span>(<span class="s">"UPDATE payments SET state=$1 WHERE id=$2"</span>,
                         <span class="n">new_state</span>, <span class="n">payment_id</span>)
-        <span class="k">await</span> <span class="n">ledger</span>.<span class="n">record_capture</span>(<span class="n">pi</span>)</pre></div>
+        <span class="k">await</span> <span class="n">ledger</span>.<span class="n">record_capture</span>(<span class="n">db</span>, <span class="n">pi</span>)
+    <span class="k">return</span> {<span class="s">"id"</span>: <span class="n">payment_id</span>, <span class="s">"state"</span>: <span class="n">new_state</span>}</pre></div>
       <div class="code-pane" id="c4-ts"><pre><span class="c">// String-literal union with allowed transitions built in.</span>
 <span class="k">export type</span> <span class="t">PaymentState</span> <span class="o">=</span>
     <span class="s">"pending"</span> <span class="o">|</span> <span class="s">"authorised"</span> <span class="o">|</span> <span class="s">"captured"</span> <span class="o">|</span> <span class="s">"settled"</span> <span class="o">|</span> <span class="s">"failed"</span> <span class="o">|</span> <span class="s">"cancelled"</span> <span class="o">|</span> <span class="s">"refunded"</span>;
@@ -744,7 +794,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (Temporal)</button><button class="tab py" data-target="c5-py">Python</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c5-go">Go (Temporal)</button><button class="tab py" data-target="c5-py">Python · FastAPI</button><button class="tab ts" data-target="c5-ts">TypeScript</button></div>
       <div class="code-pane active" id="c5-go"><pre><span class="c">// Temporal workflow — the saga orchestrator.</span>
 <span class="k">func</span> <span class="n">CheckoutWorkflow</span>(<span class="n">ctx</span> <span class="t">workflow.Context</span>, <span class="n">order</span> <span class="t">Order</span>) <span class="t">error</span> {
     <span class="c">// Step 1: Reserve inventory</span>
@@ -770,6 +820,10 @@
     <span class="k">return</span> <span class="k">nil</span>
 }</pre></div>
       <div class="code-pane" id="c5-py"><pre><span class="c"># Saga orchestrator — simple sequential with compensations.</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
 <span class="k">class</span> <span class="t">CheckoutSaga</span>:
     <span class="k">def</span> <span class="n">__init__</span>(<span class="n">self</span>):
         <span class="n">self</span>.<span class="n">compensations</span>: <span class="t">list</span> <span class="o">=</span> []
@@ -789,7 +843,15 @@
             <span class="c"># Run compensations in reverse</span>
             <span class="k">for</span> <span class="n">comp</span> <span class="k">in</span> <span class="n">reversed</span>(<span class="n">self</span>.<span class="n">compensations</span>):
                 <span class="k">await</span> <span class="n">comp</span>()
-            <span class="k">raise</span></pre></div>
+            <span class="k">raise</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/checkout"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async def</span> <span class="n">checkout</span>(<span class="n">order</span>: <span class="t">Order</span>) <span class="o">-&gt;</span> <span class="t">Order</span>:
+    <span class="k">try</span>:
+        <span class="k">await</span> <span class="t">CheckoutSaga</span>().<span class="n">execute</span>(<span class="n">order</span>)   <span class="c"># fresh saga per request</span>
+    <span class="k">except</span> <span class="t">Exception</span> <span class="k">as</span> <span class="n">exc</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">502</span>, <span class="s">f"checkout failed, compensated: {exc}"</span>)
+    <span class="k">return</span> <span class="n">order</span></pre></div>
       <div class="code-pane" id="c5-ts"><pre><span class="c">// Saga orchestrator with a compensation stack.</span>
 <span class="k">export async function</span> <span class="n">checkout</span>(<span class="n">order</span>: <span class="t">Order</span>): <span class="t">Promise</span>&lt;<span class="t">Order</span>&gt; {
     <span class="k">const</span> <span class="n">compensations</span>: <span class="t">Array</span>&lt;() <span class="o">=&gt;</span> <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;&gt; <span class="o">=</span> [];
@@ -858,7 +920,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Frontend JS</button><button class="tab py" data-target="c6-py">Python (server)</button><button class="tab ts" data-target="c6-ts">TypeScript (server)</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c6-go">Frontend JS</button><button class="tab py" data-target="c6-py">Python · FastAPI + Stripe</button><button class="tab ts" data-target="c6-ts">TypeScript (server)</button></div>
       <div class="code-pane active" id="c6-go"><pre><span class="c">// Stripe Elements — card never hits your server.</span>
 <span class="k">const</span> <span class="n">stripe</span> <span class="o">=</span> <span class="n">Stripe</span>(<span class="s">'pk_live_xxx'</span>);  <span class="c">// publishable key only</span>
 <span class="k">const</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">stripe</span>.<span class="n">elements</span>();
@@ -875,19 +937,26 @@
     <span class="n">body</span>: <span class="n">JSON</span>.<span class="n">stringify</span>({ <span class="n">token_id</span>: <span class="n">token</span>.<span class="n">id</span>, <span class="n">amount</span>: <span class="num">1999</span> }),
 });</pre></div>
       <div class="code-pane" id="c6-py"><pre><span class="c"># Server-side: only ever sees the token, never the card.</span>
+<span class="k">import</span> <span class="n">os</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
 <span class="k">import</span> <span class="n">stripe</span>
-<span class="n">stripe</span>.<span class="n">api_key</span> <span class="o">=</span> <span class="n">secrets</span>.<span class="n">get</span>(<span class="s">"STRIPE_SECRET_KEY"</span>)
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Header</span>
 
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="n">stripe</span>.<span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span>.<span class="n">environ</span>[<span class="s">"STRIPE_SECRET_KEY"</span>]
+
+<span class="c"># Plain def: the Stripe SDK call blocks, so FastAPI runs it in a threadpool.</span>
 <span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/payment-intents"</span>)
-<span class="k">async def</span> <span class="n">create</span>(<span class="n">req</span>: <span class="t">CreatePaymentReq</span>):
+<span class="k">def</span> <span class="n">create</span>(<span class="n">req</span>: <span class="t">CreatePaymentReq</span>,
+           <span class="n">idem_key</span>: <span class="t">Annotated</span>[<span class="t">str</span>, <span class="t">Header</span>(<span class="n">alias</span><span class="o">=</span><span class="s">"Idempotency-Key"</span>)]):
     <span class="n">intent</span> <span class="o">=</span> <span class="n">stripe</span>.<span class="t">PaymentIntent</span>.<span class="n">create</span>(
         <span class="n">amount</span><span class="o">=</span><span class="n">req</span>.<span class="n">amount_cents</span>,           <span class="c"># integer cents</span>
         <span class="n">currency</span><span class="o">=</span><span class="n">req</span>.<span class="n">currency</span>,
         <span class="n">payment_method</span><span class="o">=</span><span class="n">req</span>.<span class="n">token_id</span>,     <span class="c"># token, not card</span>
         <span class="n">capture_method</span><span class="o">=</span><span class="s">"manual"</span>,         <span class="c"># auth only, capture later</span>
-        <span class="n">idempotency_key</span><span class="o">=</span><span class="n">req</span>.<span class="n">idem_key</span>,
+        <span class="n">idempotency_key</span><span class="o">=</span><span class="n">idem_key</span>,        <span class="c"># Stripe dedupes retries too</span>
     )
-    <span class="k">return</span> <span class="n">intent</span></pre></div>
+    <span class="k">return</span> {<span class="s">"id"</span>: <span class="n">intent</span>.<span class="n">id</span>, <span class="s">"status"</span>: <span class="n">intent</span>.<span class="n">status</span>}</pre></div>
       <div class="code-pane" id="c6-ts"><pre><span class="c">// Stripe Node SDK — same pattern, token only.</span>
 <span class="k">import</span> <span class="t">Stripe</span> <span class="k">from</span> <span class="s">"stripe"</span>;
 <span class="k">const</span> <span class="n">stripe</span> <span class="o">=</span> <span class="k">new</span> <span class="t">Stripe</span>(<span class="n">process</span>.<span class="n">env</span>.<span class="n">STRIPE_SECRET_KEY</span><span class="o">!</span>);
@@ -953,7 +1022,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c7-go">Go</button><button class="tab py" data-target="c7-py">Python · FastAPI</button><button class="tab ts" data-target="c7-ts">TypeScript</button></div>
       <div class="code-pane active" id="c7-go"><pre><span class="c">// Nightly reconciliation — compare ledger vs PSP settlement.</span>
 <span class="k">func</span> <span class="n">Reconcile</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">date</span> <span class="t">time.Time</span>) <span class="o">*</span><span class="t">ReconReport</span> {
     <span class="n">ours</span> <span class="o">:=</span> <span class="n">ledger</span>.<span class="n">CapturedForDate</span>(<span class="n">ctx</span>, <span class="n">date</span>)     <span class="c">// map[psp_ref]amount</span>
@@ -969,10 +1038,15 @@
     }
     <span class="k">return</span> <span class="n">report</span>
 }</pre></div>
-      <div class="code-pane" id="c7-py"><pre><span class="c"># Reconciliation: download PSP file, diff against ledger.</span>
-<span class="k">async def</span> <span class="n">reconcile</span>(<span class="n">date</span>: <span class="t">date</span>):
-    <span class="n">ours</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ledger</span>.<span class="n">captured_for_date</span>(<span class="n">date</span>)   <span class="c"># {psp_ref: amount}</span>
-    <span class="n">theirs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">psp</span>.<span class="n">download_settlement</span>(<span class="n">date</span>)
+      <div class="code-pane" id="c7-py"><pre><span class="c"># Reconciliation: download PSP file, diff against ledger — nightly, in the API process.</span>
+<span class="k">import</span> <span class="n">asyncio</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">from</span> <span class="t">datetime</span> <span class="k">import</span> <span class="t">date</span>, <span class="t">datetime</span>, <span class="t">time</span>, <span class="t">timedelta</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">BackgroundTasks</span>, <span class="t">FastAPI</span>
+
+<span class="k">async def</span> <span class="n">reconcile</span>(<span class="n">day</span>: <span class="t">date</span>) <span class="o">-&gt;</span> <span class="k">None</span>:
+    <span class="n">ours</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ledger</span>.<span class="n">captured_for_date</span>(<span class="n">day</span>)    <span class="c"># {psp_ref: amount}</span>
+    <span class="n">theirs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">psp</span>.<span class="n">download_settlement</span>(<span class="n">day</span>)
 
     <span class="n">matched</span>, <span class="n">unmatched</span> <span class="o">=</span> [], []
     <span class="k">for</span> <span class="n">ref</span>, <span class="n">amt</span> <span class="k">in</span> <span class="n">ours</span>.<span class="n">items</span>():
@@ -981,7 +1055,28 @@
         <span class="k">else</span>:
             <span class="n">unmatched</span>.<span class="n">append</span>(<span class="n">ref</span>)
     <span class="k">if</span> <span class="n">unmatched</span>:
-        <span class="k">await</span> <span class="n">alert</span>.<span class="n">fire</span>(<span class="n">f</span><span class="s">"Recon mismatch: {len(unmatched)} items"</span>)</pre></div>
+        <span class="k">await</span> <span class="n">alert</span>.<span class="n">fire</span>(<span class="s">f"Recon mismatch: {len(unmatched)} items"</span>)
+
+<span class="k">async def</span> <span class="n">nightly</span>():                              <span class="c"># 6am daily, recon T+1</span>
+    <span class="k">while True</span>:
+        <span class="n">now</span> <span class="o">=</span> <span class="t">datetime</span>.<span class="n">now</span>()
+        <span class="n">run_at</span> <span class="o">=</span> <span class="t">datetime</span>.<span class="n">combine</span>(<span class="n">now</span>.<span class="t">date</span>(), <span class="t">time</span>(<span class="num">6</span>))
+        <span class="k">if</span> <span class="n">run_at</span> <span class="o">&lt;=</span> <span class="n">now</span>: <span class="n">run_at</span> <span class="o">+=</span> <span class="t">timedelta</span>(<span class="n">days</span><span class="o">=</span><span class="num">1</span>)
+        <span class="k">await</span> <span class="n">asyncio</span>.<span class="n">sleep</span>((<span class="n">run_at</span> <span class="o">-</span> <span class="n">now</span>).<span class="n">total_seconds</span>())
+        <span class="k">await</span> <span class="n">reconcile</span>(<span class="t">date</span>.<span class="n">today</span>() <span class="o">-</span> <span class="t">timedelta</span>(<span class="n">days</span><span class="o">=</span><span class="num">1</span>))
+
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):                 <span class="c"># one replica only (leader lock)</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span>.<span class="n">create_task</span>(<span class="n">nightly</span>())
+    <span class="k">yield</span>
+    <span class="n">task</span>.<span class="n">cancel</span>()
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/admin/reconcile/{day}"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">202</span>)
+<span class="k">async def</span> <span class="n">rerun</span>(<span class="n">day</span>: <span class="t">date</span>, <span class="n">tasks</span>: <span class="t">BackgroundTasks</span>):
+    <span class="n">tasks</span>.<span class="n">add_task</span>(<span class="n">reconcile</span>, <span class="n">day</span>)                <span class="c"># re-run a day on demand</span>
+    <span class="k">return</span> {<span class="s">"queued"</span>: <span class="n">day</span>.<span class="n">isoformat</span>()}</pre></div>
       <div class="code-pane" id="c7-ts"><pre><span class="c">// node-cron nightly recon job.</span>
 <span class="k">import</span> <span class="n">cron</span> <span class="k">from</span> <span class="s">"node-cron"</span>;
 
@@ -1053,7 +1148,7 @@
       </div>
     </div>
     <div class="code-block">
-      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
+      <div class="code-tabs"><button class="tab go active" data-target="c8-go">Go</button><button class="tab py" data-target="c8-py">Python · FastAPI + httpx</button><button class="tab ts" data-target="c8-ts">TypeScript</button></div>
       <div class="code-pane active" id="c8-go"><pre><span class="c">// Webhook sender — HMAC-signed, retried, idempotent event_id.</span>
 <span class="k">func</span> <span class="n">SendWebhook</span>(<span class="n">ctx</span> <span class="t">context.Context</span>, <span class="n">endpoint</span> <span class="t">string</span>, <span class="n">event</span> <span class="t">Event</span>) <span class="t">error</span> {
     <span class="n">body</span>, <span class="n">_</span> <span class="o">:=</span> <span class="n">json</span>.<span class="n">Marshal</span>(<span class="n">event</span>)
@@ -1072,22 +1167,41 @@
     }
     <span class="k">return</span> <span class="k">nil</span>
 }</pre></div>
-      <div class="code-pane" id="c8-py"><pre><span class="c"># Webhook sender — HMAC-signed delivery.</span>
-<span class="k">import</span> <span class="n">hmac</span>, <span class="n">hashlib</span>, <span class="n">time</span>, <span class="n">httpx</span>
+      <div class="code-pane" id="c8-py"><pre><span class="c"># Webhook sender — HMAC-signed delivery, off the request path.</span>
+<span class="k">import</span> <span class="n">hashlib</span>, <span class="n">hmac</span>, <span class="n">json</span>, <span class="n">time</span>
+<span class="k">from</span> <span class="n">contextlib</span> <span class="k">import</span> <span class="n">asynccontextmanager</span>
+<span class="k">import</span> <span class="n">httpx</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">BackgroundTasks</span>, <span class="t">FastAPI</span>
+
+<span class="o">@</span><span class="n">asynccontextmanager</span>
+<span class="k">async def</span> <span class="n">lifespan</span>(<span class="n">app</span>: <span class="t">FastAPI</span>):
+    <span class="k">async with</span> <span class="n">httpx</span>.<span class="t">AsyncClient</span>(<span class="n">timeout</span><span class="o">=</span><span class="num">5</span>) <span class="k">as</span> <span class="n">client</span>:   <span class="c"># one pooled client</span>
+        <span class="n">app</span>.<span class="n">state</span>.<span class="n">http</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="k">yield</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>(<span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span>)
 
 <span class="k">async def</span> <span class="n">send_webhook</span>(<span class="n">url</span>: <span class="t">str</span>, <span class="n">event</span>: <span class="t">dict</span>, <span class="n">secret</span>: <span class="t">str</span>):
     <span class="n">body</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">dumps</span>(<span class="n">event</span>)
-    <span class="n">ts</span> <span class="o">=</span> <span class="n">int</span>(<span class="n">time</span>.<span class="n">time</span>())
-    <span class="n">sig</span> <span class="o">=</span> <span class="n">hmac</span>.<span class="n">new</span>(<span class="n">secret</span>.<span class="n">encode</span>(), <span class="n">f</span><span class="s">"{ts}.{body}"</span>.<span class="n">encode</span>(),
+    <span class="n">ts</span> <span class="o">=</span> <span class="t">int</span>(<span class="n">time</span>.<span class="n">time</span>())
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">hmac</span>.<span class="n">new</span>(<span class="n">secret</span>.<span class="n">encode</span>(), <span class="s">f"{ts}.{body}"</span>.<span class="n">encode</span>(),
                     <span class="n">hashlib</span>.<span class="n">sha256</span>).<span class="n">hexdigest</span>()
 
-    <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">httpx</span>.<span class="t">AsyncClient</span>().<span class="n">post</span>(<span class="n">url</span>,
+    <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">http</span>.<span class="n">post</span>(<span class="n">url</span>,
         <span class="n">content</span><span class="o">=</span><span class="n">body</span>,
         <span class="n">headers</span><span class="o">=</span>{
-            <span class="s">"Webhook-Signature"</span>: <span class="n">f</span><span class="s">"t={ts},v1={sig}"</span>,
-            <span class="s">"Webhook-ID"</span>: <span class="n">event</span>[<span class="s">"id"</span>],
-        }, <span class="n">timeout</span><span class="o">=</span><span class="num">5</span>)
-    <span class="n">resp</span>.<span class="n">raise_for_status</span>()</pre></div>
+            <span class="s">"Webhook-Signature"</span>: <span class="s">f"t={ts},v1={sig}"</span>,
+            <span class="s">"Webhook-ID"</span>: <span class="n">event</span>[<span class="s">"id"</span>],            <span class="c"># merchant dedup key</span>
+        })
+    <span class="n">resp</span>.<span class="n">raise_for_status</span>()                       <span class="c"># failure → retry queue</span>
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/payments/{payment_id}/capture"</span>)
+<span class="k">async def</span> <span class="n">capture</span>(<span class="n">payment_id</span>: <span class="t">str</span>, <span class="n">tasks</span>: <span class="t">BackgroundTasks</span>):
+    <span class="n">pi</span> <span class="o">=</span> <span class="k">await</span> <span class="n">payments</span>.<span class="n">capture</span>(<span class="n">payment_id</span>)
+    <span class="n">m</span> <span class="o">=</span> <span class="k">await</span> <span class="n">merchants</span>.<span class="n">get</span>(<span class="n">pi</span>.<span class="n">merchant_id</span>)
+    <span class="n">event</span> <span class="o">=</span> {<span class="s">"id"</span>: <span class="n">ulid</span>(), <span class="s">"type"</span>: <span class="s">"payment.captured"</span>, <span class="s">"data"</span>: <span class="n">pi</span>.<span class="n">model_dump</span>()}
+    <span class="n">tasks</span>.<span class="n">add_task</span>(<span class="n">send_webhook</span>, <span class="n">m</span>.<span class="n">webhook_url</span>, <span class="n">event</span>, <span class="n">m</span>.<span class="n">webhook_secret</span>)
+    <span class="k">return</span> <span class="n">pi</span>                                     <span class="c"># merchant latency off our path</span></pre></div>
       <div class="code-pane" id="c8-ts"><pre><span class="c">// fetch — webhook sender with HMAC.</span>
 <span class="k">import</span> { <span class="n">createHmac</span> } <span class="k">from</span> <span class="s">"node:crypto"</span>;
 
