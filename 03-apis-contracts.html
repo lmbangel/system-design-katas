@@ -640,7 +640,7 @@
     <div class="code-block">
       <div class="code-tabs">
         <button class="tab go active" data-target="c3-go">Go</button>
-        <button class="tab py" data-target="c3-py">Python · Pydantic</button>
+        <button class="tab py" data-target="c3-py">Python · FastAPI + Pydantic</button>
         <button class="tab ts" data-target="c3-ts">TypeScript · Node.js</button>
       </div>
       <div class="code-pane active" id="c3-go"><pre><span class="c">// .proto evolution — what's safe, what isn't.</span>
@@ -670,9 +670,12 @@
 
 <span class="c">// CI check (buf or protolock) — refuse PRs that break compatibility</span>
 <span class="c">//   $ buf breaking --against '.git#branch=main'</span></pre></div>
-      <div class="code-pane" id="c3-py"><pre><span class="c"># Pydantic + a "compat" model lineage that survives.</span>
-<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">Field</span>, <span class="t">ConfigDict</span>
+      <div class="code-pane" id="c3-py"><pre><span class="c"># FastAPI + Pydantic: a "compat" model lineage that survives.</span>
 <span class="k">from</span> <span class="n">enum</span> <span class="k">import</span> <span class="t">Enum</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>, <span class="t">ConfigDict</span>, <span class="t">Field</span>, <span class="n">field_validator</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 
 <span class="k">class</span> <span class="t">OrderStatus</span>(<span class="t">str</span>, <span class="t">Enum</span>):
     <span class="n">PENDING</span>   <span class="o">=</span> <span class="s">"pending"</span>
@@ -694,10 +697,20 @@
     <span class="n">currency</span>:     <span class="t">str</span> <span class="o">|</span> <span class="k">None</span> <span class="o">=</span> <span class="k">None</span>
     <span class="n">tags</span>:         <span class="t">list</span>[<span class="t">str</span>] <span class="o">=</span> <span class="t">Field</span>(<span class="n">default_factory</span><span class="o">=</span><span class="t">list</span>)
 
+    <span class="o">@</span><span class="n">field_validator</span>(<span class="s">"status"</span>, <span class="n">mode</span><span class="o">=</span><span class="s">"before"</span>)
+    <span class="o">@</span><span class="n">classmethod</span>
+    <span class="k">def</span> <span class="n">tolerant_status</span>(<span class="n">cls</span>, <span class="n">v</span>):       <span class="c"># a newer server's value → UNKNOWN</span>
+        <span class="k">return</span> <span class="n">v</span> <span class="k">if</span> <span class="n">v</span> <span class="k">in</span> <span class="t">OrderStatus</span>.<span class="n">_value2member_map_</span> <span class="k">else</span> <span class="t">OrderStatus</span>.<span class="n">UNKNOWN</span>
+
+<span class="c"># One model is both the request body and the response contract</span>
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/orders"</span>, <span class="n">response_model_exclude_none</span><span class="o">=</span><span class="k">True</span>)
+<span class="k">async def</span> <span class="n">create_order</span>(<span class="n">order</span>: <span class="t">Order</span>) <span class="o">-&gt;</span> <span class="t">Order</span>:
+    <span class="k">return</span> <span class="k">await</span> <span class="n">save_order</span>(<span class="n">order</span>)     <span class="c"># unknown keys already dropped</span>
+
 <span class="c"># Schema diffing in CI — fail PR on breaking change</span>
-<span class="c">#   pip install pydantic2openapi   (or use schemathesis)</span>
-<span class="c">#   compare openapi.json against main; refuse: removed fields,</span>
-<span class="c">#   tightened types, removed enum values, newly-required fields.</span></pre></div>
+<span class="c">#   dump app.openapi() to openapi.json, diff against main (oasdiff);</span>
+<span class="c">#   refuse: removed fields, tightened types, removed enum values,</span>
+<span class="c">#   newly-required fields.</span></pre></div>
       <div class="code-pane" id="c3-ts"><pre><span class="c">// zod — tolerant readers + explicit deprecation.</span>
 <span class="k">import</span> { <span class="n">z</span> } <span class="k">from</span> <span class="s">"zod"</span>;
 
@@ -1335,7 +1348,7 @@ return {1, 0}
 <span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
 
 <span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/v1/orders"</span>, <span class="n">dependencies</span><span class="o">=</span>[<span class="t">Depends</span>(<span class="n">rate_limit</span>(<span class="num">100</span>, <span class="num">60</span>))])
-<span class="k">async def</span> <span class="n">create_order</span>(<span class="o">...</span>): <span class="o">...</span></pre></div>
+<span class="k">async def</span> <span class="n">create_order</span>(<span class="n">body</span>: <span class="t">dict</span>): <span class="o">...</span></pre></div>
       <div class="code-pane" id="c6-ts"><pre><span class="c">// ioredis + Lua — distributed token bucket, atomic inside Redis.</span>
 <span class="k">import</span> <span class="t">Redis</span> <span class="k">from</span> <span class="s">"ioredis"</span>;
 <span class="k">import type</span> { <span class="t">RequestHandler</span> } <span class="k">from</span> <span class="s">"express"</span>;
