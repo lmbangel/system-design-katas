@@ -1,0 +1,1673 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<!-- LOAD ORDER IS MANDATORY: bootstrap -> icons -> archivo -> hume-finbiz -> katas.
+     hume-finbiz.css re-points Bootstrap's own custom properties; reordering
+     silently un-themes the page. See docs/design-system.md. -->
+<link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/vendor/archivo/archivo.css">
+<link rel="stylesheet" href="assets/hume-finbiz/hume-finbiz.css">
+<link rel="stylesheet" href="assets/css/katas.css">
+<title>Lakehouse Platform · backend.systems</title>
+</head>
+<body>
+<div class="hf-shell">
+
+  <aside class="hf-sidebar">
+    <a class="hf-sidebar__brand" href="index.html" aria-label="Overview">
+      <span class="hf-sidebar__mark"><span class="kt-mark" aria-hidden="true"></span></span>
+      <span class="hf-sidebar__wordmark">System design<small>Backend katas</small></span>
+    </a>
+
+    <nav class="hf-nav" aria-label="Main navigation">
+      <div class="hf-nav__item"><a class="hf-nav__link" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__section">Tier 1 · Foundations</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="02-data-storage.html"><i class="bi bi-database hf-nav__icon"></i><span class="hf-nav__text">02 · Data &amp; storage</span></a></div>
+      <div class="hf-nav__section">Tier 2 · Building blocks</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="03-apis-contracts.html"><i class="bi bi-plug hf-nav__icon"></i><span class="hf-nav__text">03 · APIs &amp; contracts</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="04-microservices-patterns.html"><i class="bi bi-boxes hf-nav__icon"></i><span class="hf-nav__text">04 · Microservices patterns</span></a></div>
+      <div class="hf-nav__section">Tier 3 · Production</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="05-reliability-observability.html"><i class="bi bi-activity hf-nav__icon"></i><span class="hf-nav__text">05 · Reliability &amp; observability</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
+      <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
+      <div class="hf-nav__section">Applied design</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="lakehouse-platform.html" aria-current="page">
+          <i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c1" title="Requirements, constraints and the shape of the answer"><span class="hf-nav__text">Requirements, constraints and the shape of the answer</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c2" title="Version A, lean: push agents, Parquet, DuckDB and dbt"><span class="hf-nav__text">Version A, lean: push agents, Parquet, DuckDB and dbt</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c3" title="Version B, scale and freshness: CDC, Kafka, Iceberg and Trino"><span class="hf-nav__text">Version B, scale and freshness: CDC, Kafka, Iceberg and Trino</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c4" title="Version C, managed: Microsoft Fabric and OneLake"><span class="hf-nav__text">Version C, managed: Microsoft Fabric and OneLake</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c5" title="Getting data out of a network that allows no inbound connections"><span class="hf-nav__text">Getting data out of a network that allows no inbound connections</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c6" title="Proving the numbers: reconciliation, contracts and health"><span class="hf-nav__text">Proving the numbers: reconciliation, contracts and health</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c7" title="Security and governance: identity, RLS for BI and the AI assistant, POPIA"><span class="hf-nav__text">Security and governance: identity, RLS for BI and the AI assistant, POPIA</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c8" title="Choosing between them: trade-offs and the triggers to move"><span class="hf-nav__text">Choosing between them: trade-offs and the triggers to move</span></a></div>
+        </div>
+      </div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
+    </nav>
+
+    <div class="hf-sidebar__foot">
+      <div class="hf-sidebar__env"><span class="hf-sync__dot"></span><span>Study guide · v1</span></div>
+    </div>
+  </aside>
+
+  <div class="hf-main">
+
+    <header class="hf-header">
+      <button class="hf-header__toggle" data-hf-sidebar-toggle aria-label="Toggle navigation" aria-expanded="true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="hf-header__titles">
+        <div class="hf-header__title">Lakehouse platform</div>
+        <div class="hf-header__crumbs">Backend katas / Applied system design</div>
+      </div>
+
+      <div class="hf-header__spacer"></div>
+
+      <div class="hf-header__actions">
+        <a class="hf-iconbtn" href="order-fulfilment.html" aria-label="Previous: Order fulfilment" title="Previous: Order fulfilment"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Next: Interview checklist" title="Next: Interview checklist"><i class="bi bi-arrow-right"></i></a>
+      </div>
+    </header>
+
+    <main class="hf-content">
+      <div class="hf-content__inner kt-page">
+      <header class="kt-hero">
+        <span class="hf-eyebrow">Applied system design · Architecture</span>
+        <h1 class="kt-hero__title">One problem, <em>three right answers</em>.</h1>
+        <p class="hf-lede">Northwind Cold Chain has three entities, six source databases, one network that lets nothing in, and a finance team that will reject any number that does not match the ERP. This page designs its data platform three times: lean on a single node, built for scale and minutes-fresh data, and bought as a managed Microsoft service. The interview point is not which one wins. It is showing which constraint picks which design, what each one costs to run, and how to move between them without a rewrite.</p>
+        <div class="kt-facts">
+          <div class="hf-stat"><span class="hf-stat__label">Deep-dives</span><span class="hf-stat__value">8</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">55 min</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">SQL · Python · Config</span></div>
+        </div>
+      </header>
+
+  <section class="principles">
+    <div class="principle"><div class="num">PRINCIPLE 01</div><h4>Constraints pick the architecture.</h4><p>The same requirements have several right answers. Name the data size, the freshness someone will pay for, the team and the estate first; the boxes follow.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 02</div><h4>The ERP is the truth; prove you agree.</h4><p>A dashboard that disagrees with the trial balance by one rand is wrong, and finance will stop trusting all of it. Reconcile automatically, on every load.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 03</div><h4>Push across trust boundaries.</h4><p>Pulling needs an inbound path; pushing needs one outbound HTTPS rule. Make every landing idempotent so a retry is always free.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 04</div><h4>One set of permissions, every door.</h4><p>Power BI, analysts and the AI assistant read through the same entitlement table, as the user. An assistant on a service account is a data leak with a chat window.</p></div>
+  </section>
+
+
+  <!-- ============ C1 — REQUIREMENTS ============ -->
+  <section class="pattern" id="c1">
+    <div class="pattern-head"><div class="pattern-num">01</div><div class="pattern-title-wrap"><h2>Requirements, constraints and the shape of the answer</h2><div class="pattern-tags"><span class="tag warm">Start here</span><span class="tag deep">Requirements</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c1-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">NORTHWIND COLD CHAIN · ONE PROBLEM</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <!-- Entity ZA -->
+            <rect x="15" y="32" width="125" height="58" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="22" y="44" fill="var(--hf-ink)" font-weight="600">NCC-ZA · ZAR</text>
+            <rect x="21" y="50" width="56" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="49" y="64" text-anchor="middle" fill="var(--hf-ink)">ERP</text>
+            <text x="49" y="76" text-anchor="middle" fill="var(--hf-ink-secondary)">SQL Server</text>
+            <rect x="82" y="50" width="52" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="108" y="64" text-anchor="middle" fill="var(--hf-ink)">WMS</text>
+            <text x="108" y="76" text-anchor="middle" fill="var(--hf-ink-secondary)">database</text>
+            <!-- Entity NA -->
+            <rect x="15" y="100" width="125" height="58" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="22" y="112" fill="var(--hf-ink)" font-weight="600">NCC-NA · NAD</text>
+            <rect x="21" y="118" width="56" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="49" y="132" text-anchor="middle" fill="var(--hf-ink)">ERP</text>
+            <text x="49" y="144" text-anchor="middle" fill="var(--hf-ink-secondary)">SQL Server</text>
+            <rect x="82" y="118" width="52" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="108" y="132" text-anchor="middle" fill="var(--hf-ink)">WMS</text>
+            <text x="108" y="144" text-anchor="middle" fill="var(--hf-ink-secondary)">database</text>
+            <!-- Entity BW inside the closed network -->
+            <rect x="8" y="166" width="139" height="84" rx="4" fill="none" stroke="var(--hf-danger-fg)" stroke-width="1" stroke-dasharray="4 3"/>
+            <rect x="15" y="172" width="125" height="58" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="22" y="184" fill="var(--hf-ink)" font-weight="600">NCC-BW · BWP</text>
+            <rect x="21" y="190" width="56" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="49" y="204" text-anchor="middle" fill="var(--hf-ink)">ERP</text>
+            <text x="49" y="216" text-anchor="middle" fill="var(--hf-ink-secondary)">SQL Server</text>
+            <rect x="82" y="190" width="52" height="34" rx="2" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="108" y="204" text-anchor="middle" fill="var(--hf-ink)">WMS</text>
+            <text x="108" y="216" text-anchor="middle" fill="var(--hf-ink-secondary)">database</text>
+            <text x="77" y="244" text-anchor="middle" fill="var(--hf-danger-fg)">no inbound connections</text>
+
+            <!-- Arrows into the platform -->
+            <path d="M140,61 L183,110" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M140,129 L183,138" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M147,201 L183,166" stroke="var(--hf-success-fg)" stroke-width="1.2" fill="none" marker-end="url(#c1-arr)"/>
+            <text x="170" y="202" text-anchor="middle" fill="var(--hf-success-fg)">push</text>
+
+            <!-- The platform -->
+            <rect x="185" y="86" width="115" height="104" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+            <text x="242" y="106" text-anchor="middle" fill="var(--hf-ink)" font-size="10" font-weight="600">the platform</text>
+            <text x="195" y="126" fill="var(--hf-ink-secondary)">1 land the changes</text>
+            <text x="195" y="142" fill="var(--hf-ink-secondary)">2 model in SQL</text>
+            <text x="195" y="158" fill="var(--hf-ink-secondary)">3 prove vs the ERP</text>
+            <text x="195" y="174" fill="var(--hf-ink-secondary)">4 serve with RLS</text>
+
+            <!-- Consumers -->
+            <path d="M300,112 L336,62" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M300,138 L336,120" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M300,164 L336,178" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <rect x="338" y="40" width="130" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="403" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI</text>
+            <text x="403" y="70" text-anchor="middle" fill="var(--hf-ink-secondary)">dashboards · ~60 users</text>
+            <rect x="338" y="100" width="130" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="403" y="116" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">month-end pack</text>
+            <text x="403" y="130" text-anchor="middle" fill="var(--hf-ink-secondary)">reconciles to ERP</text>
+            <rect x="338" y="160" width="130" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="403" y="176" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">AI assistant</text>
+            <text x="403" y="190" text-anchor="middle" fill="var(--hf-ink-secondary)">asks as the user</text>
+          </g>
+
+          <!-- Three constraint sets -->
+          <line x1="15" y1="256" x2="465" y2="256" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="15" y="264" width="145" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="87" y="281" text-anchor="middle" fill="var(--hf-ink)" font-size="9" font-weight="600">A · LEAN</text>
+            <text x="87" y="297" text-anchor="middle" fill="var(--hf-ink-secondary)">2 engineers · daily · 250 GB</text>
+            <rect x="167" y="264" width="145" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="239" y="281" text-anchor="middle" fill="var(--hf-ink)" font-size="9" font-weight="600">B · SCALE + FRESH</text>
+            <text x="239" y="297" text-anchor="middle" fill="var(--hf-ink-secondary)">10x data · minutes · teams</text>
+            <rect x="319" y="264" width="146" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="392" y="281" text-anchor="middle" fill="var(--hf-ink)" font-size="9" font-weight="600">C · MANAGED</text>
+            <text x="392" y="297" text-anchor="middle" fill="var(--hf-ink-secondary)">Microsoft estate · buy</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Start where an interviewer wants you to start: with questions, not boxes. Northwind Cold Chain runs three entities, South Africa (ZAR), Namibia (NAD) and Botswana (BWP), each with its own <strong>ERP on SQL Server</strong> and its own <strong>warehouse management system</strong>. The functional asks are three: one set of Power BI dashboards across entities, a <strong>month-end pack that reconciles to each ERP to the cent</strong>, and an <strong>AI assistant</strong> that answers questions over the same data with the asking user's own permissions. Then the awkward one: the Botswana ERP sits in a hosted network that <strong>allows no inbound connections</strong> at all.</p>
+        <p>The non-functional numbers decide the architecture, so write them down. About 185 000 changed ERP rows and 1.35 million WMS movements a day: roughly 36 GB a year as compressed Parquet, 250 GB across seven years of retention. Daily freshness for finance, hourly for operations. About 60 dashboard users, 40 assistant users, two data engineers. Multi-currency means storing three amounts per line: the <strong>transaction currency</strong>, the entity's <strong>functional currency</strong> (what the ERP books, and the only thing you reconcile), and <strong>group ZAR</strong> (converted at a recorded rate, and never reconciled against).</p>
+        <p><strong>The same requirements, three constraint sets.</strong> <em>A, lean:</em> today's numbers, two engineers, a small budget. <em>B, scale and freshness:</em> ten times the data after an acquisition and cold-room telemetry, operations dashboards fresh within minutes, several teams building models. <em>C, managed:</em> a small team inside a Microsoft estate whose leadership would rather buy than build. The next three deep-dives design each one; the four after that solve what all three share: the closed network, proving the numbers, security, and choosing.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Ask first</div><ul><li>Which number must match what, and to what tolerance?</li><li>How fresh, and for whom? Finance and operations rarely want the same answer</li><li>Who may see which entity, and does the assistant inherit that?</li><li>What can each network reach, and in which direction?</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Interview red flags</div><ul><li>Drawing Kafka before asking about data volume</li><li>Reconciling converted ZAR instead of functional currency</li><li>Treating the AI assistant as a separate system with its own access</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c5">The closed network</a>, <a href="#c6">Proving the numbers</a>, <a href="#c8">Choosing</a>, <a href="05-reliability-observability.html#c1">SLOs</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c1-sql">SQL · DDL</button><button class="tab py" data-target="c1-py">Python</button><button class="tab cfg" data-target="c1-cfg">YAML</button></div>
+      <div class="code-pane active" id="c1-sql"><pre><span class="c">-- The answer, stated as a table. Everything upstream exists to fill it correctly.</span>
+<span class="c">-- Grain: one row per entity, period, account, cost centre and transaction currency.</span>
+<span class="k">create</span> <span class="k">table</span> <span class="t">gold.fct_gl_monthly</span> (
+    <span class="n">entity_code</span>        <span class="t">varchar</span>(<span class="num">6</span>)     <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- NCC-ZA, NCC-NA, NCC-BW</span>
+    <span class="n">period_key</span>         <span class="t">int</span>            <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- 202609 = September 2026</span>
+    <span class="n">account_code</span>       <span class="t">varchar</span>(<span class="num">20</span>)    <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">cost_centre_code</span>   <span class="t">varchar</span>(<span class="num">20</span>)    <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">txn_currency</span>       <span class="t">char</span>(<span class="num">3</span>)        <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- what was invoiced</span>
+    <span class="n">functional_ccy</span>     <span class="t">char</span>(<span class="num">3</span>)        <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- what the entity's ERP books in</span>
+    <span class="n">amount_txn</span>         <span class="t">decimal</span>(<span class="num">19</span>, <span class="num">4</span>) <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">amount_functional</span>  <span class="t">decimal</span>(<span class="num">19</span>, <span class="num">4</span>) <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- reconciles to the ERP, to the cent</span>
+    <span class="n">amount_group_zar</span>   <span class="t">decimal</span>(<span class="num">19</span>, <span class="num">4</span>) <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- converted; never reconciled against</span>
+    <span class="n">fx_rate_id</span>         <span class="t">int</span>            <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- which rate produced the ZAR figure</span>
+    <span class="n">source_batch_id</span>    <span class="t">varchar</span>(<span class="num">80</span>)    <span class="k">not</span> <span class="k">null</span>,  <span class="c">-- lineage back to the landed file</span>
+    <span class="k">primary</span> <span class="k">key</span> (<span class="n">entity_code</span>, <span class="n">period_key</span>, <span class="n">account_code</span>, <span class="n">cost_centre_code</span>, <span class="n">txn_currency</span>)
+);
+
+<span class="c">-- The question finance asks every month. The platform must answer it</span>
+<span class="c">-- exactly as the ERP does before the pack is published.</span>
+<span class="k">select</span> <span class="n">entity_code</span>,
+       <span class="n">account_code</span>,
+       <span class="n">sum</span>(<span class="n">amount_functional</span>) <span class="k">as</span> <span class="n">balance</span>
+<span class="k">from</span> <span class="n">gold.fct_gl_monthly</span>
+<span class="k">where</span> <span class="n">period_key</span> <span class="o">=</span> <span class="num">202609</span>
+<span class="k">group</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">account_code</span>
+<span class="k">order</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">account_code</span>;</pre></div>
+      <div class="code-pane" id="c1-py"><pre><span class="c"># Back-of-envelope sizing: the numbers that decide between A, B and C.</span>
+<span class="c"># Plain Python on purpose: a calculation you rerun whenever the inputs move.</span>
+<span class="k">from</span> <span class="n">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+
+
+<span class="o">@</span><span class="n">dataclass</span>(<span class="n">frozen</span><span class="o">=</span><span class="k">True</span>)
+<span class="k">class</span> <span class="t">Source</span>:
+    <span class="n">name</span>: <span class="t">str</span>
+    <span class="n">rows_per_day</span>: <span class="t">int</span>       <span class="c"># changed rows per day, not table size</span>
+    <span class="n">bytes_per_row</span>: <span class="t">int</span>      <span class="c"># compressed Parquet, measured on a sample batch</span>
+
+
+<span class="n">SOURCES</span> <span class="o">=</span> [
+    <span class="t">Source</span>(<span class="s">"erp-za"</span>, <span class="num">120_000</span>, <span class="num">90</span>),
+    <span class="t">Source</span>(<span class="s">"erp-na"</span>, <span class="num">40_000</span>, <span class="num">90</span>),
+    <span class="t">Source</span>(<span class="s">"erp-bw"</span>, <span class="num">25_000</span>, <span class="num">90</span>),
+    <span class="t">Source</span>(<span class="s">"wms-za"</span>, <span class="num">900_000</span>, <span class="num">60</span>),
+    <span class="t">Source</span>(<span class="s">"wms-na"</span>, <span class="num">300_000</span>, <span class="num">60</span>),
+    <span class="t">Source</span>(<span class="s">"wms-bw"</span>, <span class="num">150_000</span>, <span class="num">60</span>),
+]
+
+<span class="n">RETENTION_YEARS</span> <span class="o">=</span> <span class="num">7</span>             <span class="c"># finance keeps seven years</span>
+<span class="n">ONE_NODE_COMFORT_GB</span> <span class="o">=</span> <span class="num">500</span>       <span class="c"># what one large VM running DuckDB scans comfortably</span>
+
+
+<span class="k">def</span> <span class="n">gb_per_year</span>(<span class="n">sources</span>: <span class="t">list</span>[<span class="t">Source</span>]) <span class="o">-&gt;</span> <span class="t">float</span>:
+    <span class="k">return</span> <span class="n">sum</span>(<span class="n">s</span>.<span class="n">rows_per_day</span> * <span class="n">s</span>.<span class="n">bytes_per_row</span> * <span class="num">365</span> <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="n">sources</span>) / <span class="num">1e9</span>
+
+
+<span class="k">def</span> <span class="n">summary</span>(<span class="n">growth</span>: <span class="t">float</span> <span class="o">=</span> <span class="num">1.0</span>) <span class="o">-&gt;</span> <span class="t">dict</span>[<span class="t">str</span>, <span class="t">float</span> | <span class="t">str</span>]:
+    <span class="n">per_year</span> <span class="o">=</span> <span class="n">gb_per_year</span>(<span class="n">SOURCES</span>) * <span class="n">growth</span>
+    <span class="n">retained</span> <span class="o">=</span> <span class="n">per_year</span> * <span class="n">RETENTION_YEARS</span>
+    <span class="k">return</span> {
+        <span class="s">"gb_per_year"</span>: <span class="n">round</span>(<span class="n">per_year</span>, <span class="num">1</span>),
+        <span class="s">"gb_retained"</span>: <span class="n">round</span>(<span class="n">retained</span>, <span class="num">1</span>),
+        <span class="s">"fits_one_node"</span>: <span class="s">"yes"</span> <span class="k">if</span> <span class="n">retained</span> <span class="o">&lt;</span> <span class="n">ONE_NODE_COMFORT_GB</span> <span class="k">else</span> <span class="s">"no"</span>,
+    }
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span>:
+    <span class="n">print</span>(<span class="s">"today:"</span>, <span class="n">summary</span>())        <span class="c"># ~36 GB/yr, ~250 GB retained  -&gt; A fits</span>
+    <span class="n">print</span>(<span class="s">"10x:  "</span>, <span class="n">summary</span>(<span class="num">10.0</span>))    <span class="c"># ~356 GB/yr, ~2.5 TB retained -&gt; B or C territory</span></pre></div>
+      <div class="code-pane" id="c1-cfg"><pre><span class="c"># requirements.yaml: the non-functional numbers, written down before any box is drawn.</span>
+<span class="n">company</span>: <span class="s">Northwind Cold Chain</span>
+<span class="n">group_reporting_currency</span>: <span class="s">ZAR</span>
+<span class="n">entities</span>:
+  - <span class="n">code</span>: <span class="s">NCC-ZA</span>
+    <span class="n">functional_currency</span>: <span class="s">ZAR</span>
+    <span class="n">sources</span>: [<span class="s">erp-sqlserver</span>, <span class="s">wms-sqlserver</span>]
+    <span class="n">network</span>: <span class="s">private-endpoint-ok</span>
+  - <span class="n">code</span>: <span class="s">NCC-NA</span>
+    <span class="n">functional_currency</span>: <span class="s">NAD</span>
+    <span class="n">sources</span>: [<span class="s">erp-sqlserver</span>, <span class="s">wms-sqlserver</span>]
+    <span class="n">network</span>: <span class="s">site-to-site-vpn</span>
+  - <span class="n">code</span>: <span class="s">NCC-BW</span>
+    <span class="n">functional_currency</span>: <span class="s">BWP</span>
+    <span class="n">sources</span>: [<span class="s">erp-sqlserver</span>, <span class="s">wms-sqlserver</span>]
+    <span class="n">network</span>: <span class="s">outbound-https-only</span>     <span class="c"># no inbound, no VPN: the hard constraint</span>
+
+<span class="n">freshness</span>:
+  <span class="n">finance_marts</span>: { <span class="n">max_age_hours</span>: <span class="num">26</span> }      <span class="c"># yesterday's books by 08:00</span>
+  <span class="n">ops_dashboards</span>: { <span class="n">max_age_minutes</span>: <span class="num">60</span> }   <span class="c"># A: hourly. B: five minutes.</span>
+<span class="n">month_end</span>:
+  <span class="n">reconcile_to</span>: <span class="s">erp_trial_balance</span>
+  <span class="n">tolerance</span>: <span class="num">0.00</span>                           <span class="c"># functional currency, per account</span>
+  <span class="n">pack_due</span>: <span class="s">working_day_3</span>
+<span class="n">consumers</span>:
+  <span class="n">power_bi_users</span>: <span class="num">60</span>
+  <span class="n">analysts_writing_sql</span>: <span class="num">8</span>
+  <span class="n">ai_assistant_users</span>: <span class="num">40</span>
+<span class="n">security</span>:
+  <span class="n">identity</span>: <span class="s">entra_id_sso</span>
+  <span class="n">row_level_keys</span>: [<span class="s">entity_code</span>, <span class="s">cost_centre_code</span>]
+  <span class="n">same_rules_for</span>: [<span class="s">power_bi</span>, <span class="s">sql_endpoint</span>, <span class="s">ai_assistant</span>]
+  <span class="n">privacy_law</span>: <span class="s">POPIA</span>
+<span class="n">team</span>:
+  <span class="n">data_engineers</span>: <span class="num">2</span></pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C2 — VERSION A, LEAN ============ -->
+  <section class="pattern" id="c2">
+    <div class="pattern-head"><div class="pattern-num">02</div><div class="pattern-title-wrap"><h2>Version A, lean: push agents, Parquet, DuckDB and dbt</h2><div class="pattern-tags"><span class="tag warm">Core</span><span class="tag fresh">Version A</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">VERSION A · ONE NODE, ONE NIGHT</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="10" y="38" width="80" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="50" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">push agent</text>
+            <text x="50" y="72" text-anchor="middle" fill="var(--hf-ink-secondary)">×3 entities</text>
+            <text x="50" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">CT → Parquet</text>
+            <rect x="104" y="38" width="80" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="144" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">object store</text>
+            <text x="144" y="72" text-anchor="middle" fill="var(--hf-ink-secondary)">landing/</text>
+            <text x="144" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">Parquet files</text>
+            <rect x="198" y="38" width="80" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="238" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">DuckDB + dbt</text>
+            <text x="238" y="72" text-anchor="middle" fill="var(--hf-ink-secondary)">one VM</text>
+            <text x="238" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">Dagster cron</text>
+            <rect x="292" y="38" width="80" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="332" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">marts DB</text>
+            <text x="332" y="72" text-anchor="middle" fill="var(--hf-ink-secondary)">Postgres</text>
+            <text x="332" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">gold schema</text>
+            <rect x="386" y="38" width="80" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="426" y="56" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI</text>
+            <text x="426" y="72" text-anchor="middle" fill="var(--hf-ink-secondary)">+ AI tools</text>
+            <text x="426" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">read marts</text>
+            <path d="M91,69 L102,69" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+            <path d="M185,69 L196,69" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+            <path d="M279,69 L290,69" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+            <path d="M373,69 L384,69" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+
+            <!-- Inside the VM -->
+            <text x="40" y="124" fill="var(--hf-ink-muted)" font-size="9" letter-spacing="1">INSIDE THE VM · dbt LAYERS</text>
+            <rect x="40" y="134" width="120" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="100" y="150" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">staging</text>
+            <text x="100" y="164" text-anchor="middle" fill="var(--hf-ink-secondary)">views over Parquet</text>
+            <text x="100" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">rename · cast · dedupe</text>
+            <rect x="180" y="134" width="120" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="240" y="150" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">intermediate</text>
+            <text x="240" y="164" text-anchor="middle" fill="var(--hf-ink-secondary)">FX · conformed dims</text>
+            <text x="240" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">one rate per month</text>
+            <rect x="320" y="134" width="120" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="380" y="150" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">marts</text>
+            <text x="380" y="164" text-anchor="middle" fill="var(--hf-ink-secondary)">tables, full rebuild</text>
+            <text x="380" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">contract + tests</text>
+            <path d="M161,162 L178,162" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+            <path d="M301,162 L318,162" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c2-arr)"/>
+          </g>
+
+          <line x1="20" y1="206" x2="460" y2="206" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="9">
+            <text x="30" y="226" fill="var(--hf-success-fg)">+ one VM, one bill, SQL end to end</text>
+            <text x="30" y="244" fill="var(--hf-success-fg)">+ landed Parquet is the durable copy; the VM is disposable</text>
+            <text x="30" y="262" fill="var(--hf-danger-fg)">− one node: memory and the nightly window are hard ceilings</text>
+            <text x="30" y="280" fill="var(--hf-warning-fg)">− hourly at best; DuckDB is one writer, not a BI server</text>
+          </g>
+          <text x="240" y="306" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font)" font-size="9" font-style="italic">fits Northwind today: ~250 GB retained, two engineers</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>When the data fits on one machine, use one machine. Each entity runs a small <strong>push agent</strong> beside its SQL Servers that reads changes with change tracking and uploads Parquet batches over HTTPS (<a href="#c5">deep-dive 05</a>). Object storage holds the landed files, partitioned by source, table and entity. A single VM runs <strong>DuckDB and dbt</strong>: staging views read the Parquet directly, intermediate models convert currencies and conform dimensions, and marts are built as tables. The finished gold tables are copied into a small <strong>Postgres</strong> database, which is what Power BI and the assistant's tools connect to.</p>
+        <p>Why DuckDB: it is columnar and vectorised, reads Parquet straight from object storage, and at 250 GB a full rebuild of the finance marts takes minutes on a 32 GB VM. dbt adds SQL models in Git, tests, documentation and lineage. Why the separate marts database: DuckDB is an in-process engine with a single writer, so it makes a poor concurrent server for 60 dashboard users, and Postgres is a very good one. Rebuild the marts in full every night rather than incrementally. At this size it is cheap, and a full rebuild cannot slowly accumulate incremental-logic bugs.</p>
+        <p><strong>Trade-off: one node is a single point of failure and a hard ceiling.</strong> That is acceptable while the rebuild window is measured in hours and recovery is "start a new VM and rerun": the landed Parquet is the durable copy and the DuckDB file is disposable. It stops being acceptable when the nightly run creeps towards its window, when operations want data within minutes, or when a third team starts committing models into the same project.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Under about a terabyte scanned, one or two engineers</li><li>Daily or hourly freshness is genuinely enough</li><li>Cost and simplicity matter more than elasticity</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Serving dashboards straight from the DuckDB file</li><li>Several teams writing into one project with no isolation</li><li>A minutes-fresh requirement someone has actually funded</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c5">Push agent</a>, <a href="#c6">Reconciliation</a>, <a href="#c8">When to leave A</a>, <a href="06-performance-scale.html#c7">Batching &amp; streaming</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://duckdb.org/docs/" target="_blank" rel="noopener">DuckDB documentation</a> · <a href="https://docs.getdbt.com/" target="_blank" rel="noopener">dbt documentation</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c2-sql">SQL · dbt</button><button class="tab py" data-target="c2-py">Python · Dagster</button><button class="tab cfg" data-target="c2-cfg">YAML · dbt</button></div>
+      <div class="code-pane active" id="c2-sql"><pre><span class="c">-- models/staging/stg_erp__gl_lines.sql</span>
+<span class="c">-- A view over the landed Parquet: rename, cast, keep the latest version of each row.</span>
+{{ <span class="n">config</span>(<span class="n">materialized</span><span class="o">=</span><span class="s">'view'</span>) }}
+
+<span class="k">with</span> <span class="n">ranked</span> <span class="k">as</span> (
+    <span class="k">select</span> *,
+           <span class="n">row_number</span>() <span class="k">over</span> (
+               <span class="k">partition</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">entry_no</span>
+               <span class="k">order</span> <span class="k">by</span> <span class="n">_ct_version</span> <span class="k">desc</span>
+           ) <span class="k">as</span> <span class="n">rn</span>
+    <span class="k">from</span> {{ <span class="n">source</span>(<span class="s">'erp'</span>, <span class="s">'gl_entry'</span>) }}
+)
+<span class="k">select</span>
+    <span class="n">entity_code</span>,
+    <span class="n">cast</span>(<span class="n">entry_no</span> <span class="k">as</span> <span class="t">bigint</span>)                 <span class="k">as</span> <span class="n">gl_entry_id</span>,
+    <span class="n">cast</span>(<span class="n">posting_date</span> <span class="k">as</span> <span class="t">date</span>)               <span class="k">as</span> <span class="n">posting_date</span>,
+    <span class="n">account_no</span>                               <span class="k">as</span> <span class="n">account_code</span>,
+    <span class="n">coalesce</span>(<span class="n">dim_cost_centre</span>, <span class="s">'UNALLOCATED'</span>) <span class="k">as</span> <span class="n">cost_centre_code</span>,
+    <span class="n">currency_code</span>                            <span class="k">as</span> <span class="n">txn_currency</span>,
+    <span class="n">cast</span>(<span class="n">amount_fcy</span> <span class="k">as</span> <span class="t">decimal</span>(<span class="num">19</span>, <span class="num">4</span>))       <span class="k">as</span> <span class="n">amount_txn</span>,
+    <span class="n">cast</span>(<span class="n">amount_lcy</span> <span class="k">as</span> <span class="t">decimal</span>(<span class="num">19</span>, <span class="num">4</span>))       <span class="k">as</span> <span class="n">amount_functional</span>,
+    <span class="n">_batch_id</span>                                <span class="k">as</span> <span class="n">source_batch_id</span>
+<span class="k">from</span> <span class="n">ranked</span>
+<span class="k">where</span> <span class="n">rn</span> <span class="o">=</span> <span class="num">1</span>
+  <span class="k">and</span> <span class="n">_ct_operation</span> <span class="o">&lt;&gt;</span> <span class="s">'D'</span>      <span class="c">-- latest version wins; deleted rows drop out</span>
+
+<span class="c">-- models/marts/fct_gl_monthly.sql</span>
+<span class="c">-- A table, rebuilt in full every night: at this size it takes minutes,</span>
+<span class="c">-- and a full rebuild cannot accumulate incremental bugs.</span>
+{{ <span class="n">config</span>(<span class="n">materialized</span><span class="o">=</span><span class="s">'table'</span>) }}
+
+<span class="k">select</span>
+    <span class="n">g.entity_code</span>,
+    <span class="n">year</span>(<span class="n">g.posting_date</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">g.posting_date</span>)  <span class="k">as</span> <span class="n">period_key</span>,
+    <span class="n">g.account_code</span>,
+    <span class="n">g.cost_centre_code</span>,
+    <span class="n">g.txn_currency</span>,
+    <span class="n">e.functional_currency</span>                               <span class="k">as</span> <span class="n">functional_ccy</span>,
+    <span class="n">sum</span>(<span class="n">g.amount_txn</span>)                                   <span class="k">as</span> <span class="n">amount_txn</span>,
+    <span class="n">sum</span>(<span class="n">g.amount_functional</span>)                            <span class="k">as</span> <span class="n">amount_functional</span>,
+    <span class="n">sum</span>(<span class="n">g.amount_functional</span> * <span class="n">fx.rate_to_zar</span>)           <span class="k">as</span> <span class="n">amount_group_zar</span>,
+    <span class="n">any_value</span>(<span class="n">fx.fx_rate_id</span>)                            <span class="k">as</span> <span class="n">fx_rate_id</span>,
+    <span class="n">max</span>(<span class="n">g.source_batch_id</span>)                              <span class="k">as</span> <span class="n">source_batch_id</span>
+<span class="k">from</span> {{ <span class="n">ref</span>(<span class="s">'stg_erp__gl_lines'</span>) }} <span class="k">as</span> <span class="n">g</span>
+<span class="k">join</span> {{ <span class="n">ref</span>(<span class="s">'dim_entity'</span>) }} <span class="k">as</span> <span class="n">e</span>
+  <span class="k">on</span> <span class="n">e.entity_code</span> <span class="o">=</span> <span class="n">g.entity_code</span>
+<span class="k">join</span> {{ <span class="n">ref</span>(<span class="s">'int_fx_month_end'</span>) }} <span class="k">as</span> <span class="n">fx</span>
+  <span class="k">on</span> <span class="n">fx.from_ccy</span> <span class="o">=</span> <span class="n">e.functional_currency</span>
+ <span class="k">and</span> <span class="n">fx.period_key</span> <span class="o">=</span> <span class="n">year</span>(<span class="n">g.posting_date</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">g.posting_date</span>)
+<span class="k">group</span> <span class="k">by</span> <span class="k">all</span></pre></div>
+      <div class="code-pane" id="c2-py"><pre><span class="c"># orchestration.py: one process, one schedule, one VM.</span>
+<span class="c"># Plain Python (Dagster), not a web service: nothing calls it, it runs on a clock.</span>
+<span class="k">from</span> <span class="n">pathlib</span> <span class="k">import</span> <span class="t">Path</span>
+
+<span class="k">import</span> <span class="n">duckdb</span>
+<span class="k">from</span> <span class="n">dagster</span> <span class="k">import</span> <span class="t">AssetExecutionContext</span>, <span class="t">Definitions</span>, <span class="t">ScheduleDefinition</span>, <span class="n">asset</span>, <span class="n">define_asset_job</span>
+<span class="k">from</span> <span class="n">dagster_dbt</span> <span class="k">import</span> <span class="t">DbtCliResource</span>, <span class="t">DbtProject</span>, <span class="n">dbt_assets</span>
+
+<span class="n">PROJECT</span> <span class="o">=</span> <span class="t">DbtProject</span>(<span class="n">project_dir</span><span class="o">=</span><span class="t">Path</span>(<span class="n">__file__</span>).<span class="n">parent</span> / <span class="s">"northwind_dbt"</span>)
+<span class="n">GOLD_TABLES</span> <span class="o">=</span> (<span class="s">"fct_gl_monthly"</span>, <span class="s">"fct_stock_daily"</span>, <span class="s">"dim_entity"</span>, <span class="s">"dim_account"</span>)
+
+
+<span class="o">@</span><span class="n">dbt_assets</span>(<span class="n">manifest</span><span class="o">=</span><span class="n">PROJECT</span>.<span class="n">manifest_path</span>)
+<span class="k">def</span> <span class="n">northwind_models</span>(<span class="n">context</span>: <span class="t">AssetExecutionContext</span>, <span class="n">dbt</span>: <span class="t">DbtCliResource</span>):
+    <span class="c"># build = run + test in DAG order: a failing test stops everything downstream of it</span>
+    <span class="k">yield</span> <span class="k">from</span> <span class="n">dbt</span>.<span class="n">cli</span>([<span class="s">"build"</span>], <span class="n">context</span><span class="o">=</span><span class="n">context</span>).<span class="n">stream</span>()
+
+
+<span class="o">@</span><span class="n">asset</span>(<span class="n">deps</span><span class="o">=</span>[<span class="n">northwind_models</span>])
+<span class="k">def</span> <span class="n">published_marts</span>() <span class="o">-&gt;</span> <span class="k">None</span>:
+    <span class="s">"""Copy gold into Postgres, which is what Power BI and the AI tools connect to."""</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">duckdb</span>.<span class="n">connect</span>(<span class="s">"/data/northwind.duckdb"</span>)
+    <span class="c"># Credentials come from the PG* environment, injected from the vault at start-up.</span>
+    <span class="n">con</span>.<span class="n">execute</span>(<span class="s">"ATTACH 'dbname=marts host=marts.northwind.example' AS pg (TYPE postgres)"</span>)
+    <span class="k">for</span> <span class="n">table</span> <span class="k">in</span> <span class="n">GOLD_TABLES</span>:
+        <span class="c"># One transaction per table: readers see yesterday's table or today's, never half.</span>
+        <span class="n">con</span>.<span class="n">execute</span>(<span class="s">"BEGIN"</span>)
+        <span class="n">con</span>.<span class="n">execute</span>(<span class="s">f"DROP TABLE IF EXISTS pg.gold.{table}"</span>)
+        <span class="n">con</span>.<span class="n">execute</span>(<span class="s">f"CREATE TABLE pg.gold.{table} AS SELECT * FROM gold.{table}"</span>)
+        <span class="n">con</span>.<span class="n">execute</span>(<span class="s">"COMMIT"</span>)
+    <span class="n">con</span>.<span class="n">close</span>()
+
+
+<span class="n">nightly</span> <span class="o">=</span> <span class="t">ScheduleDefinition</span>(
+    <span class="n">job</span><span class="o">=</span><span class="n">define_asset_job</span>(<span class="s">"nightly"</span>, <span class="n">selection</span><span class="o">=</span><span class="s">"*"</span>),
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s">"30 2 * * *"</span>,                 <span class="c"># after the agents' 02:00 push</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="s">"Africa/Johannesburg"</span>,
+)
+
+<span class="n">defs</span> <span class="o">=</span> <span class="t">Definitions</span>(
+    <span class="n">assets</span><span class="o">=</span>[<span class="n">northwind_models</span>, <span class="n">published_marts</span>],
+    <span class="n">schedules</span><span class="o">=</span>[<span class="n">nightly</span>],
+    <span class="n">resources</span><span class="o">=</span>{<span class="s">"dbt"</span>: <span class="t">DbtCliResource</span>(<span class="n">project_dir</span><span class="o">=</span><span class="n">PROJECT</span>)},
+)</pre></div>
+      <div class="code-pane" id="c2-cfg"><pre><span class="c"># profiles.yml: dbt-duckdb on a single 32 GB VM</span>
+<span class="n">northwind</span>:
+  <span class="n">target</span>: <span class="s">prod</span>
+  <span class="n">outputs</span>:
+    <span class="n">prod</span>:
+      <span class="n">type</span>: <span class="s">duckdb</span>
+      <span class="n">path</span>: <span class="s">/data/northwind.duckdb</span>          <span class="c"># disposable: rebuilt from landed Parquet</span>
+      <span class="n">threads</span>: <span class="num">4</span>
+      <span class="n">extensions</span>: [<span class="s">httpfs</span>, <span class="s">parquet</span>, <span class="s">azure</span>]
+      <span class="n">settings</span>:
+        <span class="n">memory_limit</span>: <span class="s">24GB</span>                  <span class="c"># headroom for the OS and Dagster</span>
+      <span class="n">secrets</span>:
+        - <span class="n">type</span>: <span class="s">azure</span>
+          <span class="n">provider</span>: <span class="s">credential_chain</span>        <span class="c"># the VM's managed identity; no keys in files</span>
+          <span class="n">account_name</span>: <span class="s">nwlakeprod</span>
+
+<span class="c"># models/staging/_sources.yml: dbt reads the Parquet where the ingest API landed it</span>
+<span class="n">sources</span>:
+  - <span class="n">name</span>: <span class="s">erp</span>
+    <span class="n">meta</span>:
+      <span class="n">external_location</span>: <span class="s">"read_parquet('az://landing/erp/{name}/*/*.parquet', hive_partitioning = true, union_by_name = true)"</span>
+    <span class="n">tables</span>:
+      - <span class="n">name</span>: <span class="s">gl_entry</span>          <span class="c"># landing/erp/gl_entry/entity_code=NCC-ZA/&lt;batch&gt;.parquet</span>
+      - <span class="n">name</span>: <span class="s">sales_invoice</span>
+      - <span class="n">name</span>: <span class="s">customer</span>
+      - <span class="n">name</span>: <span class="s">control_totals</span>    <span class="c"># shipped by the agent with every batch (see 06)</span></pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C3 — VERSION B, SCALE AND FRESHNESS ============ -->
+  <section class="pattern" id="c3">
+    <div class="pattern-head"><div class="pattern-num">03</div><div class="pattern-title-wrap"><h2>Version B, scale and freshness: CDC, Kafka, Iceberg and Trino</h2><div class="pattern-tags"><span class="tag warm">Core</span><span class="tag cool">Version B</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">VERSION B · LOG → TABLE FORMAT → ENGINES</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <!-- Row 1: capture -->
+            <rect x="10" y="34" width="100" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="60" y="52" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">SQL Server</text>
+            <text x="60" y="68" text-anchor="middle" fill="var(--hf-ink-secondary)">CDC on · ZA, NA</text>
+            <rect x="125" y="34" width="100" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="175" y="52" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Debezium</text>
+            <text x="175" y="68" text-anchor="middle" fill="var(--hf-ink-secondary)">Kafka Connect</text>
+            <rect x="240" y="34" width="100" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="290" y="52" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Redpanda</text>
+            <text x="290" y="68" text-anchor="middle" fill="var(--hf-ink-secondary)">topic per table</text>
+            <rect x="355" y="34" width="113" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="411" y="52" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Iceberg sink</text>
+            <text x="411" y="68" text-anchor="middle" fill="var(--hf-ink-secondary)">commit every 2 min</text>
+            <path d="M111,57 L123,57" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <path d="M226,57 L238,57" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <path d="M341,57 L353,57" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <!-- BW still pushes -->
+            <rect x="125" y="92" width="100" height="28" rx="3" fill="var(--hf-surface)" stroke="var(--hf-success-fg)" stroke-width="1"/>
+            <text x="175" y="110" text-anchor="middle" fill="var(--hf-success-fg)">BW agent → ingest</text>
+            <path d="M225,104 L262,82" stroke="var(--hf-success-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+
+            <!-- Row 2: tables and modelling -->
+            <rect x="240" y="136" width="228" height="56" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="354" y="155" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Iceberg tables · object storage</text>
+            <text x="354" y="169" text-anchor="middle" fill="var(--hf-ink-secondary)">bronze → silver → gold</text>
+            <text x="354" y="183" text-anchor="middle" fill="var(--hf-ink-secondary)">REST catalog · snapshots</text>
+            <path d="M411,80 L411,134" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <rect x="10" y="136" width="215" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="117" y="155" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">dbt on Trino</text>
+            <text x="117" y="169" text-anchor="middle" fill="var(--hf-ink-secondary)">one namespace per team</text>
+            <text x="117" y="183" text-anchor="middle" fill="var(--hf-ink-secondary)">finance · ops · commercial</text>
+            <path d="M226,164 L238,164" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+
+            <!-- Row 3: engines and consumers -->
+            <rect x="240" y="212" width="108" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="294" y="228" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Trino</text>
+            <text x="294" y="242" text-anchor="middle" fill="var(--hf-ink-secondary)">ad hoc + dbt</text>
+            <rect x="360" y="212" width="108" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="414" y="228" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ClickHouse</text>
+            <text x="414" y="242" text-anchor="middle" fill="var(--hf-ink-secondary)">hot dashboards</text>
+            <path d="M294,192 L294,210" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <path d="M414,192 L414,210" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+            <rect x="10" y="212" width="215" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="117" y="228" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI · AI tools</text>
+            <text x="117" y="242" text-anchor="middle" fill="var(--hf-ink-secondary)">minutes-fresh ops views</text>
+            <path d="M239,232 L227,232" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c3-arr)"/>
+          </g>
+
+          <line x1="20" y1="264" x2="460" y2="264" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="9">
+            <text x="20" y="280" fill="var(--hf-success-fg)">+ minutes-fresh · scales out · engines share open tables</text>
+            <text x="20" y="295" fill="var(--hf-danger-fg)">− a cluster to run: Kafka, Connect, catalog, Trino</text>
+            <text x="20" y="310" fill="var(--hf-warning-fg)">− compaction, snapshot expiry and schema drift are yours</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Now change the constraints. An acquisition and cold-room temperature telemetry multiply the data tenfold, operations want stock and shipment dashboards fresh within five minutes, and finance, operations and commercial each want to build their own models. A nightly batch cannot deliver minutes, and one node cannot comfortably scan 2.5 TB. The shape becomes a <strong>log-based pipeline</strong>: SQL Server CDC, read by <strong>Debezium</strong> on Kafka Connect, into <strong>Kafka or Redpanda</strong> topics, committed continuously into <strong>Apache Iceberg</strong> tables on object storage, queried by <strong>Trino</strong> for ad-hoc and dbt work, with <strong>ClickHouse</strong> only for the few dashboards that need sub-second answers over hot data.</p>
+        <p>Iceberg is what makes this a lakehouse rather than a pile of files: atomic snapshot commits, schema evolution, hidden partitioning, time travel, and a REST catalog that lets Trino, Spark and ClickHouse read the same tables. Bronze holds the append-only change stream; a MERGE folds it into silver current state, guarded by the source LSN so a replayed window is harmless; gold is dbt models, one namespace per team. The closed Botswana network does not change: its agent still pushes (<a href="#c5">05</a>), and the ingest API now produces to the same topics the connectors write.</p>
+        <p><strong>Trade-off: freshness and scale are bought with operating burden.</strong> You now run Kafka, Connect, a catalog, Trino and perhaps ClickHouse, and you own compaction, snapshot expiry, connector restarts after schema changes, and consumer lag. That needs a platform team of three or more. Without one, Version B decays into a system that looks fresh on the slides and has stale corners nobody notices, which is worse than an honest daily batch.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Terabytes and growing, with many consumers</li><li>Minutes-level freshness that someone has funded</li><li>Several teams needing isolation over shared tables</li><li>You want open tables as a hedge against any one engine</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Two engineers and daily needs: a cluster for a spreadsheet's worth of data</li><li>Sources where you cannot enable CDC (use the agent)</li><li>ClickHouse as the system of record</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="02-data-storage.html#c8">Change Data Capture</a>, <a href="04-microservices-patterns.html#p6">Event-driven architecture</a>, <a href="01-distributed-systems.html#c8">Idempotency</a>, <a href="#c5">The closed network</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://iceberg.apache.org/spec/" target="_blank" rel="noopener">Iceberg table spec</a> · <a href="https://trino.io/docs/current/connector/iceberg.html" target="_blank" rel="noopener">Trino Iceberg connector</a> · <a href="https://debezium.io/documentation/reference/stable/connectors/sqlserver.html" target="_blank" rel="noopener">Debezium SQL Server connector</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c3-sql">SQL · Trino</button><button class="tab py" data-target="c3-py">Python · PyIceberg</button><button class="tab cfg" data-target="c3-cfg">YAML · Kafka Connect</button></div>
+      <div class="code-pane active" id="c3-sql"><pre><span class="c">-- 1. On each reachable SQL Server (once): turn on CDC for the tables Debezium reads.</span>
+<span class="k">exec</span> <span class="n">sys.sp_cdc_enable_db</span>;
+<span class="k">exec</span> <span class="n">sys.sp_cdc_enable_table</span>
+     <span class="n">@source_schema</span>        <span class="o">=</span> <span class="s">N'dbo'</span>,
+     <span class="n">@source_name</span>          <span class="o">=</span> <span class="s">N'GLEntry'</span>,
+     <span class="n">@role_name</span>            <span class="o">=</span> <span class="s">N'cdc_reader'</span>,  <span class="c">-- only this role can read the change tables</span>
+     <span class="n">@supports_net_changes</span> <span class="o">=</span> <span class="num">0</span>;
+
+<span class="c">-- 2. In Trino: fold the append-only change stream (bronze) into current state (silver).</span>
+<span class="c">--    Guarded by the source LSN, so replaying a window of changes is harmless.</span>
+<span class="k">merge</span> <span class="k">into</span> <span class="n">iceberg.silver.gl_entry</span> <span class="k">as</span> <span class="n">t</span>
+<span class="k">using</span> (
+    <span class="k">select</span> *
+    <span class="k">from</span> (
+        <span class="k">select</span> *,
+               <span class="n">row_number</span>() <span class="k">over</span> (
+                   <span class="k">partition</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">entry_no</span>
+                   <span class="k">order</span> <span class="k">by</span> <span class="n">source_lsn</span> <span class="k">desc</span>) <span class="k">as</span> <span class="n">rn</span>
+        <span class="k">from</span> <span class="n">iceberg.bronze.erp_gl_entry_changes</span>
+        <span class="k">where</span> <span class="n">ingested_at</span> <span class="o">&gt;=</span> <span class="t">timestamp</span> <span class="s">'2026-10-08 06:00:00'</span>   <span class="c">-- the job's watermark</span>
+    ) <span class="k">as</span> <span class="n">changes</span>
+    <span class="k">where</span> <span class="n">rn</span> <span class="o">=</span> <span class="num">1</span>
+) <span class="k">as</span> <span class="n">s</span>
+<span class="k">on</span> <span class="n">t.entity_code</span> <span class="o">=</span> <span class="n">s.entity_code</span> <span class="k">and</span> <span class="n">t.entry_no</span> <span class="o">=</span> <span class="n">s.entry_no</span>
+<span class="k">when</span> <span class="k">matched</span> <span class="k">and</span> <span class="n">s.source_lsn</span> <span class="o">&gt;</span> <span class="n">t.source_lsn</span> <span class="k">and</span> <span class="n">s.op</span> <span class="o">=</span> <span class="s">'d'</span> <span class="k">then</span> <span class="k">delete</span>
+<span class="k">when</span> <span class="k">matched</span> <span class="k">and</span> <span class="n">s.source_lsn</span> <span class="o">&gt;</span> <span class="n">t.source_lsn</span> <span class="k">then</span> <span class="k">update</span> <span class="k">set</span>
+    <span class="n">account_no</span> <span class="o">=</span> <span class="n">s.account_no</span>,
+    <span class="n">amount_lcy</span> <span class="o">=</span> <span class="n">s.amount_lcy</span>,
+    <span class="n">posting_date</span> <span class="o">=</span> <span class="n">s.posting_date</span>,
+    <span class="n">source_lsn</span> <span class="o">=</span> <span class="n">s.source_lsn</span>
+<span class="k">when</span> <span class="k">not</span> <span class="k">matched</span> <span class="k">and</span> <span class="n">s.op</span> <span class="o">&lt;&gt;</span> <span class="s">'d'</span> <span class="k">then</span> <span class="k">insert</span>
+    (<span class="n">entity_code</span>, <span class="n">entry_no</span>, <span class="n">account_no</span>, <span class="n">amount_lcy</span>, <span class="n">posting_date</span>, <span class="n">source_lsn</span>)
+    <span class="k">values</span> (<span class="n">s.entity_code</span>, <span class="n">s.entry_no</span>, <span class="n">s.account_no</span>, <span class="n">s.amount_lcy</span>, <span class="n">s.posting_date</span>, <span class="n">s.source_lsn</span>);
+
+<span class="c">-- 3. Housekeeping you now own: small files from frequent commits, and old snapshots.</span>
+<span class="k">alter</span> <span class="k">table</span> <span class="t">iceberg.silver.gl_entry</span> <span class="k">execute</span> <span class="n">optimize</span>(<span class="n">file_size_threshold</span> <span class="o">=&gt;</span> <span class="s">'128MB'</span>);
+<span class="k">alter</span> <span class="k">table</span> <span class="t">iceberg.silver.gl_entry</span> <span class="k">execute</span> <span class="n">expire_snapshots</span>(<span class="n">retention_threshold</span> <span class="o">=&gt;</span> <span class="s">'7d'</span>);</pre></div>
+      <div class="code-pane" id="c3-py"><pre><span class="c"># freshness.py: how old is the newest committed data, per table? Runs every minute.</span>
+<span class="c"># Plain Python worker: it reads the catalog and emits metrics; it serves no requests.</span>
+<span class="k">import</span> <span class="n">time</span>
+
+<span class="k">from</span> <span class="n">pyiceberg</span>.<span class="n">catalog</span> <span class="k">import</span> <span class="n">load_catalog</span>
+
+<span class="n">catalog</span> <span class="o">=</span> <span class="n">load_catalog</span>(
+    <span class="s">"northwind"</span>,
+    <span class="o">**</span>{
+        <span class="s">"type"</span>: <span class="s">"rest"</span>,
+        <span class="s">"uri"</span>: <span class="s">"https://catalog.northwind.example"</span>,
+        <span class="s">"warehouse"</span>: <span class="s">"lakehouse"</span>,
+        <span class="c"># auth: OAuth client credentials, read from the environment</span>
+    },
+)
+
+<span class="n">SLO_SECONDS</span> <span class="o">=</span> {
+    <span class="s">"silver.gl_entry"</span>: <span class="num">10</span> * <span class="num">60</span>,
+    <span class="s">"silver.stock_movement"</span>: <span class="num">5</span> * <span class="num">60</span>,
+    <span class="s">"silver.shipment"</span>: <span class="num">5</span> * <span class="num">60</span>,
+}
+
+
+<span class="k">def</span> <span class="n">lag_seconds</span>(<span class="n">identifier</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">float</span>:
+    <span class="n">table</span> <span class="o">=</span> <span class="n">catalog</span>.<span class="n">load_table</span>(<span class="n">identifier</span>)
+    <span class="n">snapshot</span> <span class="o">=</span> <span class="n">table</span>.<span class="n">current_snapshot</span>()
+    <span class="k">if</span> <span class="n">snapshot</span> <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">return</span> <span class="t">float</span>(<span class="s">"inf"</span>)                 <span class="c"># never committed: maximally stale</span>
+    <span class="c"># Commit time is a proxy. The honest lag is now minus the newest *source*</span>
+    <span class="c"># timestamp in the data; track both, alert on the second.</span>
+    <span class="k">return</span> <span class="n">time</span>.<span class="n">time</span>() - <span class="n">snapshot</span>.<span class="n">timestamp_ms</span> / <span class="num">1000</span>
+
+
+<span class="k">def</span> <span class="n">breaches</span>() <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">str</span>]:
+    <span class="n">found</span> <span class="o">=</span> []
+    <span class="k">for</span> <span class="n">identifier</span>, <span class="n">slo</span> <span class="k">in</span> <span class="n">SLO_SECONDS</span>.<span class="n">items</span>():
+        <span class="n">lag</span> <span class="o">=</span> <span class="n">lag_seconds</span>(<span class="n">identifier</span>)
+        <span class="k">if</span> <span class="n">lag</span> <span class="o">&gt;</span> <span class="n">slo</span>:
+            <span class="n">found</span>.<span class="n">append</span>(<span class="s">f"{identifier}: {lag / 60:.0f} min old (SLO {slo // 60} min)"</span>)
+    <span class="k">return</span> <span class="n">found</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span>:
+    <span class="k">for</span> <span class="n">line</span> <span class="k">in</span> <span class="n">breaches</span>():
+        <span class="n">print</span>(<span class="s">"FRESHNESS BREACH"</span>, <span class="n">line</span>)     <span class="c"># in production: a gauge, alerted on burn rate</span></pre></div>
+      <div class="code-pane" id="c3-cfg"><pre><span class="c"># Debezium SQL Server source: one connector per database, run by Strimzi on Kubernetes.</span>
+<span class="n">apiVersion</span>: <span class="s">kafka.strimzi.io/v1beta2</span>
+<span class="n">kind</span>: <span class="s">KafkaConnector</span>
+<span class="n">metadata</span>:
+  <span class="n">name</span>: <span class="s">erp-za-cdc</span>
+  <span class="n">labels</span>:
+    <span class="n">strimzi.io/cluster</span>: <span class="s">northwind-connect</span>
+<span class="n">spec</span>:
+  <span class="n">class</span>: <span class="s">io.debezium.connector.sqlserver.SqlServerConnector</span>
+  <span class="n">tasksMax</span>: <span class="num">1</span>
+  <span class="n">config</span>:
+    <span class="n">database.hostname</span>: <span class="s">erp-za.northwind.example</span>
+    <span class="n">database.port</span>: <span class="num">1433</span>
+    <span class="n">database.user</span>: <span class="s">cdc_reader</span>
+    <span class="n">database.password</span>: <span class="s">"${secrets:data/erp-za-cdc:password}"</span>
+    <span class="n">database.names</span>: <span class="s">NorthwindERP</span>
+    <span class="n">database.encrypt</span>: <span class="s">true</span>
+    <span class="n">topic.prefix</span>: <span class="s">erp.za</span>
+    <span class="n">table.include.list</span>: <span class="s">"dbo.GLEntry,dbo.SalesInvoice,dbo.Customer"</span>
+    <span class="n">snapshot.mode</span>: <span class="s">initial</span>
+    <span class="n">schema.history.internal.kafka.bootstrap.servers</span>: <span class="s">redpanda:9092</span>
+    <span class="n">schema.history.internal.kafka.topic</span>: <span class="s">schema-history.erp.za</span>
+    <span class="n">transforms</span>: <span class="s">unwrap</span>
+    <span class="n">transforms.unwrap.type</span>: <span class="s">io.debezium.transforms.ExtractNewRecordState</span>
+    <span class="n">transforms.unwrap.add.fields</span>: <span class="s">"op,change_lsn,source.ts_ms"</span>
+---
+<span class="c"># Iceberg sink: topics into bronze tables, committing every two minutes.</span>
+<span class="n">apiVersion</span>: <span class="s">kafka.strimzi.io/v1beta2</span>
+<span class="n">kind</span>: <span class="s">KafkaConnector</span>
+<span class="n">metadata</span>:
+  <span class="n">name</span>: <span class="s">lake-iceberg-sink</span>
+  <span class="n">labels</span>:
+    <span class="n">strimzi.io/cluster</span>: <span class="s">northwind-connect</span>
+<span class="n">spec</span>:
+  <span class="n">class</span>: <span class="s">org.apache.iceberg.connect.IcebergSinkConnector</span>
+  <span class="n">tasksMax</span>: <span class="num">4</span>
+  <span class="n">config</span>:
+    <span class="n">topics.regex</span>: <span class="s">"erp\\.(za|na|bw)\\.NorthwindERP\\.dbo\\.GLEntry"</span>
+    <span class="n">iceberg.tables</span>: <span class="s">bronze.erp_gl_entry_changes</span>
+    <span class="n">iceberg.catalog.type</span>: <span class="s">rest</span>
+    <span class="n">iceberg.catalog.uri</span>: <span class="s">https://catalog.northwind.example</span>
+    <span class="n">iceberg.control.commit.interval-ms</span>: <span class="num">120000</span>   <span class="c"># freshness vs small files: pick deliberately</span></pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C4 — VERSION C, MANAGED ============ -->
+  <section class="pattern" id="c4">
+    <div class="pattern-head"><div class="pattern-num">04</div><div class="pattern-title-wrap"><h2>Version C, managed: Microsoft Fabric and OneLake</h2><div class="pattern-tags"><span class="tag warm">Core</span><span class="tag deep">Version C</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">VERSION C · ONE CAPACITY, ONE LAKE</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <!-- Sources -->
+            <rect x="10" y="50" width="96" height="50" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="58" y="64" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ERP + WMS</text>
+            <text x="58" y="78" text-anchor="middle" fill="var(--hf-ink-secondary)">ZA · NA</text>
+            <text x="58" y="91" text-anchor="middle" fill="var(--hf-ink-secondary)">via gateway</text>
+            <rect x="10" y="140" width="96" height="50" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="58" y="154" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ERP + WMS</text>
+            <text x="58" y="168" text-anchor="middle" fill="var(--hf-ink-secondary)">BW · closed</text>
+            <text x="58" y="181" text-anchor="middle" fill="var(--hf-success-fg)">push agent</text>
+
+            <!-- Fabric capacity boundary -->
+            <rect x="120" y="32" width="350" height="210" rx="4" fill="none" stroke="var(--hf-ink-secondary)" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="128" y="45" fill="var(--hf-ink-muted)" letter-spacing="1">FABRIC CAPACITY · F SKU</text>
+
+            <rect x="132" y="56" width="100" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="182" y="72" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">pipelines</text>
+            <text x="182" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">copy · mirroring</text>
+            <rect x="132" y="146" width="100" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="182" y="162" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">notebooks</text>
+            <text x="182" y="176" text-anchor="middle" fill="var(--hf-ink-secondary)">Spark · dbt-fabric</text>
+
+            <rect x="250" y="56" width="208" height="130" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="354" y="72" text-anchor="middle" fill="var(--hf-ink)" font-size="9" font-weight="600">OneLake</text>
+            <rect x="262" y="82" width="88" height="42" rx="2" fill="var(--hf-surface)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="306" y="99" text-anchor="middle" fill="var(--hf-ink)">Lakehouse</text>
+            <text x="306" y="113" text-anchor="middle" fill="var(--hf-ink-secondary)">Delta tables</text>
+            <rect x="360" y="82" width="88" height="42" rx="2" fill="var(--hf-surface)" stroke="var(--hf-hairline-strong)" stroke-width="0.8"/>
+            <text x="404" y="99" text-anchor="middle" fill="var(--hf-ink)">Warehouse</text>
+            <text x="404" y="113" text-anchor="middle" fill="var(--hf-ink-secondary)">T-SQL · RLS</text>
+            <text x="354" y="146" text-anchor="middle" fill="var(--hf-ink-secondary)">bronze → silver → gold</text>
+            <text x="354" y="164" text-anchor="middle" fill="var(--hf-ink-secondary)">shortcuts · Purview lineage</text>
+
+            <rect x="132" y="198" width="150" height="34" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="207" y="219" text-anchor="middle" fill="var(--hf-ink)">semantic model · Direct Lake</text>
+            <rect x="300" y="198" width="158" height="34" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="379" y="219" text-anchor="middle" fill="var(--hf-ink)">Power BI · Copilot · AI tools</text>
+
+            <path d="M106,75 L130,76" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c4-arr)"/>
+            <path d="M106,166 L130,166" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c4-arr)"/>
+            <path d="M233,76 L248,76" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c4-arr)"/>
+            <path d="M233,166 L248,166" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c4-arr)"/>
+            <path d="M300,186 L262,197" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c4-arr)"/>
+            <path d="M283,215 L298,215" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c4-arr)"/>
+          </g>
+
+          <line x1="20" y1="254" x2="460" y2="254" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="9">
+            <text x="20" y="270" fill="var(--hf-success-fg)">+ no servers · Entra SSO · lineage · Direct Lake for Power BI</text>
+            <text x="20" y="286" fill="var(--hf-danger-fg)">− one pool of capacity: a runaway notebook throttles dashboards</text>
+            <text x="20" y="302" fill="var(--hf-warning-fg)">− pipelines, models, billing are Fabric's; the Delta files stay open</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Third constraint set: a small team, an estate that is already Entra ID, Microsoft 365 and Power BI, and leadership that would rather buy than build. <strong>Microsoft Fabric</strong> puts the pieces under one <strong>capacity</strong>: <strong>OneLake</strong> as the single lake with Delta Parquet underneath, Lakehouses and Warehouses over it, Data Factory pipelines and mirroring for ingestion, notebooks for Spark, and Power BI semantic models in <strong>Direct Lake</strong> mode, which read the Delta tables without an import copy. The reachable ERPs come in through pipelines and the on-premises data gateway. For Botswana the push agent lands files in OneLake and a notebook folds them into bronze; the contract from <a href="#c5">05</a> is unchanged.</p>
+        <p>What you gain: no servers to patch, one bill, Entra sign-in and permissions everywhere, lineage and sensitivity labels through Purview, fast Power BI over Direct Lake, and Copilot over the same semantic model. What you lose: control of the engine and its settings, a release cadence you do not set, and isolation. Pipelines, Spark, SQL and Power BI all draw on <strong>one pool of capacity units</strong>, so a runaway notebook can throttle the finance director's dashboard on the morning of the board pack. Size the capacity for the month-end peak, or split heavy engineering work onto its own capacity.</p>
+        <p><strong>Trade-off: the lock-in is real but uneven.</strong> The data stays open: Delta Parquet in OneLake is readable through ADLS-compatible APIs and by any Delta reader. The work does not: pipelines, Dataflows, semantic models and capacity sizing are Fabric's. Keep the transformation logic in dbt (the dbt-fabric adapter) or plain SQL in Git, and the exit cost stays a migration of plumbing, not of business logic. One practical trap: Direct Lake reads Delta tables, not views, so materialise gold as tables or the model quietly falls back to DirectQuery.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Microsoft estate, with Power BI as the BI tool</li><li>One to three engineers and no appetite for running servers</li><li>Lineage, labels and access governance wanted out of the box</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Workloads that must run outside Microsoft's cloud</li><li>Heavy, spiky Spark beside latency-sensitive dashboards on one small capacity</li><li>Expecting the capacity bill to stay flat without anyone watching it</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">Version A</a>, <a href="#c8">Choosing</a>, <a href="05-reliability-observability.html#c7">Load shedding &amp; backpressure</a>, <a href="07-security.html#c4">Least privilege</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/fabric/" target="_blank" rel="noopener">Microsoft Fabric documentation</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c4-sql">SQL · Spark</button><button class="tab py" data-target="c4-py">Python · PySpark</button><button class="tab cfg" data-target="c4-cfg">Bicep</button></div>
+      <div class="code-pane active" id="c4-sql"><pre><span class="c">-- Fabric notebook cell (Spark SQL): fold landed changes into a Delta table in the Lakehouse.</span>
+<span class="k">merge</span> <span class="k">into</span> <span class="n">silver.gl_entry</span> <span class="k">as</span> <span class="n">t</span>
+<span class="k">using</span> (
+    <span class="k">select</span> <span class="n">entity_code</span>, <span class="n">entry_no</span>, <span class="n">account_no</span>, <span class="n">posting_date</span>, <span class="n">amount_lcy</span>, <span class="n">amount_fcy</span>,
+           <span class="n">currency_code</span>, <span class="n">_ct_version</span>, <span class="n">_ct_operation</span>, <span class="n">_landed_at</span>
+    <span class="k">from</span> (
+        <span class="k">select</span> *,
+               <span class="n">row_number</span>() <span class="k">over</span> (
+                   <span class="k">partition</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">entry_no</span>
+                   <span class="k">order</span> <span class="k">by</span> <span class="n">_ct_version</span> <span class="k">desc</span>) <span class="k">as</span> <span class="n">rn</span>
+        <span class="k">from</span> <span class="n">bronze.gl_entry_changes</span>
+        <span class="k">where</span> <span class="n">_landed_at</span> <span class="o">&gt;</span> (<span class="k">select</span> <span class="n">coalesce</span>(<span class="n">max</span>(<span class="n">_landed_at</span>), <span class="t">timestamp</span> <span class="s">'1900-01-01'</span>)
+                            <span class="k">from</span> <span class="n">silver.gl_entry</span>)
+    ) <span class="k">as</span> <span class="n">latest</span>
+    <span class="k">where</span> <span class="n">rn</span> <span class="o">=</span> <span class="num">1</span>
+) <span class="k">as</span> <span class="n">s</span>
+<span class="k">on</span> <span class="n">t.entity_code</span> <span class="o">=</span> <span class="n">s.entity_code</span> <span class="k">and</span> <span class="n">t.entry_no</span> <span class="o">=</span> <span class="n">s.entry_no</span>
+<span class="k">when</span> <span class="k">matched</span> <span class="k">and</span> <span class="n">s._ct_operation</span> <span class="o">=</span> <span class="s">'D'</span> <span class="k">then</span> <span class="k">delete</span>
+<span class="k">when</span> <span class="k">matched</span> <span class="k">then</span> <span class="k">update</span> <span class="k">set</span> *
+<span class="k">when</span> <span class="k">not</span> <span class="k">matched</span> <span class="k">and</span> <span class="n">s._ct_operation</span> <span class="o">&lt;&gt;</span> <span class="s">'D'</span> <span class="k">then</span> <span class="k">insert</span> *;
+
+<span class="c">-- Gold as a Delta *table*, not a view: Direct Lake reads tables directly,</span>
+<span class="c">-- and a semantic model over views falls back to DirectQuery.</span>
+<span class="k">create</span> <span class="k">or</span> <span class="k">replace</span> <span class="k">table</span> <span class="t">gold.fct_gl_monthly</span> <span class="k">using</span> <span class="n">delta</span> <span class="k">as</span>
+<span class="k">select</span> <span class="n">g.entity_code</span>,
+       <span class="n">year</span>(<span class="n">g.posting_date</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">g.posting_date</span>) <span class="k">as</span> <span class="n">period_key</span>,
+       <span class="n">g.account_no</span>                                       <span class="k">as</span> <span class="n">account_code</span>,
+       <span class="n">g.currency_code</span>                                    <span class="k">as</span> <span class="n">txn_currency</span>,
+       <span class="n">sum</span>(<span class="n">g.amount_fcy</span>)                                  <span class="k">as</span> <span class="n">amount_txn</span>,
+       <span class="n">sum</span>(<span class="n">g.amount_lcy</span>)                                  <span class="k">as</span> <span class="n">amount_functional</span>
+<span class="k">from</span> <span class="n">silver.gl_entry</span> <span class="k">as</span> <span class="n">g</span>
+<span class="k">group</span> <span class="k">by</span> <span class="n">g.entity_code</span>, <span class="n">year</span>(<span class="n">g.posting_date</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">g.posting_date</span>),
+         <span class="n">g.account_no</span>, <span class="n">g.currency_code</span>;</pre></div>
+      <div class="code-pane" id="c4-py"><pre><span class="c"># Fabric notebook (PySpark): append newly landed agent batches to a bronze Delta table.</span>
+<span class="c"># `spark` and `notebookutils` are provided by the Fabric notebook runtime.</span>
+<span class="k">from</span> <span class="n">pyspark</span>.<span class="n">sql</span> <span class="k">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">F</span>
+
+<span class="n">LANDING</span> <span class="o">=</span> <span class="s">"Files/landing/erp/gl_entry"</span>      <span class="c"># OneLake path inside this Lakehouse</span>
+<span class="n">TARGET</span> <span class="o">=</span> <span class="s">"bronze.gl_entry_changes"</span>
+
+<span class="n">already_loaded</span> <span class="o">=</span> <span class="t">set</span>()
+<span class="k">if</span> <span class="n">spark</span>.<span class="n">catalog</span>.<span class="n">tableExists</span>(<span class="n">TARGET</span>):
+    <span class="c"># Fine for thousands of batches; past that, keep a small control table instead.</span>
+    <span class="n">already_loaded</span> <span class="o">=</span> {
+        <span class="n">row</span>.<span class="n">source_batch_id</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="k">in</span> <span class="n">spark</span>.<span class="n">table</span>(<span class="n">TARGET</span>).<span class="n">select</span>(<span class="s">"source_batch_id"</span>).<span class="n">distinct</span>().<span class="n">collect</span>()
+    }
+
+<span class="n">new_files</span> <span class="o">=</span> [
+    <span class="n">f</span>.<span class="n">path</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="k">in</span> <span class="n">notebookutils</span>.<span class="n">fs</span>.<span class="n">ls</span>(<span class="n">LANDING</span>)
+    <span class="k">if</span> <span class="n">f</span>.<span class="n">name</span>.<span class="n">endswith</span>(<span class="s">".parquet"</span>) <span class="k">and</span> <span class="n">f</span>.<span class="n">name</span>.<span class="n">removesuffix</span>(<span class="s">".parquet"</span>) <span class="k">not</span> <span class="k">in</span> <span class="n">already_loaded</span>
+]
+
+<span class="k">if</span> <span class="n">new_files</span>:
+    (
+        <span class="n">spark</span>.<span class="n">read</span>.<span class="n">parquet</span>(*<span class="n">new_files</span>)
+        .<span class="n">withColumn</span>(<span class="s">"source_batch_id"</span>,
+                    <span class="n">F</span>.<span class="n">regexp_replace</span>(<span class="n">F</span>.<span class="n">col</span>(<span class="s">"_metadata.file_name"</span>), <span class="s">r"\.parquet$"</span>, <span class="s">""</span>))
+        .<span class="n">withColumn</span>(<span class="s">"_landed_at"</span>, <span class="n">F</span>.<span class="n">current_timestamp</span>())
+        .<span class="n">write</span>.<span class="n">format</span>(<span class="s">"delta"</span>)
+        .<span class="n">mode</span>(<span class="s">"append"</span>)
+        .<span class="n">saveAsTable</span>(<span class="n">TARGET</span>)
+    )
+
+<span class="n">print</span>(<span class="s">f"loaded {len(new_files)} new batch(es) into {TARGET}"</span>)</pre></div>
+      <div class="code-pane" id="c4-cfg"><pre><span class="c">// fabric.bicep: the capacity is the one thing you size, and the one bill you watch.</span>
+<span class="k">param</span> <span class="n">location</span> <span class="t">string</span> <span class="o">=</span> <span class="n">resourceGroup</span>().<span class="n">location</span>
+<span class="k">param</span> <span class="n">adminUpns</span> <span class="t">array</span>
+
+<span class="o">@</span><span class="n">allowed</span>([<span class="s">'F2'</span>, <span class="s">'F4'</span>, <span class="s">'F8'</span>, <span class="s">'F16'</span>, <span class="s">'F32'</span>, <span class="s">'F64'</span>])
+<span class="k">param</span> <span class="n">skuName</span> <span class="t">string</span> <span class="o">=</span> <span class="s">'F8'</span>
+
+<span class="k">resource</span> <span class="n">capacity</span> <span class="s">'Microsoft.Fabric/capacities@2023-11-01'</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="s">'nwfabricprod'</span>
+  <span class="n">location</span>: <span class="n">location</span>
+  <span class="n">sku</span>: {
+    <span class="n">name</span>: <span class="n">skuName</span>
+    <span class="n">tier</span>: <span class="s">'Fabric'</span>
+  }
+  <span class="n">properties</span>: {
+    <span class="n">administration</span>: {
+      <span class="n">members</span>: <span class="n">adminUpns</span>       <span class="c">// capacity admins, by UPN; workspace roles are separate</span>
+    }
+  }
+  <span class="n">tags</span>: {
+    <span class="n">owner</span>: <span class="s">'data-platform'</span>
+    <span class="n">costCentre</span>: <span class="s">'GRP-IT'</span>
+  }
+}
+
+<span class="c">// Two operational habits that matter more than the SKU:</span>
+<span class="c">//   pause the capacity outside working hours from automation (it bills while running),</span>
+<span class="c">//   and alert on sustained utilisation before throttling starts, not after.</span>
+<span class="k">output</span> <span class="n">capacityId</span> <span class="t">string</span> <span class="o">=</span> <span class="n">capacity</span>.<span class="n">id</span></pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C5 — THE CLOSED NETWORK ============ -->
+  <section class="pattern" id="c5">
+    <div class="pattern-head"><div class="pattern-num">05</div><div class="pattern-title-wrap"><h2>Getting data out of a network that allows no inbound connections</h2><div class="pattern-tags"><span class="tag hot">Critical</span><span class="tag cool">Ingestion</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c5-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">NO INBOUND · THE AGENT PUSHES OUT</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <!-- Closed network -->
+            <rect x="10" y="32" width="200" height="190" rx="4" fill="none" stroke="var(--hf-danger-fg)" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="20" y="46" fill="var(--hf-danger-fg)" letter-spacing="1">BW NETWORK · NO INBOUND</text>
+            <rect x="22" y="58" width="80" height="48" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="62" y="74" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ERP</text>
+            <text x="62" y="87" text-anchor="middle" fill="var(--hf-ink-secondary)">SQL Server</text>
+            <text x="62" y="99" text-anchor="middle" fill="var(--hf-ink-secondary)">change tracking</text>
+            <rect x="120" y="58" width="80" height="48" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="160" y="74" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">push agent</text>
+            <text x="160" y="87" text-anchor="middle" fill="var(--hf-ink-secondary)">read-only gMSA</text>
+            <text x="160" y="99" text-anchor="middle" fill="var(--hf-ink-secondary)">mTLS cert</text>
+            <path d="M103,82 L118,82" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c5-arr)"/>
+            <rect x="22" y="128" width="80" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="62" y="144" text-anchor="middle" fill="var(--hf-ink)">control totals</text>
+            <text x="62" y="158" text-anchor="middle" fill="var(--hf-ink-secondary)">same snapshot</text>
+            <path d="M62,107 L62,126" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c5-arr)"/>
+            <rect x="120" y="128" width="80" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1"/>
+            <text x="160" y="144" text-anchor="middle" fill="var(--hf-ink)">watermark</text>
+            <text x="160" y="158" text-anchor="middle" fill="var(--hf-ink-secondary)">last acked ver.</text>
+            <path d="M160,108 L160,126" stroke="var(--hf-ink-secondary)" stroke-width="1" marker-start="url(#c5-arr)" marker-end="url(#c5-arr)"/>
+            <text x="110" y="192" text-anchor="middle" fill="var(--hf-ink-secondary)">one firewall rule:</text>
+            <text x="110" y="206" text-anchor="middle" fill="var(--hf-ink-secondary)">out 443 → one host</text>
+
+            <!-- Outbound push -->
+            <path d="M201,78 L258,78" stroke="var(--hf-success-fg)" stroke-width="1.4" marker-end="url(#c5-arr)"/>
+            <text x="236" y="72" text-anchor="middle" fill="var(--hf-success-fg)">HTTPS PUT</text>
+            <path d="M259,98 L203,98" stroke="var(--hf-success-fg)" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#c5-arr)"/>
+            <text x="240" y="114" text-anchor="middle" fill="var(--hf-success-fg)">ack 201/200</text>
+
+            <rect x="260" y="58" width="95" height="48" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="307" y="74" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ingest API</text>
+            <text x="307" y="87" text-anchor="middle" fill="var(--hf-ink-secondary)">FastAPI · mTLS</text>
+            <text x="307" y="99" text-anchor="middle" fill="var(--hf-ink-secondary)">checks sha256</text>
+            <rect x="370" y="58" width="98" height="48" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="419" y="74" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">landing/</text>
+            <text x="419" y="87" text-anchor="middle" fill="var(--hf-ink-secondary)">put-if-absent</text>
+            <text x="419" y="99" text-anchor="middle" fill="var(--hf-ink-secondary)">id = object name</text>
+            <path d="M356,82 L368,82" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c5-arr)"/>
+
+            <!-- Blocked inbound -->
+            <path d="M340,160 L216,160" stroke="var(--hf-danger-fg)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#c5-arr)"/>
+            <text x="280" y="152" text-anchor="middle" fill="var(--hf-danger-fg)">cloud → ERP pull: blocked</text>
+            <text x="224" y="176" text-anchor="middle" fill="var(--hf-danger-fg)" font-size="11">✕</text>
+          </g>
+
+          <line x1="20" y1="234" x2="460" y2="234" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="9">
+            <text x="20" y="250" fill="var(--hf-ink)">batch id = NCC-BW.GLEntry.418213-419007</text>
+            <text x="20" y="265" fill="var(--hf-success-fg)">lost ack → resend → same id → no-op</text>
+            <text x="20" y="280" fill="var(--hf-success-fg)">overlapping ranges → latest version per key wins</text>
+            <text x="20" y="295" fill="var(--hf-danger-fg)">a gap is data loss: advance the watermark only after the ack</text>
+            <text x="20" y="310" fill="var(--hf-warning-fg)">offline longer than retention → full re-snapshot</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>The Botswana ERP's hosting provider allows <strong>no inbound connections and no VPN</strong>. That rules out every pull-based option: a connector dialling in, a replica, a cloud service polling the database. What is allowed is one outbound HTTPS rule. So invert the direction. A small <strong>push agent</strong> runs inside the network, reads changes locally and pushes them out, the same shape as a monitoring agent or a card terminal: the side behind the wall starts every connection. It authenticates with a <strong>client certificate</strong> of its own, so a compromised box can only write its own entity's batches, and it never listens on a port, not even "just for health checks".</p>
+        <p>The agent uses SQL Server <strong>change tracking</strong> rather than CDC: no SQL Agent jobs, little overhead, and a version number per change that is exactly the watermark you need. Each run reads <code>CHANGETABLE</code> from the last <em>acknowledged</em> version to the current one inside a snapshot transaction, writes a Parquet batch, and PUTs it to the ingest API under a <strong>deterministic batch id</strong> (entity, table, from-version, to-version). The API verifies the checksum and writes put-if-absent. The watermark advances only after a 2xx. Lose the response and the agent resends the same range: same id, same object, no-op. Crash and rerun, and the next range overlaps the last: harmless, because silver keeps the latest version per key. <strong>Gaps are the only real danger</strong>, and the watermark rule prevents them.</p>
+        <p><strong>Edge case: the agent is offline longer than change-tracking retention.</strong> <code>CHANGE_TRACKING_MIN_VALID_VERSION</code> is now above the watermark and the incremental changes are gone. The agent must detect it, take a full snapshot of the table, and flag the batch so the platform <em>replaces</em> that table rather than appending. Set retention (seven days here) against the longest outage you will tolerate, and alert on agent silence long before it runs out.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Sources behind firewalls you do not control</li><li>Third-party hosted systems and small remote sites</li><li>You need idempotent, auditable landing with checksums</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Agents holding storage account keys</li><li>Advancing the watermark before the acknowledgement</li><li>Agents that take commands from the cloud: an inbound path by another name</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="01-distributed-systems.html#c8">Idempotency</a>, <a href="03-apis-contracts.html#c9">Idempotency keys</a>, <a href="02-data-storage.html#c8">Change Data Capture</a>, <a href="07-security.html#c5">mTLS &amp; service identity</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/about-change-tracking-sql-server" target="_blank" rel="noopener">SQL Server change tracking</a> · <a href="https://fastapi.tiangolo.com/" target="_blank" rel="noopener">FastAPI</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c5-sql">SQL · T-SQL</button><button class="tab py" data-target="c5-py">Python · agent + FastAPI</button><button class="tab cfg" data-target="c5-cfg">TOML</button></div>
+      <div class="code-pane active" id="c5-sql"><pre><span class="c">-- Once, on the BW ERP database: change tracking (lighter than CDC, no SQL Agent jobs).</span>
+<span class="k">alter</span> <span class="n">database</span> <span class="n">NorthwindERP</span> <span class="k">set</span> <span class="n">allow_snapshot_isolation</span> <span class="k">on</span>;
+<span class="k">alter</span> <span class="n">database</span> <span class="n">NorthwindERP</span>
+    <span class="k">set</span> <span class="n">change_tracking</span> <span class="o">=</span> <span class="k">on</span> (<span class="n">change_retention</span> <span class="o">=</span> <span class="num">7</span> <span class="n">days</span>, <span class="n">auto_cleanup</span> <span class="o">=</span> <span class="k">on</span>);
+<span class="k">alter</span> <span class="k">table</span> <span class="t">dbo.GLEntry</span> <span class="k">enable</span> <span class="n">change_tracking</span> <span class="k">with</span> (<span class="n">track_columns_updated</span> <span class="o">=</span> <span class="k">off</span>);
+
+<span class="c">-- Every run, from the agent. @last_version is the last version the cloud acknowledged.</span>
+<span class="k">set</span> <span class="k">transaction</span> <span class="k">isolation</span> <span class="k">level</span> <span class="k">snapshot</span>;   <span class="c">-- changes and @now_version from one moment</span>
+<span class="k">begin</span> <span class="k">transaction</span>;
+
+<span class="k">declare</span> <span class="n">@last_version</span> <span class="t">bigint</span> <span class="o">=</span> <span class="num">418213</span>;      <span class="c">-- from the agent's watermark file</span>
+<span class="k">declare</span> <span class="n">@now_version</span>  <span class="t">bigint</span> <span class="o">=</span> <span class="n">change_tracking_current_version</span>();
+<span class="k">declare</span> <span class="n">@open_from</span>    <span class="t">date</span>   <span class="o">=</span> <span class="s">'2026-09-01'</span>;  <span class="c">-- first open period; closed ones are certified</span>
+
+<span class="k">if</span> <span class="n">@last_version</span> <span class="o">&lt;</span> <span class="n">change_tracking_min_valid_version</span>(<span class="n">object_id</span>(<span class="s">'dbo.GLEntry'</span>))
+    <span class="k">throw</span> <span class="num">50001</span>, <span class="s">'Watermark older than retention: full re-snapshot required.'</span>, <span class="num">1</span>;
+
+<span class="k">select</span> <span class="n">ct.sys_change_version</span>   <span class="k">as</span> <span class="n">_ct_version</span>,
+       <span class="n">ct.sys_change_operation</span> <span class="k">as</span> <span class="n">_ct_operation</span>,     <span class="c">-- I, U or D</span>
+       <span class="n">ct.EntryNo</span>              <span class="k">as</span> <span class="n">entry_no</span>,
+       <span class="n">g.AccountNo</span>, <span class="n">g.PostingDate</span>, <span class="n">g.AmountLCY</span>, <span class="n">g.AmountFCY</span>, <span class="n">g.CurrencyCode</span>
+<span class="k">from</span> <span class="n">changetable</span>(<span class="n">changes</span> <span class="n">dbo.GLEntry</span>, <span class="n">@last_version</span>) <span class="k">as</span> <span class="n">ct</span>
+<span class="k">left</span> <span class="k">join</span> <span class="n">dbo.GLEntry</span> <span class="k">as</span> <span class="n">g</span>
+  <span class="k">on</span> <span class="n">g.EntryNo</span> <span class="o">=</span> <span class="n">ct.EntryNo</span>                         <span class="c">-- deleted rows: only the key survives</span>
+<span class="k">where</span> <span class="n">ct.sys_change_version</span> <span class="o">&lt;=</span> <span class="n">@now_version</span>
+<span class="k">order</span> <span class="k">by</span> <span class="n">ct.sys_change_version</span>;
+
+<span class="c">-- Control totals in the same snapshot, so both sides describe the same moment (see 06).</span>
+<span class="k">select</span> <span class="n">AccountNo</span>, <span class="n">year</span>(<span class="n">PostingDate</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">PostingDate</span>) <span class="k">as</span> <span class="n">period_key</span>,
+       <span class="n">sum</span>(<span class="n">AmountLCY</span>) <span class="k">as</span> <span class="n">amount_lcy</span>, <span class="n">count</span>(*) <span class="k">as</span> <span class="n">line_count</span>
+<span class="k">from</span> <span class="n">dbo.GLEntry</span>
+<span class="k">where</span> <span class="n">PostingDate</span> <span class="o">&gt;=</span> <span class="n">@open_from</span>
+<span class="k">group</span> <span class="k">by</span> <span class="n">AccountNo</span>, <span class="n">year</span>(<span class="n">PostingDate</span>) * <span class="num">100</span> + <span class="n">month</span>(<span class="n">PostingDate</span>);
+
+<span class="k">commit</span> <span class="k">transaction</span>;</pre></div>
+      <div class="code-pane" id="c5-py"><pre><span class="c"># agent.py: runs inside the BW network as a Windows service. Plain Python worker on</span>
+<span class="c"># purpose: it must never listen on a port, so it is not a web app. It only calls out.</span>
+<span class="k">import</span> <span class="n">hashlib</span>
+<span class="k">import</span> <span class="n">io</span>
+<span class="k">import</span> <span class="n">json</span>
+<span class="k">import</span> <span class="n">pathlib</span>
+<span class="k">import</span> <span class="n">time</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+
+<span class="k">import</span> <span class="n">httpx</span>
+<span class="k">import</span> <span class="n">pyarrow</span>.<span class="n">parquet</span> <span class="k">as</span> <span class="n">pq</span>
+
+<span class="n">STATE</span> <span class="o">=</span> <span class="n">pathlib</span>.<span class="t">Path</span>(<span class="s">"C:/ProgramData/NorthwindAgent/watermarks.json"</span>)
+<span class="n">ENDPOINT</span> <span class="o">=</span> <span class="s">"https://ingest.northwind.example/v1/batches"</span>
+<span class="n">TABLES</span> <span class="o">=</span> (<span class="s">"GLEntry"</span>, <span class="s">"SalesInvoice"</span>, <span class="s">"Customer"</span>, <span class="s">"StockMovement"</span>)
+
+
+<span class="k">def</span> <span class="n">push_once</span>(<span class="n">table</span>: <span class="t">str</span>, <span class="n">client</span>: <span class="n">httpx</span>.<span class="t">Client</span>) <span class="o">-&gt;</span> <span class="k">None</span>:
+    <span class="n">marks</span> <span class="o">=</span> <span class="n">json</span>.<span class="n">loads</span>(<span class="n">STATE</span>.<span class="n">read_text</span>())
+    <span class="n">last</span> <span class="o">=</span> <span class="n">marks</span>[<span class="n">table</span>]
+    <span class="n">rows</span>, <span class="n">now_version</span> <span class="o">=</span> <span class="n">read_changes</span>(<span class="n">table</span>, <span class="n">last</span>)       <span class="c"># the CHANGETABLE query, in a snapshot</span>
+    <span class="k">if</span> <span class="n">rows</span>.<span class="n">num_rows</span> <span class="o">==</span> <span class="num">0</span>:
+        <span class="k">return</span>
+    <span class="n">batch_id</span> <span class="o">=</span> <span class="s">f"NCC-BW.{table}.{last}-{now_version}"</span>   <span class="c"># deterministic: same range, same id</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">io</span>.<span class="t">BytesIO</span>()
+    <span class="n">pq</span>.<span class="n">write_table</span>(<span class="n">rows</span>, <span class="n">buf</span>, <span class="n">compression</span><span class="o">=</span><span class="s">"zstd"</span>)
+    <span class="n">body</span> <span class="o">=</span> <span class="n">buf</span>.<span class="n">getvalue</span>()
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span>.<span class="n">put</span>(
+        <span class="s">f"{ENDPOINT}/{batch_id}"</span>,
+        <span class="n">content</span><span class="o">=</span><span class="n">body</span>,
+        <span class="n">headers</span><span class="o">=</span>{<span class="s">"Content-SHA256"</span>: <span class="n">hashlib</span>.<span class="n">sha256</span>(<span class="n">body</span>).<span class="n">hexdigest</span>()},
+    )
+    <span class="n">resp</span>.<span class="n">raise_for_status</span>()                             <span class="c"># 201 landed, or 200 already had it</span>
+    <span class="n">marks</span>[<span class="n">table</span>] <span class="o">=</span> <span class="n">now_version</span>                          <span class="c"># advance ONLY after the ack</span>
+    <span class="n">STATE</span>.<span class="n">write_text</span>(<span class="n">json</span>.<span class="n">dumps</span>(<span class="n">marks</span>))
+
+
+<span class="k">def</span> <span class="n">run</span>(<span class="n">cert</span>: <span class="t">tuple</span>[<span class="t">str</span>, <span class="t">str</span>]) <span class="o">-&gt;</span> <span class="k">None</span>:
+    <span class="k">with</span> <span class="n">httpx</span>.<span class="t">Client</span>(<span class="n">cert</span><span class="o">=</span><span class="n">cert</span>, <span class="n">timeout</span><span class="o">=</span><span class="num">60</span>) <span class="k">as</span> <span class="n">client</span>:   <span class="c"># mTLS: the cert is the identity</span>
+        <span class="k">while</span> <span class="k">True</span>:
+            <span class="k">for</span> <span class="n">table</span> <span class="k">in</span> <span class="n">TABLES</span>:
+                <span class="k">try</span>:
+                    <span class="n">push_once</span>(<span class="n">table</span>, <span class="n">client</span>)
+                <span class="k">except</span> <span class="n">httpx</span>.<span class="t">HTTPError</span> <span class="k">as</span> <span class="n">exc</span>:
+                    <span class="n">log_and_back_off</span>(<span class="n">table</span>, <span class="n">exc</span>)          <span class="c"># watermark unchanged: next run resends</span>
+            <span class="n">time</span>.<span class="n">sleep</span>(<span class="num">900</span>)
+
+
+<span class="c"># ingest.py: the receiving side, in the platform. An HTTP service, so FastAPI.</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Header</span>, <span class="t">HTTPException</span>, <span class="t">Request</span>, <span class="t">Response</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">put</span>(<span class="s">"/v1/batches/{batch_id}"</span>, <span class="n">status_code</span><span class="o">=</span><span class="num">201</span>)
+<span class="k">async</span> <span class="k">def</span> <span class="n">land</span>(<span class="n">batch_id</span>: <span class="t">str</span>, <span class="n">request</span>: <span class="t">Request</span>, <span class="n">response</span>: <span class="t">Response</span>,
+               <span class="n">content_sha256</span>: <span class="t">Annotated</span>[<span class="t">str</span>, <span class="t">Header</span>(<span class="n">alias</span><span class="o">=</span><span class="s">"Content-SHA256"</span>)]):
+    <span class="n">entity</span> <span class="o">=</span> <span class="n">entity_from_client_cert</span>(<span class="n">request</span>)           <span class="c"># set by the mTLS-terminating proxy</span>
+    <span class="k">if</span> <span class="k">not</span> <span class="n">batch_id</span>.<span class="n">startswith</span>(<span class="s">f"{entity}."</span>):
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">403</span>, <span class="s">"an agent may only write its own entity"</span>)
+    <span class="n">body</span> <span class="o">=</span> <span class="k">await</span> <span class="n">request</span>.<span class="n">body</span>()
+    <span class="k">if</span> <span class="n">hashlib</span>.<span class="n">sha256</span>(<span class="n">body</span>).<span class="n">hexdigest</span>() <span class="o">!=</span> <span class="n">content_sha256</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">422</span>, <span class="s">"checksum mismatch: resend"</span>)
+    <span class="n">blob</span> <span class="o">=</span> <span class="n">landing</span>.<span class="n">get_blob_client</span>(<span class="n">blob_path</span>(<span class="n">batch_id</span>))  <span class="c"># landing/erp/&lt;table&gt;/entity_code=&lt;e&gt;/&lt;id&gt;.parquet</span>
+    <span class="k">if</span> <span class="k">await</span> <span class="n">blob</span>.<span class="n">exists</span>():
+        <span class="n">response</span>.<span class="n">status_code</span> <span class="o">=</span> <span class="num">200</span>                       <span class="c"># a replay: already landed, no-op</span>
+        <span class="k">return</span> {<span class="s">"batch_id"</span>: <span class="n">batch_id</span>, <span class="s">"status"</span>: <span class="s">"duplicate"</span>}
+    <span class="k">await</span> <span class="n">blob</span>.<span class="n">upload_blob</span>(<span class="n">body</span>, <span class="n">overwrite</span><span class="o">=</span><span class="k">False</span>)       <span class="c"># put-if-absent closes the race</span>
+    <span class="k">return</span> {<span class="s">"batch_id"</span>: <span class="n">batch_id</span>, <span class="s">"status"</span>: <span class="s">"landed"</span>}</pre></div>
+      <div class="code-pane" id="c5-cfg"><pre><span class="c"># agent.toml: everything the agent needs, and nothing that opens a port.</span>
+[<span class="n">agent</span>]
+<span class="n">entity</span> <span class="o">=</span> <span class="s">"NCC-BW"</span>
+<span class="n">interval_seconds</span> <span class="o">=</span> <span class="num">900</span>            <span class="c"># 15 minutes; 300 during month-end close</span>
+<span class="n">max_rows_per_batch</span> <span class="o">=</span> <span class="num">200000</span>       <span class="c"># keeps each PUT well under the proxy's body limit</span>
+
+[<span class="n">source</span>]
+<span class="n">server</span> <span class="o">=</span> <span class="s">"erp-bw-sql01"</span>
+<span class="n">database</span> <span class="o">=</span> <span class="s">"NorthwindERP"</span>
+<span class="n">auth</span> <span class="o">=</span> <span class="s">"windows"</span>                  <span class="c"># a gMSA with db_datareader + VIEW CHANGE TRACKING</span>
+<span class="n">tables</span> <span class="o">=</span> [<span class="s">"GLEntry"</span>, <span class="s">"SalesInvoice"</span>, <span class="s">"Customer"</span>, <span class="s">"StockMovement"</span>]
+<span class="n">on_retention_gap</span> <span class="o">=</span> <span class="s">"full_snapshot"</span>  <span class="c"># flag the batch so the platform replaces, not appends</span>
+
+[<span class="n">push</span>]
+<span class="n">endpoint</span> <span class="o">=</span> <span class="s">"https://ingest.northwind.example/v1/batches"</span>
+<span class="n">client_cert</span> <span class="o">=</span> <span class="s">"cert:LocalMachine/My/CN=ncc-bw-agent"</span>   <span class="c"># never exported off the box</span>
+<span class="n">timeout_seconds</span> <span class="o">=</span> <span class="num">60</span>
+<span class="n">retry_backoff_seconds</span> <span class="o">=</span> [<span class="num">30</span>, <span class="num">120</span>, <span class="num">600</span>, <span class="num">1800</span>]
+
+[<span class="n">egress</span>]
+<span class="c"># The one rule the BW hosting provider approves, outbound only:</span>
+<span class="c">#   from erp-bw-agent01  to ingest.northwind.example:443  TLS 1.2+</span>
+<span class="n">allowed_hosts</span> <span class="o">=</span> [<span class="s">"ingest.northwind.example:443"</span>]</pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C6 — PROVING THE NUMBERS ============ -->
+  <section class="pattern" id="c6">
+    <div class="pattern-head"><div class="pattern-num">06</div><div class="pattern-title-wrap"><h2>Proving the numbers: reconciliation, contracts and health</h2><div class="pattern-tags"><span class="tag hot">Critical</span><span class="tag warm">Ops</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c6-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">PROVE IT · CONTROL TOTALS ON BOTH SIDES</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="10" y="36" width="125" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="72" y="54" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">ERP trial balance</text>
+            <text x="72" y="70" text-anchor="middle" fill="var(--hf-ink-secondary)">computed at source</text>
+            <rect x="10" y="108" width="125" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="72" y="126" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">gold.fct_gl_monthly</text>
+            <text x="72" y="142" text-anchor="middle" fill="var(--hf-ink-secondary)">same keys, summed</text>
+            <path d="M136,62 L182,82" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c6-arr)"/>
+            <path d="M136,128 L182,108" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c6-arr)"/>
+            <polygon points="215,58 275,94 215,130 155,94" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+            <text x="215" y="92" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">diff = 0.00?</text>
+            <text x="215" y="104" text-anchor="middle" fill="var(--hf-ink-secondary)">exact, decimal</text>
+            <path d="M275,94 L316,60" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+            <text x="290" y="72" text-anchor="middle" fill="var(--hf-success-fg)">= 0</text>
+            <path d="M275,94 L316,130" stroke="var(--hf-danger-fg)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+            <text x="290" y="126" text-anchor="middle" fill="var(--hf-danger-fg)">≠ 0</text>
+            <rect x="318" y="38" width="150" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+            <text x="393" y="54" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">certified</text>
+            <text x="393" y="69" text-anchor="middle" fill="var(--hf-ink-secondary)">pack may publish</text>
+            <rect x="318" y="112" width="150" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-danger-fg)" stroke-width="1.2"/>
+            <text x="393" y="128" text-anchor="middle" fill="var(--hf-danger-fg)" font-weight="600">blocked + alert</text>
+            <text x="393" y="143" text-anchor="middle" fill="var(--hf-ink-secondary)">names entity·period·acct</text>
+          </g>
+
+          <line x1="15" y1="170" x2="465" y2="170" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <text x="240" y="188" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">HEALTH = OUTCOMES, NOT EXIT CODES</text>
+          <g font-family="var(--hf-font-mono)" font-size="8" text-anchor="middle">
+            <text x="50" y="206" fill="var(--hf-ink-muted)">entity</text>
+            <text x="140" y="206" fill="var(--hf-ink-muted)">fresh</text>
+            <text x="230" y="206" fill="var(--hf-ink-muted)">reconciled</text>
+            <text x="320" y="206" fill="var(--hf-ink-muted)">contract</text>
+            <text x="410" y="206" fill="var(--hf-ink-muted)">status</text>
+          </g>
+          <line x1="15" y1="212" x2="465" y2="212" stroke="var(--hf-hairline)" stroke-width="0.8"/>
+          <g font-family="var(--hf-font-mono)" font-size="9" text-anchor="middle">
+            <text x="50" y="228" fill="var(--hf-ink)">NCC-ZA</text>
+            <text x="140" y="228" fill="var(--hf-success-fg)">2 h</text>
+            <text x="230" y="228" fill="var(--hf-success-fg)">0 diffs</text>
+            <text x="320" y="228" fill="var(--hf-success-fg)">held</text>
+            <text x="410" y="228" fill="var(--hf-success-fg)" font-weight="600">green</text>
+            <text x="50" y="246" fill="var(--hf-ink)">NCC-NA</text>
+            <text x="140" y="246" fill="var(--hf-success-fg)">3 h</text>
+            <text x="230" y="246" fill="var(--hf-success-fg)">0 diffs</text>
+            <text x="320" y="246" fill="var(--hf-success-fg)">held</text>
+            <text x="410" y="246" fill="var(--hf-success-fg)" font-weight="600">green</text>
+            <text x="50" y="264" fill="var(--hf-ink)">NCC-BW</text>
+            <text x="140" y="264" fill="var(--hf-warning-fg)">31 h</text>
+            <text x="230" y="264" fill="var(--hf-success-fg)">0 diffs</text>
+            <text x="320" y="264" fill="var(--hf-success-fg)">held</text>
+            <text x="410" y="264" fill="var(--hf-warning-fg)" font-weight="600">amber</text>
+          </g>
+          <text x="240" y="292" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font)" font-size="9" font-style="italic">a green job that published wrong numbers is red</text>
+          <text x="240" y="308" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font)" font-size="9" font-style="italic">the pack publishes only when every entity in it is green</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Finance will judge the whole platform on one test: does the pack match the ERP? So make the platform prove it on every load instead of waiting for someone to notice. The agent computes <strong>control totals at the source</strong>, in the same snapshot transaction as the batch: per entity, period and account, the sum of functional-currency amounts and the line count. The platform recomputes the same aggregates from gold, and a <strong>reconciliation test</strong> compares the two exactly, in decimal, in the currency the ERP books in. Every difference names the entity, period and account, which is precisely the line an accountant needs to investigate.</p>
+        <p><strong>Data contracts</strong> catch the other class of breakage: an ERP upgrade renames a column, or a WMS starts sending quantities in cases instead of units. dbt model contracts fail the build when a gold model's columns or types drift; tests check keys, accepted values and relationships; source freshness measures the age of the newest landed row per entity. Upstream, the agent refuses to ship a table whose shape changed without a schema version bump, so the break shows up at the edge with a clear message instead of as a wrong total three layers later.</p>
+        <p><strong>Health is an outcome, not an exit code.</strong> A pipeline that ran green and published wrong numbers is the worst failure there is, because people act on it. Define health per entity from three signals (fresh within its SLO, reconciled with zero differences, contracts held), alert on those, and stamp the status and data timestamp on every report page. Amber, late but right, is shown as such; red blocks the month-end pack. Route alerts by meaning: differences go to that entity's finance team, staleness and broken contracts to the platform on-call.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Every load, not only at month-end</li><li>Exact comparison in functional currency</li><li>Status visible to the people reading the numbers</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Alerting only on job failure</li><li>Tolerances that quietly absorb real errors</li><li>Hand-adjusting the platform number until it matches</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="payment-system.html#c7">Reconciliation &amp; settlement</a>, <a href="05-reliability-observability.html#c1">SLOs</a>, <a href="03-apis-contracts.html#c3">Schema evolution</a>, <a href="#c5">Control totals at the source</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://docs.getdbt.com/" target="_blank" rel="noopener">dbt documentation</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c6-sql">SQL · dbt test</button><button class="tab py" data-target="c6-py">Python · Dagster</button><button class="tab cfg" data-target="c6-cfg">YAML · dbt</button></div>
+      <div class="code-pane active" id="c6-sql"><pre><span class="c">-- tests/assert_gl_reconciles_to_erp.sql: a dbt singular test. Any row returned is a failure,</span>
+<span class="c">-- and stored failures become the list an accountant works through.</span>
+{{ <span class="n">config</span>(<span class="n">severity</span><span class="o">=</span><span class="s">'error'</span>, <span class="n">store_failures</span><span class="o">=</span><span class="n">true</span>, <span class="n">schema</span><span class="o">=</span><span class="s">'audit'</span>, <span class="n">alias</span><span class="o">=</span><span class="s">'gl_recon_differences'</span>) }}
+
+<span class="k">with</span> <span class="n">latest</span> <span class="k">as</span> (
+    <span class="k">select</span> <span class="n">entity_code</span>, <span class="n">max</span>(<span class="n">captured_at</span>) <span class="k">as</span> <span class="n">captured_at</span>
+    <span class="k">from</span> {{ <span class="n">ref</span>(<span class="s">'stg_erp__control_totals'</span>) }}
+    <span class="k">group</span> <span class="k">by</span> <span class="n">entity_code</span>
+),
+<span class="n">erp</span> <span class="k">as</span> (
+    <span class="k">select</span> <span class="n">c.entity_code</span>, <span class="n">c.period_key</span>, <span class="n">c.account_code</span>, <span class="n">c.amount_lcy</span> <span class="k">as</span> <span class="n">amount</span>
+    <span class="k">from</span> {{ <span class="n">ref</span>(<span class="s">'stg_erp__control_totals'</span>) }} <span class="k">as</span> <span class="n">c</span>
+    <span class="k">join</span> <span class="n">latest</span> <span class="k">as</span> <span class="n">l</span>
+      <span class="k">on</span> <span class="n">l.entity_code</span> <span class="o">=</span> <span class="n">c.entity_code</span> <span class="k">and</span> <span class="n">l.captured_at</span> <span class="o">=</span> <span class="n">c.captured_at</span>
+),
+<span class="n">platform</span> <span class="k">as</span> (
+    <span class="k">select</span> <span class="n">entity_code</span>, <span class="n">period_key</span>, <span class="n">account_code</span>, <span class="n">sum</span>(<span class="n">amount_functional</span>) <span class="k">as</span> <span class="n">amount</span>
+    <span class="k">from</span> {{ <span class="n">ref</span>(<span class="s">'fct_gl_monthly'</span>) }}
+    <span class="k">group</span> <span class="k">by</span> <span class="n">entity_code</span>, <span class="n">period_key</span>, <span class="n">account_code</span>
+)
+<span class="k">select</span> <span class="n">coalesce</span>(<span class="n">p.entity_code</span>, <span class="n">e.entity_code</span>)    <span class="k">as</span> <span class="n">entity_code</span>,
+       <span class="n">coalesce</span>(<span class="n">p.period_key</span>, <span class="n">e.period_key</span>)      <span class="k">as</span> <span class="n">period_key</span>,
+       <span class="n">coalesce</span>(<span class="n">p.account_code</span>, <span class="n">e.account_code</span>)  <span class="k">as</span> <span class="n">account_code</span>,
+       <span class="n">e.amount</span>                                  <span class="k">as</span> <span class="n">erp_amount</span>,
+       <span class="n">p.amount</span>                                  <span class="k">as</span> <span class="n">platform_amount</span>,
+       <span class="n">coalesce</span>(<span class="n">p.amount</span>, <span class="num">0</span>) - <span class="n">coalesce</span>(<span class="n">e.amount</span>, <span class="num">0</span>) <span class="k">as</span> <span class="n">difference</span>
+<span class="k">from</span> <span class="n">platform</span> <span class="k">as</span> <span class="n">p</span>
+<span class="k">full</span> <span class="k">outer</span> <span class="k">join</span> <span class="n">erp</span> <span class="k">as</span> <span class="n">e</span>
+  <span class="k">on</span> <span class="n">p.entity_code</span> <span class="o">=</span> <span class="n">e.entity_code</span>
+ <span class="k">and</span> <span class="n">p.period_key</span> <span class="o">=</span> <span class="n">e.period_key</span>
+ <span class="k">and</span> <span class="n">p.account_code</span> <span class="o">=</span> <span class="n">e.account_code</span>
+<span class="k">where</span> <span class="n">coalesce</span>(<span class="n">p.amount</span>, <span class="num">0</span>) <span class="o">&lt;&gt;</span> <span class="n">coalesce</span>(<span class="n">e.amount</span>, <span class="num">0</span>)   <span class="c">-- exact: decimals, functional currency</span>
+  <span class="k">and</span> <span class="n">coalesce</span>(<span class="n">p.period_key</span>, <span class="n">e.period_key</span>) <span class="o">&gt;=</span> <span class="num">202609</span>   <span class="c">-- open periods; closed ones are frozen</span></pre></div>
+      <div class="code-pane" id="c6-py"><pre><span class="c"># health.py: health is computed from outcomes (fresh? reconciled? contract held?),</span>
+<span class="c"># not from whether last night's job exited 0. Plain Python checks run by Dagster.</span>
+<span class="k">from</span> <span class="n">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+<span class="k">from</span> <span class="n">datetime</span> <span class="k">import</span> <span class="n">datetime</span>, <span class="n">timedelta</span>, <span class="n">timezone</span>
+
+<span class="k">from</span> <span class="n">dagster</span> <span class="k">import</span> <span class="t">AssetCheckResult</span>, <span class="t">AssetCheckSeverity</span>, <span class="n">asset_check</span>
+
+
+<span class="o">@</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="t">EntityHealth</span>:
+    <span class="n">entity</span>: <span class="t">str</span>
+    <span class="n">newest_source_row</span>: <span class="n">datetime</span>
+    <span class="n">recon_differences</span>: <span class="t">int</span>
+    <span class="n">failed_tests</span>: <span class="t">int</span>
+
+    <span class="k">def</span> <span class="n">status</span>(<span class="n">self</span>, <span class="n">max_age</span>: <span class="n">timedelta</span>) <span class="o">-&gt;</span> <span class="t">str</span>:
+        <span class="k">if</span> <span class="n">self</span>.<span class="n">recon_differences</span> <span class="k">or</span> <span class="n">self</span>.<span class="n">failed_tests</span>:
+            <span class="k">return</span> <span class="s">"red"</span>        <span class="c"># wrong numbers are worse than late numbers</span>
+        <span class="k">if</span> <span class="n">datetime</span>.<span class="n">now</span>(<span class="n">timezone</span>.<span class="n">utc</span>) - <span class="n">self</span>.<span class="n">newest_source_row</span> <span class="o">&gt;</span> <span class="n">max_age</span>:
+            <span class="k">return</span> <span class="s">"amber"</span>      <span class="c"># right but stale: say so on every report page</span>
+        <span class="k">return</span> <span class="s">"green"</span>
+
+
+<span class="o">@</span><span class="n">asset_check</span>(<span class="n">asset</span><span class="o">=</span><span class="s">"fct_gl_monthly"</span>, <span class="n">blocking</span><span class="o">=</span><span class="k">True</span>)
+<span class="k">def</span> <span class="n">gl_reconciles_to_erp</span>() <span class="o">-&gt;</span> <span class="t">AssetCheckResult</span>:
+    <span class="c"># The dbt test stored its failures; this turns them into a check that blocks publishing.</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">warehouse</span>.<span class="n">query</span>(<span class="s">"select entity_code, period_key, account_code, difference "</span>
+                           <span class="s">"from audit.gl_recon_differences"</span>)
+    <span class="n">by_entity</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">int</span>] <span class="o">=</span> {}
+    <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>:
+        <span class="n">by_entity</span>[<span class="n">r</span>.<span class="n">entity_code</span>] <span class="o">=</span> <span class="n">by_entity</span>.<span class="n">get</span>(<span class="n">r</span>.<span class="n">entity_code</span>, <span class="num">0</span>) + <span class="num">1</span>
+    <span class="k">return</span> <span class="t">AssetCheckResult</span>(
+        <span class="n">passed</span><span class="o">=</span><span class="k">not</span> <span class="n">rows</span>,
+        <span class="n">severity</span><span class="o">=</span><span class="t">AssetCheckSeverity</span>.<span class="n">ERROR</span>,
+        <span class="n">metadata</span><span class="o">=</span>{<span class="s">"differences_by_entity"</span>: <span class="n">by_entity</span>},
+    )
+
+
+<span class="k">def</span> <span class="n">can_publish_pack</span>(<span class="n">entities</span>: <span class="t">list</span>[<span class="t">EntityHealth</span>]) <span class="o">-&gt;</span> <span class="t">bool</span>:
+    <span class="c"># The month-end pack goes out only when every entity in it is green.</span>
+    <span class="k">return</span> <span class="n">all</span>(<span class="n">e</span>.<span class="n">status</span>(<span class="n">max_age</span><span class="o">=</span><span class="n">timedelta</span>(<span class="n">hours</span><span class="o">=</span><span class="num">26</span>)) <span class="o">==</span> <span class="s">"green"</span> <span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="n">entities</span>)
+
+
+<span class="k">def</span> <span class="n">alert_routes</span>(<span class="n">h</span>: <span class="t">EntityHealth</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">str</span>]:
+    <span class="c"># Route by meaning: finance owns differences, the platform team owns staleness.</span>
+    <span class="n">routes</span> <span class="o">=</span> []
+    <span class="k">if</span> <span class="n">h</span>.<span class="n">recon_differences</span>:
+        <span class="n">routes</span>.<span class="n">append</span>(<span class="s">f"finance-{h.entity.lower()}"</span>)
+    <span class="k">if</span> <span class="n">h</span>.<span class="n">failed_tests</span> <span class="k">or</span> <span class="n">h</span>.<span class="n">status</span>(<span class="n">timedelta</span>(<span class="n">hours</span><span class="o">=</span><span class="num">26</span>)) <span class="o">==</span> <span class="s">"amber"</span>:
+        <span class="n">routes</span>.<span class="n">append</span>(<span class="s">"data-platform-oncall"</span>)
+    <span class="k">return</span> <span class="n">routes</span></pre></div>
+      <div class="code-pane" id="c6-cfg"><pre><span class="c"># models/marts/_marts.yml: the contract Power BI and the AI tools rely on.</span>
+<span class="n">models</span>:
+  - <span class="n">name</span>: <span class="s">fct_gl_monthly</span>
+    <span class="n">config</span>:
+      <span class="n">contract</span>:
+        <span class="n">enforced</span>: <span class="s">true</span>          <span class="c"># the build fails if a column or type drifts from this list</span>
+    <span class="n">columns</span>:
+      - <span class="n">name</span>: <span class="s">entity_code</span>
+        <span class="n">data_type</span>: <span class="s">varchar</span>
+        <span class="n">constraints</span>: [{ <span class="n">type</span>: <span class="s">not_null</span> }]
+        <span class="n">data_tests</span>:
+          - <span class="n">accepted_values</span>:
+              <span class="n">values</span>: [<span class="s">"NCC-ZA"</span>, <span class="s">"NCC-NA"</span>, <span class="s">"NCC-BW"</span>]
+      - <span class="n">name</span>: <span class="s">period_key</span>
+        <span class="n">data_type</span>: <span class="s">integer</span>
+        <span class="n">constraints</span>: [{ <span class="n">type</span>: <span class="s">not_null</span> }]
+      - <span class="n">name</span>: <span class="s">account_code</span>
+        <span class="n">data_type</span>: <span class="s">varchar</span>
+        <span class="n">data_tests</span>:
+          - <span class="n">relationships</span>:
+              <span class="n">to</span>: <span class="s">ref('dim_account')</span>
+              <span class="n">field</span>: <span class="s">account_code</span>
+      - <span class="n">name</span>: <span class="s">amount_functional</span>
+        <span class="n">data_type</span>: <span class="s">"decimal(19,4)"</span>
+        <span class="n">constraints</span>: [{ <span class="n">type</span>: <span class="s">not_null</span> }]
+
+<span class="c"># models/staging/_sources.yml (excerpt): freshness per source, alerted per entity</span>
+<span class="n">sources</span>:
+  - <span class="n">name</span>: <span class="s">erp</span>
+    <span class="n">loaded_at_field</span>: <span class="s">_landed_at</span>
+    <span class="n">freshness</span>:
+      <span class="n">warn_after</span>: { <span class="n">count</span>: <span class="num">6</span>, <span class="n">period</span>: <span class="s">hour</span> }
+      <span class="n">error_after</span>: { <span class="n">count</span>: <span class="num">26</span>, <span class="n">period</span>: <span class="s">hour</span> }</pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C7 — SECURITY AND GOVERNANCE ============ -->
+  <section class="pattern" id="c7">
+    <div class="pattern-head"><div class="pattern-num">07</div><div class="pattern-title-wrap"><h2>Security and governance: identity, RLS for BI and the AI assistant, POPIA</h2><div class="pattern-tags"><span class="tag hot">Security</span><span class="tag deep">Governance</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c7-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">ONE ENTITLEMENT TABLE · EVERY DOOR</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="10" y="118" width="80" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="50" y="136" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">analyst</text>
+            <text x="50" y="150" text-anchor="middle" fill="var(--hf-ink-secondary)">NCC-NA only</text>
+            <rect x="108" y="118" width="82" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="149" y="136" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Entra ID</text>
+            <text x="149" y="150" text-anchor="middle" fill="var(--hf-ink-secondary)">SSO · token</text>
+            <path d="M91,141 L106,141" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c7-arr)"/>
+
+            <rect x="212" y="50" width="116" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="270" y="68" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI</text>
+            <text x="270" y="82" text-anchor="middle" fill="var(--hf-ink-secondary)">RLS role on UPN</text>
+            <rect x="212" y="186" width="116" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="270" y="204" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">AI assistant</text>
+            <text x="270" y="218" text-anchor="middle" fill="var(--hf-ink-secondary)">OBO · curated tools</text>
+            <path d="M190,130 L210,78" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c7-arr)"/>
+            <path d="M190,152 L210,204" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c7-arr)"/>
+
+            <rect x="350" y="106" width="118" height="72" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="409" y="123" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">gold</text>
+            <text x="409" y="138" text-anchor="middle" fill="var(--hf-ink-secondary)">security policy</text>
+            <text x="409" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)">sec.user_entity</text>
+            <text x="409" y="168" text-anchor="middle" fill="var(--hf-success-fg)">NA rows only</text>
+            <path d="M329,73 L348,120" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c7-arr)"/>
+            <path d="M329,209 L348,164" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c7-arr)"/>
+
+            <path d="M270,233 L270,248" stroke="var(--hf-danger-fg)" stroke-width="1" stroke-dasharray="3 2"/>
+            <text x="270" y="260" text-anchor="middle" fill="var(--hf-danger-fg)">✕ assistant as a service account = every entity</text>
+          </g>
+
+          <line x1="20" y1="272" x2="460" y2="272" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <g font-family="var(--hf-font-mono)" font-size="9">
+            <text x="20" y="289" fill="var(--hf-ink)">PII: raw in restricted bronze · hashed in silver · absent from gold</text>
+            <text x="20" y="305" fill="var(--hf-ink-secondary)">POPIA: purpose · minimality · safeguards · s72 cross-border</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Identity first. Every person signs in with <strong>Entra ID</strong>, everywhere: Power BI, the SQL endpoint, Trino over OAuth, and the assistant. Every workload has its own identity with one job: the ingest API writes landing (agents have no storage role at all), the transform identity reads landing and writes the lake, the BI layer reads gold. No person holds write access to production tables; changes arrive through dbt in Git and a pipeline. Credentials are managed identities and certificates, never passwords in config files.</p>
+        <p><strong>Row-level security is where most designs break, because there are several doors.</strong> Power BI enforces RLS with roles filtered on <code>USERPRINCIPALNAME()</code>; the database enforces it with a security policy on the caller's login. Both must read <strong>one entitlement table</strong> (user, entity, cost centre), owned by finance and audited. Watch import mode: a dataset refreshed by a service account bypasses database RLS, so the semantic model's own roles must do the filtering. The <strong>AI assistant</strong> is the newest door. It calls curated, parameterised tools with an <strong>on-behalf-of token</strong> for the asking user, so the database applies that user's rows. An assistant running as a service account that sees every entity turns any question into a cross-entity leak, and prompt injection hidden in the data makes that worse. Log every tool call with the user, the arguments and the row count.</p>
+        <p><strong>PII and POPIA.</strong> Classify columns in the contract: customer contacts, driver and employee details. Keep raw PII only in a restricted bronze area with short retention, hash or drop it in silver, and keep it out of gold and out of the assistant's tools unless a stated purpose needs it. POPIA asks for a lawful purpose, minimality, security safeguards and notification of compromises, and it restricts sending personal information outside South Africa (section 72). That matters when you choose the cloud region and move Namibian and Botswana data, which bring their own jurisdictions too: get the data-residency decision signed off by the information officer instead of letting a default region make it.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>One entitlement table, enforced at every door</li><li>On-behalf-of tokens for anything acting for a user</li><li>PII classified in the contract, not discovered later</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>A shared "powerbi" or "assistant" login</li><li>Letting the model write free SQL against gold</li><li>PII in gold "because a dashboard might need it"</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="07-security.html#c4">Least privilege &amp; IAM</a>, <a href="07-security.html#c3">Secrets management</a>, <a href="03-apis-contracts.html#c8">RBAC vs ABAC</a>, <a href="07-security.html#c8">Audit logging</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/sql/relational-databases/security/row-level-security" target="_blank" rel="noopener">SQL Server row-level security</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c7-sql">SQL · T-SQL</button><button class="tab py" data-target="c7-py">Python · FastAPI</button><button class="tab cfg" data-target="c7-cfg">Bicep</button></div>
+      <div class="code-pane active" id="c7-sql"><pre><span class="c">-- One entitlement table. Power BI roles, the SQL endpoint and the AI tools all read it.</span>
+<span class="k">create</span> <span class="k">table</span> <span class="t">sec.user_entity</span> (
+    <span class="n">upn</span>          <span class="t">varchar</span>(<span class="num">256</span>) <span class="k">not</span> <span class="k">null</span>,   <span class="c">-- Entra user principal name</span>
+    <span class="n">entity_code</span>  <span class="t">varchar</span>(<span class="num">6</span>)   <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">granted_by</span>   <span class="t">varchar</span>(<span class="num">256</span>) <span class="k">not</span> <span class="k">null</span>,   <span class="c">-- finance owns grants; every change is audited</span>
+    <span class="n">granted_at</span>   <span class="t">datetime2</span>    <span class="k">not</span> <span class="k">null</span>,
+    <span class="k">primary</span> <span class="k">key</span> (<span class="n">upn</span>, <span class="n">entity_code</span>)
+);
+<span class="k">go</span>
+
+<span class="k">create</span> <span class="k">function</span> <span class="t">sec.fn_entity_filter</span>(<span class="n">@entity_code</span> <span class="t">varchar</span>(<span class="num">6</span>))
+<span class="k">returns</span> <span class="k">table</span>
+<span class="k">with</span> <span class="k">schemabinding</span>
+<span class="k">as</span>
+<span class="k">return</span>
+    <span class="k">select</span> <span class="num">1</span> <span class="k">as</span> <span class="n">allowed</span>
+    <span class="k">from</span> <span class="n">sec.user_entity</span> <span class="k">as</span> <span class="n">ue</span>
+    <span class="k">where</span> <span class="n">ue.entity_code</span> <span class="o">=</span> <span class="n">@entity_code</span>
+      <span class="k">and</span> <span class="n">ue.upn</span> <span class="o">=</span> <span class="n">suser_sname</span>();          <span class="c">-- the caller's own identity, never a shared login</span>
+<span class="k">go</span>
+
+<span class="k">create</span> <span class="k">security</span> <span class="k">policy</span> <span class="t">sec.entity_policy</span>
+    <span class="k">add</span> <span class="k">filter</span> <span class="k">predicate</span> <span class="n">sec.fn_entity_filter</span>(<span class="n">entity_code</span>) <span class="k">on</span> <span class="n">gold.fct_gl_monthly</span>,
+    <span class="k">add</span> <span class="k">filter</span> <span class="k">predicate</span> <span class="n">sec.fn_entity_filter</span>(<span class="n">entity_code</span>) <span class="k">on</span> <span class="n">gold.fct_stock_daily</span>
+    <span class="k">with</span> (<span class="n">state</span> <span class="o">=</span> <span class="k">on</span>);
+<span class="k">go</span>
+
+<span class="c">-- PII stays out of gold: the customer dimension carries a keyed hash, not the customer.</span>
+<span class="k">create</span> <span class="k">view</span> <span class="t">gold.dim_customer</span> <span class="k">as</span>
+<span class="k">select</span> <span class="n">customer_key</span>,
+       <span class="n">entity_code</span>,
+       <span class="n">customer_segment</span>,
+       <span class="n">region</span>,
+       <span class="n">customer_hash</span>        <span class="c">-- HMAC of the customer number, computed in silver</span>
+<span class="k">from</span> <span class="n">silver.customer</span>;
+<span class="k">go</span></pre></div>
+      <div class="code-pane" id="c7-py"><pre><span class="c"># assistant_tools.py: the tools the AI assistant may call. An HTTP service, so FastAPI.</span>
+<span class="c"># The assistant never holds a credential that sees everything: each call runs as the user.</span>
+<span class="k">import</span> <span class="n">struct</span>
+<span class="k">from</span> <span class="n">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+<span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="t">Annotated</span>
+
+<span class="k">import</span> <span class="n">msal</span>
+<span class="k">import</span> <span class="n">pyodbc</span>
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">Depends</span>, <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+<span class="k">from</span> <span class="n">fastapi</span>.<span class="n">security</span> <span class="k">import</span> <span class="t">HTTPAuthorizationCredentials</span>, <span class="t">HTTPBearer</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="n">bearer</span> <span class="o">=</span> <span class="t">HTTPBearer</span>()
+<span class="n">cca</span> <span class="o">=</span> <span class="n">msal</span>.<span class="t">ConfidentialClientApplication</span>(
+    <span class="n">client_id</span><span class="o">=</span><span class="n">settings</span>.<span class="n">client_id</span>,
+    <span class="n">authority</span><span class="o">=</span><span class="s">f"https://login.microsoftonline.com/{settings.tenant_id}"</span>,
+    <span class="n">client_credential</span><span class="o">=</span><span class="n">settings</span>.<span class="n">client_cert</span>,     <span class="c"># a certificate from Key Vault, not a secret</span>
+)
+<span class="n">SQL_COPT_SS_ACCESS_TOKEN</span> <span class="o">=</span> <span class="num">1256</span>
+
+
+<span class="o">@</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="t">UserSession</span>:
+    <span class="n">upn</span>: <span class="t">str</span>
+    <span class="n">conn</span>: <span class="n">pyodbc</span>.<span class="t">Connection</span>
+
+
+<span class="k">def</span> <span class="n">as_user</span>(<span class="n">creds</span>: <span class="t">Annotated</span>[<span class="t">HTTPAuthorizationCredentials</span>, <span class="t">Depends</span>(<span class="n">bearer</span>)]) <span class="o">-&gt;</span> <span class="t">UserSession</span>:
+    <span class="n">claims</span> <span class="o">=</span> <span class="n">validate_token</span>(<span class="n">creds</span>.<span class="n">credentials</span>)   <span class="c"># signature, issuer, audience = this API</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">cca</span>.<span class="n">acquire_token_on_behalf_of</span>(
+        <span class="n">user_assertion</span><span class="o">=</span><span class="n">creds</span>.<span class="n">credentials</span>,
+        <span class="n">scopes</span><span class="o">=</span>[<span class="s">"https://database.windows.net/.default"</span>],
+    )
+    <span class="k">if</span> <span class="s">"access_token"</span> <span class="k">not</span> <span class="k">in</span> <span class="n">result</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="num">403</span>, <span class="s">"no delegated access for this user"</span>)
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">result</span>[<span class="s">"access_token"</span>].<span class="n">encode</span>(<span class="s">"utf-16-le"</span>)
+    <span class="n">token</span> <span class="o">=</span> <span class="n">struct</span>.<span class="n">pack</span>(<span class="s">f"&lt;I{len(raw)}s"</span>, <span class="n">len</span>(<span class="n">raw</span>), <span class="n">raw</span>)
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">pyodbc</span>.<span class="n">connect</span>(<span class="n">settings</span>.<span class="n">warehouse_dsn</span>, <span class="n">attrs_before</span><span class="o">=</span>{<span class="n">SQL_COPT_SS_ACCESS_TOKEN</span>: <span class="n">token</span>})
+    <span class="k">return</span> <span class="t">UserSession</span>(<span class="n">upn</span><span class="o">=</span><span class="n">claims</span>[<span class="s">"upn"</span>], <span class="n">conn</span><span class="o">=</span><span class="n">conn</span>)
+
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/tools/gl-balance"</span>)
+<span class="k">def</span> <span class="n">gl_balance</span>(<span class="n">period_key</span>: <span class="t">int</span>, <span class="n">account_code</span>: <span class="t">str</span>,
+               <span class="n">user</span>: <span class="t">Annotated</span>[<span class="t">UserSession</span>, <span class="t">Depends</span>(<span class="n">as_user</span>)]):
+    <span class="c"># A curated, parameterised query. The model chooses the tool and the arguments;</span>
+    <span class="c"># it never writes SQL, and the security policy trims rows to this user's entities.</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">user</span>.<span class="n">conn</span>.<span class="n">execute</span>(
+        <span class="s">"select entity_code, sum(amount_functional) as balance "</span>
+        <span class="s">"from gold.fct_gl_monthly where period_key = ? and account_code = ? "</span>
+        <span class="s">"group by entity_code"</span>,
+        <span class="n">period_key</span>, <span class="n">account_code</span>,
+    ).<span class="n">fetchall</span>()
+    <span class="n">audit</span>.<span class="n">record</span>(<span class="n">user</span><span class="o">=</span><span class="n">user</span>.<span class="n">upn</span>, <span class="n">tool</span><span class="o">=</span><span class="s">"gl-balance"</span>,
+                 <span class="n">args</span><span class="o">=</span>{<span class="s">"period_key"</span>: <span class="n">period_key</span>, <span class="s">"account_code"</span>: <span class="n">account_code</span>},
+                 <span class="n">rows</span><span class="o">=</span><span class="n">len</span>(<span class="n">rows</span>))
+    <span class="k">return</span> [{<span class="s">"entity"</span>: <span class="n">r</span>.<span class="n">entity_code</span>, <span class="s">"balance"</span>: <span class="t">str</span>(<span class="n">r</span>.<span class="n">balance</span>)} <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">rows</span>]</pre></div>
+      <div class="code-pane" id="c7-cfg"><pre><span class="c">// access.bicep: least privilege as code. One role, one container, one identity each;</span>
+<span class="c">// nothing at storage-account scope, and no shared keys (allowSharedKeyAccess: false).</span>
+<span class="k">param</span> <span class="n">storageName</span> <span class="t">string</span>
+<span class="k">param</span> <span class="n">ingestPrincipalId</span> <span class="t">string</span>      <span class="c">// the ingest API's managed identity</span>
+<span class="k">param</span> <span class="n">transformPrincipalId</span> <span class="t">string</span>   <span class="c">// the dbt / Spark identity</span>
+
+<span class="k">var</span> <span class="n">blobDataContributor</span> <span class="o">=</span> <span class="s">'ba92f5b4-2d11-453d-a403-e96b0029c9fe'</span>
+<span class="k">var</span> <span class="n">blobDataReader</span> <span class="o">=</span> <span class="s">'2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'</span>
+
+<span class="k">resource</span> <span class="n">landing</span> <span class="s">'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01'</span> <span class="k">existing</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="s">'${storageName}/default/landing'</span>
+}
+
+<span class="k">resource</span> <span class="n">lake</span> <span class="s">'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01'</span> <span class="k">existing</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="s">'${storageName}/default/lake'</span>
+}
+
+<span class="c">// Ingest API: writes landing. Agents have no storage role at all.</span>
+<span class="k">resource</span> <span class="n">ingestWrite</span> <span class="s">'Microsoft.Authorization/roleAssignments@2022-04-01'</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="n">guid</span>(<span class="n">landing</span>.<span class="n">id</span>, <span class="n">ingestPrincipalId</span>, <span class="n">blobDataContributor</span>)
+  <span class="n">scope</span>: <span class="n">landing</span>
+  <span class="n">properties</span>: {
+    <span class="n">roleDefinitionId</span>: <span class="n">subscriptionResourceId</span>(<span class="s">'Microsoft.Authorization/roleDefinitions'</span>, <span class="n">blobDataContributor</span>)
+    <span class="n">principalId</span>: <span class="n">ingestPrincipalId</span>
+    <span class="n">principalType</span>: <span class="s">'ServicePrincipal'</span>
+  }
+}
+
+<span class="c">// Transform: reads landing, writes the lake. People get neither.</span>
+<span class="k">resource</span> <span class="n">transformRead</span> <span class="s">'Microsoft.Authorization/roleAssignments@2022-04-01'</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="n">guid</span>(<span class="n">landing</span>.<span class="n">id</span>, <span class="n">transformPrincipalId</span>, <span class="n">blobDataReader</span>)
+  <span class="n">scope</span>: <span class="n">landing</span>
+  <span class="n">properties</span>: {
+    <span class="n">roleDefinitionId</span>: <span class="n">subscriptionResourceId</span>(<span class="s">'Microsoft.Authorization/roleDefinitions'</span>, <span class="n">blobDataReader</span>)
+    <span class="n">principalId</span>: <span class="n">transformPrincipalId</span>
+    <span class="n">principalType</span>: <span class="s">'ServicePrincipal'</span>
+  }
+}
+
+<span class="k">resource</span> <span class="n">transformWrite</span> <span class="s">'Microsoft.Authorization/roleAssignments@2022-04-01'</span> <span class="o">=</span> {
+  <span class="n">name</span>: <span class="n">guid</span>(<span class="n">lake</span>.<span class="n">id</span>, <span class="n">transformPrincipalId</span>, <span class="n">blobDataContributor</span>)
+  <span class="n">scope</span>: <span class="n">lake</span>
+  <span class="n">properties</span>: {
+    <span class="n">roleDefinitionId</span>: <span class="n">subscriptionResourceId</span>(<span class="s">'Microsoft.Authorization/roleDefinitions'</span>, <span class="n">blobDataContributor</span>)
+    <span class="n">principalId</span>: <span class="n">transformPrincipalId</span>
+    <span class="n">principalType</span>: <span class="s">'ServicePrincipal'</span>
+  }
+}</pre></div>
+    </div>
+  </section>
+
+
+  <!-- ============ C8 — CHOOSING ============ -->
+  <section class="pattern" id="c8">
+    <div class="pattern-head"><div class="pattern-num">08</div><div class="pattern-title-wrap"><h2>Choosing between them: trade-offs and the triggers to move</h2><div class="pattern-tags"><span class="tag warm">Decision</span><span class="tag deep">Architecture</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c8-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">CHOOSING · FIVE AXES, THREE ANSWERS</text>
+          <g font-family="var(--hf-font-mono)" font-size="9" font-weight="600" text-anchor="middle">
+            <text x="185" y="40" fill="var(--hf-ink)">A · lean</text>
+            <text x="300" y="40" fill="var(--hf-ink)">B · scale</text>
+            <text x="415" y="40" fill="var(--hf-ink)">C · managed</text>
+          </g>
+          <line x1="12" y1="47" x2="468" y2="47" stroke="var(--hf-hairline)" stroke-width="0.8"/>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <text x="12" y="64" fill="var(--hf-ink-secondary)">cost</text>
+            <text x="12" y="86" fill="var(--hf-ink-secondary)">freshness</text>
+            <text x="12" y="108" fill="var(--hf-ink-secondary)">operating effort</text>
+            <text x="12" y="130" fill="var(--hf-ink-secondary)">lock-in</text>
+            <text x="12" y="152" fill="var(--hf-ink-secondary)">fails by</text>
+          </g>
+          <g font-family="var(--hf-font-mono)" font-size="8" text-anchor="middle">
+            <text x="185" y="64" fill="var(--hf-success-fg)">one VM</text>
+            <text x="300" y="64" fill="var(--hf-warning-fg)">cluster + 3 people</text>
+            <text x="415" y="64" fill="var(--hf-ink)">capacity fee</text>
+            <text x="185" y="86" fill="var(--hf-warning-fg)">hourly to daily</text>
+            <text x="300" y="86" fill="var(--hf-success-fg)">minutes</text>
+            <text x="415" y="86" fill="var(--hf-ink)">minutes to hourly</text>
+            <text x="185" y="108" fill="var(--hf-success-fg)">low · 1-2 people</text>
+            <text x="300" y="108" fill="var(--hf-warning-fg)">high · platform team</text>
+            <text x="415" y="108" fill="var(--hf-success-fg)">lowest · admin</text>
+            <text x="185" y="130" fill="var(--hf-success-fg)">none · open files</text>
+            <text x="300" y="130" fill="var(--hf-success-fg)">low · Iceberg</text>
+            <text x="415" y="130" fill="var(--hf-warning-fg)">Fabric items</text>
+            <text x="185" y="152" fill="var(--hf-ink)">loudly · rerun</text>
+            <text x="300" y="152" fill="var(--hf-danger-fg)">quietly · lag</text>
+            <text x="415" y="152" fill="var(--hf-warning-fg)">throttling · all</text>
+          </g>
+
+          <line x1="12" y1="166" x2="468" y2="166" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <text x="12" y="182" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="9" letter-spacing="1">TRIGGERS</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="12" y="208" width="92" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.4"/>
+            <text x="58" y="225" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">A · lean</text>
+            <text x="58" y="239" text-anchor="middle" fill="var(--hf-ink-secondary)">Northwind today</text>
+            <rect x="368" y="192" width="100" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="418" y="209" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">B · scale</text>
+            <text x="418" y="223" text-anchor="middle" fill="var(--hf-ink-secondary)">platform team</text>
+            <rect x="368" y="258" width="100" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="418" y="275" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">C · managed</text>
+            <text x="418" y="289" text-anchor="middle" fill="var(--hf-ink-secondary)">no platform team</text>
+            <path d="M105,222 L366,212" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c8-arr)"/>
+            <text x="235" y="205" text-anchor="middle" fill="var(--hf-ink-secondary)">&gt; 1 TB · minutes-fresh · 3+ teams</text>
+            <path d="M105,236 L366,276" stroke="var(--hf-info-fg)" stroke-width="1" marker-end="url(#c8-arr)"/>
+            <text x="235" y="294" text-anchor="middle" fill="var(--hf-ink-secondary)">same triggers, nobody to run servers</text>
+          </g>
+          <text x="240" y="314" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font)" font-size="9" font-style="italic">open files + dbt + one entitlement table: moving is a re-platform, not a rewrite</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Score the three on the axes that actually decide: <strong>cost, freshness, operating effort, lock-in, and how each one fails</strong>. A is the cheapest and simplest; it fails loudly (the node dies or the window overruns) and recovers by rerunning. B is the freshest and scales furthest, costs the most in people, and fails <em>quietly</em>: consumer lag, an uncompacted table, one connector stuck after a schema change while the dashboards look fine. C costs a predictable capacity fee, needs the fewest engineers, and fails by <strong>throttling</strong>: everything on the capacity slows down at once, usually at month-end.</p>
+        <p>For Northwind today the answer is <strong>A</strong>. The numbers fit one node with room to spare, daily plus hourly is the real freshness need, and two engineers can run it well. The triggers to move are concrete and measurable: data scanned past about a terabyte, or the nightly run nearing its window; operations committing to (and funding) minutes-level freshness; a third team writing models. If those fire and there is a platform team, move to <strong>B</strong>. If they fire and there is not, move to <strong>C</strong>, which a Microsoft estate makes the natural purchase. Saying the trigger out loud is what turns an opinion into a design.</p>
+        <p><strong>Design for the move, not only the version.</strong> The seams that make migration cheap are the same in every version: open files (Parquet, Delta, Iceberg) as the durable copy, business logic in dbt models that run on DuckDB, Trino and Fabric, one entitlement table, and reconciliation tests that travel with the models. Get those right and moving from A to B or C is a re-platform of plumbing over a quarter, with the same tests proving the new system matches the old one before anyone switches over.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Say in the interview</div><ul><li>The constraint that picks the design</li><li>The trigger that would change your answer</li><li>The seam that makes changing it cheap</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Choosing by fashion, or by what looks good on a CV</li><li>Comparing licence cost and ignoring operating effort</li><li>A design with no exit</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">Version A</a>, <a href="#c3">Version B</a>, <a href="#c4">Version C</a>, <a href="02-data-storage.html#c9">Polyglot persistence</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c8-sql">SQL · dbt</button><button class="tab py" data-target="c8-py">Python</button><button class="tab cfg" data-target="c8-cfg">YAML · dbt</button></div>
+      <div class="code-pane active" id="c8-sql"><pre><span class="c">-- models/marts/fct_stock_daily.sql: one model, three engines (dbt-duckdb, dbt-trino, dbt-fabric).</span>
+<span class="c">-- Portability is a habit: cross-database macros instead of engine-specific functions,</span>
+<span class="c">-- explicit group-by expressions instead of ordinals, integer flags instead of booleans.</span>
+{{ <span class="n">config</span>(<span class="n">materialized</span><span class="o">=</span><span class="s">'incremental'</span>,
+          <span class="n">unique_key</span><span class="o">=</span>[<span class="s">'entity_code'</span>, <span class="s">'stock_date'</span>, <span class="s">'item_code'</span>, <span class="s">'warehouse_code'</span>]) }}
+
+<span class="k">select</span>
+    <span class="n">m.entity_code</span>,
+    <span class="n">cast</span>({{ <span class="n">dbt.date_trunc</span>(<span class="s">'day'</span>, <span class="s">'m.moved_at'</span>) }} <span class="k">as</span> <span class="t">date</span>)              <span class="k">as</span> <span class="n">stock_date</span>,
+    <span class="n">m.item_code</span>,
+    <span class="n">m.warehouse_code</span>,
+    <span class="n">sum</span>(<span class="k">case</span> <span class="k">when</span> <span class="n">m.direction</span> <span class="o">=</span> <span class="s">'IN'</span> <span class="k">then</span> <span class="n">m.qty_base</span> <span class="k">else</span> <span class="num">0</span> <span class="k">end</span>)        <span class="k">as</span> <span class="n">qty_in</span>,
+    <span class="n">sum</span>(<span class="k">case</span> <span class="k">when</span> <span class="n">m.direction</span> <span class="o">=</span> <span class="s">'OUT'</span> <span class="k">then</span> <span class="n">m.qty_base</span> <span class="k">else</span> <span class="num">0</span> <span class="k">end</span>)       <span class="k">as</span> <span class="n">qty_out</span>,
+    <span class="n">sum</span>(<span class="k">case</span> <span class="k">when</span> <span class="n">m.temp_excursion_flag</span> <span class="o">=</span> <span class="num">1</span> <span class="k">then</span> <span class="num">1</span> <span class="k">else</span> <span class="num">0</span> <span class="k">end</span>)          <span class="k">as</span> <span class="n">excursion_events</span>
+<span class="k">from</span> {{ <span class="n">ref</span>(<span class="s">'stg_wms__stock_movements'</span>) }} <span class="k">as</span> <span class="n">m</span>
+{% <span class="n">if</span> <span class="n">is_incremental</span>() %}
+<span class="k">where</span> <span class="n">m.moved_at</span> <span class="o">&gt;=</span> {{ <span class="n">dbt.dateadd</span>(<span class="s">'day'</span>, <span class="num">-3</span>, <span class="n">dbt.current_timestamp</span>()) }}  <span class="c">-- late scans</span>
+{% <span class="n">endif</span> %}
+<span class="k">group</span> <span class="k">by</span> <span class="n">m.entity_code</span>,
+         <span class="n">cast</span>({{ <span class="n">dbt.date_trunc</span>(<span class="s">'day'</span>, <span class="s">'m.moved_at'</span>) }} <span class="k">as</span> <span class="t">date</span>),
+         <span class="n">m.item_code</span>,
+         <span class="n">m.warehouse_code</span></pre></div>
+      <div class="code-pane" id="c8-py"><pre><span class="c"># choose.py: the triggers, written down, so the decision is argued once</span>
+<span class="c"># and revisited on evidence rather than on fashion.</span>
+<span class="k">from</span> <span class="n">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+
+
+<span class="o">@</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="t">Situation</span>:
+    <span class="n">scanned_tb</span>: <span class="t">float</span>               <span class="c"># data the nightly and ad-hoc queries scan, not total stored</span>
+    <span class="n">freshness_minutes</span>: <span class="t">int</span>          <span class="c"># the tightest freshness someone has agreed to fund</span>
+    <span class="n">teams_writing_models</span>: <span class="t">int</span>
+    <span class="n">platform_engineers</span>: <span class="t">int</span>
+    <span class="n">microsoft_estate</span>: <span class="t">bool</span>          <span class="c"># Entra ID, Microsoft 365, Power BI already in place</span>
+    <span class="n">must_run_outside_microsoft</span>: <span class="t">bool</span>
+
+
+<span class="k">def</span> <span class="n">choose</span>(<span class="n">s</span>: <span class="t">Situation</span>) <span class="o">-&gt;</span> <span class="t">tuple</span>[<span class="t">str</span>, <span class="t">list</span>[<span class="t">str</span>]]:
+    <span class="n">triggers</span> <span class="o">=</span> []
+    <span class="k">if</span> <span class="n">s</span>.<span class="n">scanned_tb</span> <span class="o">&gt;</span> <span class="num">1</span>:
+        <span class="n">triggers</span>.<span class="n">append</span>(<span class="s">"past ~1 TB scanned, one node stops being comfortable"</span>)
+    <span class="k">if</span> <span class="n">s</span>.<span class="n">freshness_minutes</span> <span class="o">&lt;</span> <span class="num">30</span>:
+        <span class="n">triggers</span>.<span class="n">append</span>(<span class="s">"minutes-fresh needs CDC and a log, not a scheduled batch"</span>)
+    <span class="k">if</span> <span class="n">s</span>.<span class="n">teams_writing_models</span> <span class="o">&gt;=</span> <span class="num">3</span>:
+        <span class="n">triggers</span>.<span class="n">append</span>(<span class="s">"several teams need namespaces, a catalog and isolation"</span>)
+
+    <span class="k">if</span> <span class="k">not</span> <span class="n">triggers</span>:
+        <span class="k">return</span> <span class="s">"A: DuckDB + dbt"</span>, [<span class="s">"small, daily, one team: the cheapest design that is correct"</span>]
+    <span class="k">if</span> <span class="n">s</span>.<span class="n">platform_engineers</span> <span class="o">&gt;=</span> <span class="num">3</span> <span class="k">or</span> <span class="n">s</span>.<span class="n">must_run_outside_microsoft</span>:
+        <span class="k">return</span> <span class="s">"B: CDC + Iceberg + Trino"</span>, <span class="n">triggers</span>
+    <span class="k">if</span> <span class="n">s</span>.<span class="n">microsoft_estate</span>:
+        <span class="k">return</span> <span class="s">"C: Fabric"</span>, <span class="n">triggers</span> + [<span class="s">"no team to run B, and the estate is already Microsoft"</span>]
+    <span class="k">return</span> <span class="s">"B, staffed first"</span>, <span class="n">triggers</span> + [<span class="s">"hire or buy the operating capacity before building"</span>]
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span>:
+    <span class="n">today</span> <span class="o">=</span> <span class="t">Situation</span>(<span class="num">0.25</span>, <span class="num">60</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="k">True</span>, <span class="k">False</span>)
+    <span class="n">grown</span> <span class="o">=</span> <span class="t">Situation</span>(<span class="num">2.5</span>, <span class="num">5</span>, <span class="num">4</span>, <span class="num">2</span>, <span class="k">True</span>, <span class="k">False</span>)
+    <span class="n">print</span>(<span class="n">choose</span>(<span class="n">today</span>))    <span class="c"># ('A: DuckDB + dbt', [...])</span>
+    <span class="n">print</span>(<span class="n">choose</span>(<span class="n">grown</span>))    <span class="c"># ('C: Fabric', [...]): B's triggers, without B's team</span></pre></div>
+      <div class="code-pane" id="c8-cfg"><pre><span class="c"># profiles.yml: the same dbt project, three engines. Moving is a new target, not a rewrite.</span>
+<span class="n">northwind</span>:
+  <span class="n">target</span>: <span class="s">lean</span>
+  <span class="n">outputs</span>:
+    <span class="n">lean</span>:                                   <span class="c"># Version A</span>
+      <span class="n">type</span>: <span class="s">duckdb</span>
+      <span class="n">path</span>: <span class="s">/data/northwind.duckdb</span>
+      <span class="n">threads</span>: <span class="num">4</span>
+    <span class="n">scale</span>:                                  <span class="c"># Version B</span>
+      <span class="n">type</span>: <span class="s">trino</span>
+      <span class="n">method</span>: <span class="s">oauth</span>
+      <span class="n">user</span>: <span class="s">dbt@northwind.example</span>
+      <span class="n">host</span>: <span class="s">trino.northwind.example</span>
+      <span class="n">port</span>: <span class="num">443</span>
+      <span class="n">http_scheme</span>: <span class="s">https</span>
+      <span class="n">database</span>: <span class="s">iceberg</span>                     <span class="c"># the Trino catalog</span>
+      <span class="n">schema</span>: <span class="s">gold</span>
+      <span class="n">threads</span>: <span class="num">8</span>
+    <span class="n">managed</span>:                                <span class="c"># Version C</span>
+      <span class="n">type</span>: <span class="s">fabric</span>
+      <span class="n">driver</span>: <span class="s">"ODBC Driver 18 for SQL Server"</span>
+      <span class="n">server</span>: <span class="s">"&lt;workspace-sql-endpoint&gt;"</span>    <span class="c"># from the warehouse's settings page</span>
+      <span class="n">database</span>: <span class="s">nw_warehouse</span>
+      <span class="n">schema</span>: <span class="s">gold</span>
+      <span class="n">authentication</span>: <span class="s">ServicePrincipal</span>
+      <span class="n">tenant_id</span>: <span class="s">"{{ env_var('AZURE_TENANT_ID') }}"</span>
+      <span class="n">client_id</span>: <span class="s">"{{ env_var('DBT_CLIENT_ID') }}"</span>
+      <span class="n">client_secret</span>: <span class="s">"{{ env_var('DBT_CLIENT_SECRET') }}"</span>   <span class="c"># CI injects it; better, OIDC</span>
+      <span class="n">threads</span>: <span class="num">4</span></pre></div>
+    </div>
+  </section>
+
+
+  <footer>
+    <p class="big">Same requirements. Three answers. One set of tests that proves them.</p>
+    <p>backend.systems · applied · lakehouse platform</p>
+    <p class="colophon">Requirements <span>·</span> DuckDB + dbt <span>·</span> CDC + Iceberg <span>·</span> Fabric <span>·</span> Push agent <span>·</span> Reconciliation <span>·</span> RLS <span>·</span> Trade-offs</p>
+  </footer>
+
+      </div>
+    </main>
+
+  </div><!-- /.hf-main -->
+</div><!-- /.hf-shell -->
+
+<script src="assets/hume-finbiz/hume-finbiz.js"></script>
+<script src="assets/js/katas.js"></script>
+</body>
+</html>

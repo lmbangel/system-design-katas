@@ -39,9 +39,12 @@
       <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
       <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
       <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
       <div class="hf-nav__section">Reading list</div>
@@ -78,12 +81,12 @@
       <header class="kt-hero">
         <span class="hf-eyebrow">A practical guide · 2026</span>
         <h1 class="kt-hero__title">Backend systems, for engineers who <em>ship</em>.</h1>
-        <p class="hf-lede">Seven pillars and two applied designs, with code in Go, Python and TypeScript for every concept that matters. The opinionated reference I wish I'd had when I was levelling up.</p>
+        <p class="hf-lede">Eight pillars and three applied designs, with code in Go, Python and TypeScript for every concept that matters. The opinionated reference I wish I'd had when I was levelling up.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Pillars</span><span class="hf-stat__value">7</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Applied designs</span><span class="hf-stat__value">2</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Concepts &amp; patterns</span><span class="hf-stat__value">88</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">6.4 hrs</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Pillars</span><span class="hf-stat__value">8</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Applied designs</span><span class="hf-stat__value">3</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Concepts &amp; patterns</span><span class="hf-stat__value">106</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">8.3 hrs</span></div>
         </div>
       </header>
 
@@ -197,6 +200,16 @@
               <td class="hf-num">45 min</td>
             </tr>
             <tr class="kt-tier-row">
+              <th colspan="5" scope="colgroup">Tier 5 · Data platforms <span class="hf-meta">Numbers the business can sign off on.</span></th>
+            </tr>
+            <tr>
+              <td class="kt-col-num">08</td>
+              <td><a href="08-data-platforms.html">Data platform architecture</a></td>
+              <td class="hf-ink-2">OLTP vs OLAP, Parquet, object storage, lakehouse layering, table formats, ingestion, dimensional modelling, orchestration, reconciliation, serving, build vs buy.</td>
+              <td class="hf-num">10</td>
+              <td class="hf-num">55 min</td>
+            </tr>
+            <tr class="kt-tier-row">
               <th colspan="5" scope="colgroup">Applied design <span class="hf-meta">The pillars composed into real systems, as you would present them in a design interview.</span></th>
             </tr>
             <tr>
@@ -213,13 +226,20 @@
               <td class="hf-num">8</td>
               <td class="hf-num">50 min</td>
             </tr>
+            <tr>
+              <td class="kt-col-num">C</td>
+              <td><a href="lakehouse-platform.html">Lakehouse platform</a></td>
+              <td class="hf-ink-2">One problem, three sets of constraints: lean single-node, CDC and streaming at scale, managed Fabric; closed-network ingestion, reconciliation, row-level security for BI and AI.</td>
+              <td class="hf-num">8</td>
+              <td class="hf-num">55 min</td>
+            </tr>
             </tbody>
             <tfoot>
               <tr>
                 <td></td>
                 <th scope="row" colspan="2">Total</th>
-                <td class="hf-num">88</td>
-                <td class="hf-num">6.4 hrs</td>
+                <td class="hf-num">106</td>
+                <td class="hf-num">8.3 hrs</td>
               </tr>
             </tfoot>
           </table>
@@ -232,7 +252,7 @@
       </section>
 
       <footer>
-        <p class="big">Seven pillars. Two applied designs. Four books. One mental model.</p>
+        <p class="big">Eight pillars. Three applied designs. Four books. One mental model.</p>
         <p>Built for the engineer with the pager and the deadline.</p>
         <p class="colophon">Distributed systems <span>·</span> Data <span>·</span> APIs <span>·</span> Microservices <span>·</span> Reliability <span>·</span> Performance <span>·</span> Security <span>·</span> Payments <span>·</span> Logistics</p>
       </footer>

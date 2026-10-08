@@ -43,9 +43,13 @@ const SITE = [
   { section: 'Tier 4 · Cross-cutting', crumb: 'Tier four · Cross-cutting' },
   { file: '07-security.html', num: '07', title: 'Security', icon: 'shield-lock' },
 
+  { section: 'Tier 5 · Data platforms', crumb: 'Tier five · Data platforms' },
+  { file: '08-data-platforms.html', num: '08', title: 'Data platform architecture', icon: 'stack' },
+
   { section: 'Applied design', crumb: 'Applied system design' },
   { file: 'payment-system.html', title: 'Payment processing', icon: 'credit-card' },
   { file: 'order-fulfilment.html', title: 'Order fulfilment', icon: 'truck' },
+  { file: 'lakehouse-platform.html', title: 'Lakehouse platform', icon: 'bricks' },
 
   { section: 'Interview prep', crumb: 'Interview prep' },
   { file: 'prep-checklist.html', title: 'Interview checklist', icon: 'list-check' },

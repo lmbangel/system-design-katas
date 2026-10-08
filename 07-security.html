@@ -55,9 +55,12 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c10" title="Zero trust"><span class="hf-nav__text">Zero trust</span></a></div>
         </div>
       </div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
       <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
       <div class="hf-nav__section">Reading list</div>
@@ -85,7 +88,7 @@
 
       <div class="hf-header__actions">
         <a class="hf-iconbtn" href="06-performance-scale.html" aria-label="Previous: 06 · Performance &amp; scale" title="Previous: 06 · Performance &amp; scale"><i class="bi bi-arrow-left"></i></a>
-        <a class="hf-iconbtn" href="payment-system.html" aria-label="Next: Payment processing" title="Next: Payment processing"><i class="bi bi-arrow-right"></i></a>
+        <a class="hf-iconbtn" href="08-data-platforms.html" aria-label="Next: 08 · Data platform architecture" title="Next: 08 · Data platform architecture"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
 
@@ -644,7 +647,7 @@
 <span class="c">//   govulncheck ./...     # scans code + dependencies</span>
 <span class="c">//</span>
 <span class="c">// SBOM: syft generates a bill of materials from your binary.</span>
-<span class="c">//   syft packages ./myapp -o spdx-json > sbom.json</span>
+<span class="c">//   syft packages ./myapp -o spdx-json &gt; sbom.json</span>
 <span class="c">//</span>
 <span class="c">// CI pipeline: govulncheck + syft + cosign on every build.</span></pre></div>
       <div class="code-pane" id="c7-py"><pre><span class="c"># pip-audit scans requirements.txt for CVEs.</span>
@@ -652,7 +655,7 @@
 <span class="c">#   pip-audit -r requirements.txt</span>
 <span class="c">#</span>
 <span class="c"># SBOM: syft scans your container image.</span>
-<span class="c">#   syft packages myapp:latest -o cyclonedx-json > sbom.json</span>
+<span class="c">#   syft packages myapp:latest -o cyclonedx-json &gt; sbom.json</span>
 <span class="c">#</span>
 <span class="c"># Always pin: requirements.txt with hashes (pip-compile --generate-hashes)</span></pre></div>
       <div class="code-pane" id="c7-ts"><pre><span class="c">// npm audit — scans package-lock.json for known CVEs.</span>

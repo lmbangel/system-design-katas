@@ -39,6 +39,8 @@
       <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
       <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
       <div class="hf-nav__item hf-nav__item--parent is-open">
@@ -56,6 +58,7 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c8" title="Event-driven tracking pipeline (CQRS)"><span class="hf-nav__text">Event-driven tracking pipeline (CQRS)</span></a></div>
         </div>
       </div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
       <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
       <div class="hf-nav__section">Reading list</div>
@@ -83,7 +86,7 @@
 
       <div class="hf-header__actions">
         <a class="hf-iconbtn" href="payment-system.html" aria-label="Previous: Payment processing" title="Previous: Payment processing"><i class="bi bi-arrow-left"></i></a>
-        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Next: Interview checklist" title="Next: Interview checklist"><i class="bi bi-arrow-right"></i></a>
+        <a class="hf-iconbtn" href="lakehouse-platform.html" aria-label="Next: Lakehouse platform" title="Next: Lakehouse platform"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
 
@@ -188,7 +191,7 @@
         <p>An order flows through six stages: <strong>place</strong> (reserve inventory, capture payment), <strong>assign</strong> (pick the optimal warehouse), <strong>pick+pack</strong> (warehouse workers scan items), <strong>ship</strong> (generate label, hand off to carrier), <strong>transit</strong> (tracking events from carrier scans), and <strong>deliver</strong>. Each stage is owned by a different service. The order service orchestrates the saga; inventory, warehouse, and tracking services handle their domains independently.</p>
         <p><strong>Trade-off: monolith vs microservices for fulfilment.</strong> Early-stage companies should start with a monolith — splitting too early means distributed transactions before you understand the domain. At scale, split on domain boundaries: inventory is a separate bounded context from warehouse operations. The critical insight: <strong>inventory</strong> (how much do we have?) and <strong>warehouse</strong> (where is it physically?) are different services even though they seem related.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Key components</div><ul><li><strong>Order service:</strong> saga orchestrator, state machine, source of truth</li><li><strong>Inventory:</strong> stock levels, reservations, restock events</li><li><strong>Tracking:</strong> event-sourced timeline, CQRS read model, push notifications</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Interview red flags</div><ul><li>Deducting inventory at checkout (should reserve, deduct at ship)</li><li>No state machine for order lifecycle</li><li>Polling carrier APIs instead of event-driven tracking</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="microservices-patterns.html#p5">Saga</a>, <a href="microservices-patterns.html#p6">Event sourcing</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p5">Saga</a>, <a href="04-microservices-patterns.html#p6">Event sourcing</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://shopify.engineering/shopify-fulfillment-network" target="_blank">Shopify — Building the Fulfilment Network</a> · <a href="https://engineering.grab.com/scaling-grab-order-management" target="_blank">Grab — Scaling order management</a></div>
       </div>
     </div>
@@ -326,7 +329,7 @@
         UPDATE inventory
            SET reserved = reserved + $1
          WHERE sku = $2
-           AND (physical - reserved) >= $1   -- atomic check
+           AND (physical - reserved) &gt;= $1   -- atomic check
     `</span>, <span class="n">qty</span>, <span class="n">sku</span>)
     <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="k">nil</span> { <span class="k">return</span> <span class="n">err</span> }
     <span class="k">if</span> <span class="n">res</span>.<span class="n">RowsAffected</span>() <span class="o">==</span> <span class="num">0</span> {
@@ -340,7 +343,7 @@
     <span class="n">r</span>.<span class="n">db</span>.<span class="n">Exec</span>(<span class="n">ctx</span>, <span class="s">`
         UPDATE inventory i SET reserved = reserved - r.qty
         FROM reservations r
-        WHERE r.sku = i.sku AND r.expires_at < NOW() AND r.status = 'active'
+        WHERE r.sku = i.sku AND r.expires_at &lt; NOW() AND r.status = 'active'
     `</span>)
 }</pre></div>
       <div class="code-pane" id="c2-py"><pre><span class="c"># Redis DECR for flash sales + async DB sync.</span>
@@ -448,7 +451,7 @@
                 WHERE NOT EXISTS (
                     SELECT 1 FROM inventory i
                      WHERE i.warehouse_id = w.id AND i.sku = t.sku
-                       AND (i.physical - i.reserved) >= t.qty
+                       AND (i.physical - i.reserved) &gt;= t.qty
                ))
          ORDER BY dist_m ASC
          LIMIT 1
@@ -720,7 +723,7 @@
         <p>Every scan (warehouse pick, hub arrival, out-for-delivery, delivered) is a tracking event published to Kafka. A consumer enriches each event (resolve driver location to address, calculate ETA), writes to an Elasticsearch read model, and triggers push notifications. The customer-facing app queries ES for the tracking timeline — <strong>CQRS in action</strong>: writes go to Kafka (event log), reads come from ES (optimised query model).</p>
         <p><strong>H3</strong> (Uber's hexagonal grid system) is the geospatial index: every lat/lng maps to a hex cell at various resolutions. "Find all drivers within 2km" becomes "find all drivers in this hex and its k-ring neighbours" — a constant-time index lookup instead of a distance calculation against every driver. Used by Uber, Bolt, DoorDash for dispatch and ETA.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Kafka for tracking events, ES for read model (CQRS)</li><li>H3 hex index for "find nearby" at O(1) per point</li><li>Push notifications via WebSocket or Firebase on state change</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Polling carrier APIs every 30s — use webhooks from carriers</li><li>PostGIS radius queries on millions of live drivers — use H3</li><li>Single tracking table in Postgres — won't scale to 100k events/s</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="microservices-patterns.html#p6">Event sourcing</a>, <a href="microservices-patterns.html#p3">CQRS</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p6">Event sourcing</a>, <a href="04-microservices-patterns.html#p3">CQRS</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://www.uber.com/blog/h3/" target="_blank">Uber — H3: hexagonal hierarchical spatial index</a> · <a href="https://doordash.engineering/2022/03/29/how-doordash-designed-a-real-time-tracking-system/" target="_blank">DoorDash — Real-time tracking</a></div>
       </div>
     </div>
@@ -1052,7 +1055,7 @@
         <p><strong>CQRS</strong> (Command Query Responsibility Segregation) splits the write model from the read model. Tracking writes: scan events → Kafka → Postgres (event log). Tracking reads: Kafka consumer projects events into Elasticsearch (denormalised timeline per order). The API queries ES for "show me tracking for order X" — which returns a pre-built timeline with no JOINs. This scales the write path (100k events/sec to Kafka) independently from the read path (fast ES queries).</p>
         <p><strong>Trade-off: eventual consistency.</strong> The ES read model is seconds behind the Postgres source of truth. For tracking, this is acceptable — a 2-second delay on "your package is at hub X" doesn't matter. For inventory or payments, it wouldn't be. Know where eventual consistency is tolerable and where it isn't.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Kafka as event log (write) → ES as read model (query)</li><li>Projector service: Kafka consumer → denormalise into ES</li><li>Rebuild read model by replaying Kafka from offset 0</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>CQRS for everything — overkill for simple CRUD</li><li>No replay capability — can't rebuild a corrupted read model</li><li>Treating ES as source of truth (it's a projection, not the source)</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="microservices-patterns.html#p3">CQRS</a>, <a href="microservices-patterns.html#p6">Event sourcing</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p3">CQRS</a>, <a href="04-microservices-patterns.html#p6">Event sourcing</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://doordash.engineering/2020/09/22/building-doordash-order-tracking/" target="_blank">DoorDash — Building real-time order tracking</a> · <a href="https://engineering.deliveryhero.com/event-driven-architecture/" target="_blank">Delivery Hero — Event-driven architecture</a></div>
       </div>
     </div>
