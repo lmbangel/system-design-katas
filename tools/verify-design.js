@@ -89,7 +89,11 @@ for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/app
   try {
     execFileSync(process.execPath, [path.join(__dirname, 'build-nav.js'), '--check'], { stdio: 'pipe' });
   } catch (e) {
-    String(e.stdout).trim().split(/\r?\n/).filter(Boolean).forEach(l => fail(11, l.trim()));
+    // build-nav prints its findings on stdout; if it crashed instead (e.g. a
+    // page in the site map doesn't exist yet), report that rather than pass.
+    const out = String(e.stdout || '').trim();
+    const why = out || String(e.stderr || '').trim().split(/\r?\n/).find(l => /Error/.test(l)) || 'build-nav.js --check failed';
+    why.split(/\r?\n/).filter(Boolean).forEach(l => fail(11, l.trim()));
   }
 }
 

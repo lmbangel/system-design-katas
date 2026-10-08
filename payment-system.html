@@ -39,6 +39,8 @@
       <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
       <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
       <div class="hf-nav__section">Applied design</div>
       <div class="hf-nav__item hf-nav__item--parent is-open">
         <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="payment-system.html" aria-current="page">
@@ -56,6 +58,7 @@
         </div>
       </div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
       <div class="hf-nav__section">Interview prep</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
       <div class="hf-nav__section">Reading list</div>
@@ -82,7 +85,7 @@
       <div class="hf-header__spacer"></div>
 
       <div class="hf-header__actions">
-        <a class="hf-iconbtn" href="07-security.html" aria-label="Previous: 07 · Security" title="Previous: 07 · Security"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="08-data-platforms.html" aria-label="Previous: 08 · Data platform architecture" title="Previous: 08 · Data platform architecture"><i class="bi bi-arrow-left"></i></a>
         <a class="hf-iconbtn" href="order-fulfilment.html" aria-label="Next: Order fulfilment" title="Next: Order fulfilment"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
@@ -184,7 +187,7 @@
         <p>A payment isn't one event — it's a <strong>lifecycle</strong>. The customer checks out, the merchant creates a payment intent, the system <strong>authorises</strong> against the card network (reserving funds on the customer's card), and later <strong>captures</strong> (actually moving the money). Settlement happens in batch (T+1 or T+2), and eventually funds are paid out to the merchant. Auth and capture are separate because the merchant might not ship for days — you hold the reservation, not the money.</p>
         <p><strong>Trade-off: auth+capture split vs single charge.</strong> Split gives you a refund window and prevents charging for unshipped goods (required by card network rules for physical goods). Single charge is simpler and fine for digital goods. Most payment APIs (Stripe, Adyen) support both. In an interview, always clarify which model fits the use case.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Key components</div><ul><li><strong>Payment API:</strong> stateless HTTP, idempotency key on every POST</li><li><strong>Ledger service:</strong> double-entry, append-only, source of truth</li><li><strong>PSP adapter:</strong> abstracts Stripe/Adyen/Braintree behind one interface</li><li><strong>Webhook worker:</strong> async delivery to merchants with retry</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Interview red flags</div><ul><li>Treating a payment as a single API call</li><li>No idempotency on the create-payment endpoint</li><li>Storing card numbers instead of tokens</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="microservices-patterns.html#p5">Saga</a>, <a href="07-security.html#c3">Secrets management</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p5">Saga</a>, <a href="07-security.html#c3">Secrets management</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://stripe.com/blog/payment-api-design" target="_blank">Stripe — Designing a Payment API</a> · Stripe's payment intents model is the industry standard for auth+capture separation.</div>
       </div>
     </div>
@@ -647,7 +650,7 @@
         <p>A payment has explicit states and <strong>guarded transitions</strong>. You can't go from <code>pending</code> to <code>settled</code> — you must pass through <code>authorised</code> and <code>captured</code>. The state machine makes illegal transitions impossible at the code level, not just by convention. Every state transition is logged, and the transition function is the single place where business rules live.</p>
         <p><strong>Trade-off: enum + switch vs state machine library.</strong> For a payment system with 7-8 states, an explicit enum with a transition function is simpler and easier to test than a full state machine framework. The key rule: the transition function takes (current_state, event) → (new_state, side_effects). If the transition is invalid, it throws — never silently ignores.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>State stored in DB, transitions happen in a transaction</li><li>Transition function: (state, event) → new_state or error</li><li>Every transition emits a domain event for downstream consumers</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>String-based state with no validation of transitions</li><li>Allowing "backwards" transitions (settled → authorised)</li><li>Business logic spread across multiple services instead of one machine</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="#c2">Ledger</a>, <a href="#c5">Saga</a>, <a href="microservices-patterns.html#p6">Event sourcing</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">Ledger</a>, <a href="#c5">Saga</a>, <a href="04-microservices-patterns.html#p6">Event sourcing</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://gocardless.com/blog/state-machines" target="_blank">GoCardless — Statesman: a state machine approach</a> · How GoCardless models payment lifecycles.</div>
       </div>
     </div>
@@ -789,7 +792,7 @@
         <p>A checkout touches multiple services: reserve inventory, charge payment, trigger shipping. If payment fails after inventory is reserved, you must <strong>compensate</strong> — release the reservation. A saga is a sequence of local transactions where each step has a compensating action. If step N fails, you run compensations for steps N-1 through 1 in reverse order.</p>
         <p><strong>Trade-off: orchestrator vs choreography.</strong> For payments, <strong>orchestrator wins</strong>. A central saga coordinator (Temporal, Cadence, a custom state machine) knows exactly which step you're on, can retry failed steps, and gives you one place to see the entire flow. Choreography (events flying between services) is more decoupled but much harder to debug when money is stuck in limbo. When an interviewer asks, say orchestrator and explain why: observability, retry logic, and "show me where the money is right now."</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Orchestrator pattern (Temporal/Cadence) for the checkout flow</li><li>Every step has a compensating action defined upfront</li><li>Saga state persisted — survives service restarts</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Choreography for payment flows — impossible to debug</li><li>No compensation defined — money gets stuck</li><li>Compensations that can themselves fail — need idempotent retries</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="microservices-patterns.html#p5">Saga pattern</a>, <a href="#c3">Idempotency</a>, <a href="#c4">State machine</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p5">Saga pattern</a>, <a href="#c3">Idempotency</a>, <a href="#c4">State machine</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://eng.uber.com/cadence/" target="_blank">Uber — Cadence: fault-tolerant orchestration</a> · How Uber orchestrates multi-step payment and ride flows.</div>
       </div>
     </div>
@@ -1162,7 +1165,7 @@
     <span class="n">req</span>.<span class="n">Header</span>.<span class="n">Set</span>(<span class="s">"Webhook-ID"</span>, <span class="n">event</span>.<span class="n">ID</span>)  <span class="c">// dedup key</span>
 
     <span class="n">resp</span>, <span class="n">err</span> <span class="o">:=</span> <span class="n">httpClient</span>.<span class="n">Do</span>(<span class="n">req</span>)
-    <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="k">nil</span> <span class="o">||</span> <span class="n">resp</span>.<span class="n">StatusCode</span> <span class="o">>=</span> <span class="num">300</span> {
+    <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="k">nil</span> <span class="o">||</span> <span class="n">resp</span>.<span class="n">StatusCode</span> <span class="o">&gt;=</span> <span class="num">300</span> {
         <span class="k">return</span> <span class="n">fmt</span>.<span class="n">Errorf</span>(<span class="s">"delivery failed, will retry"</span>)
     }
     <span class="k">return</span> <span class="k">nil</span>
