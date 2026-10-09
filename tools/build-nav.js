@@ -27,6 +27,7 @@ const ROOT = path.resolve(__dirname, '..');
    group; `num` prefixes the label; `crumb` is the header's location line. */
 const SITE = [
   { file: 'index.html', title: 'Overview', icon: 'grid' },
+  { file: 'learning-map.html', title: 'Learning map', icon: 'diagram-2' },
 
   { section: 'Tier 1 · Foundations', crumb: 'Tier one · Foundations' },
   { file: '01-distributed-systems.html', num: '01', title: 'Distributed systems', icon: 'diagram-3' },
@@ -53,6 +54,7 @@ const SITE = [
 
   { section: 'Interview prep', crumb: 'Interview prep' },
   { file: 'prep-checklist.html', title: 'Interview checklist', icon: 'list-check' },
+  { file: 'roadmap.html', title: 'Architecture roadmap', icon: 'signpost-split' },
 
   { section: 'Reading list', crumb: 'Reading list' },
   { file: 'books.html', title: 'Recommended books', icon: 'journal-bookmark' },

@@ -6,6 +6,7 @@
    2. Code tabs    One code block, three languages. Scoped per block.
    3. Scroll spy   Marks the tier-2 nav link of the concept on screen.
    4. Checklist    prep-checklist.html. State persists per item in localStorage.
+   5. Map bar      under each concept title: "On the learning map" + mastery.
 
    Replaces the three inline <script> variants the pages used to carry. The
    prep checklist's old version toggled each box twice per click (an onclick
@@ -145,5 +146,43 @@
       render(on);
       store(key, on ? 'true' : 'false');
     });
+  });
+
+  /* ------------------------------------------------ 5 learning-map bar */
+
+  // Under each concept's title: a way onto the learning map, and where you
+  // are with the concept. Same storage keys as learning-map.js (lm.m.<id>),
+  // so marking it here or on the map is the same thing.
+  var page = decodeURIComponent((window.location.pathname.split('/').pop() || 'index.html'));
+  var LEVELS = ['Not started', 'Read', 'Practised', 'Can explain'];
+  document.querySelectorAll('section.pattern[id] .pattern-title-wrap').forEach(function (wrap) {
+    var id = page + '#' + wrap.closest('section.pattern').id;
+    var bar = document.createElement('div');
+    bar.className = 'kt-lm-bar';
+
+    var link = document.createElement('a');
+    link.className = 'btn btn-light btn-sm';
+    link.href = 'learning-map.html#concept=' + encodeURIComponent(id);
+    link.innerHTML = '<i class="bi bi-diagram-2" aria-hidden="true"></i>On the learning map';
+    bar.appendChild(link);
+
+    var sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm';
+    sel.setAttribute('aria-label', 'Where you are with this concept');
+    LEVELS.forEach(function (label, i) {
+      var o = document.createElement('option');
+      o.value = String(i); o.textContent = label;
+      sel.appendChild(o);
+    });
+    sel.value = String(Math.max(0, Math.min(3, parseInt(store('lm.m.' + id), 10) || 0)));
+    sel.addEventListener('change', function () {
+      var v = parseInt(sel.value, 10);
+      try {
+        if (v > 0) window.localStorage.setItem('lm.m.' + id, String(v));
+        else window.localStorage.removeItem('lm.m.' + id);
+      } catch (e) { /* storage blocked: the choice just won't persist */ }
+    });
+    bar.appendChild(sel);
+    wrap.appendChild(bar);
   });
 }());
