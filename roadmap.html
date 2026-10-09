@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<!-- LOAD ORDER IS MANDATORY: bootstrap -> icons -> archivo -> hume-finbiz -> katas.
+     hume-finbiz.css re-points Bootstrap's own custom properties; reordering
+     silently un-themes the page. See docs/design-system.md. -->
+<link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/vendor/archivo/archivo.css">
+<link rel="stylesheet" href="assets/hume-finbiz/hume-finbiz.css">
+<link rel="stylesheet" href="assets/css/katas.css">
+<title>Architecture Roadmap · backend.systems</title>
+</head>
+<body>
+<div class="hf-shell">
+
+  <aside class="hf-sidebar">
+    <a class="hf-sidebar__brand" href="index.html" aria-label="Overview">
+      <span class="hf-sidebar__mark"><span class="kt-mark" aria-hidden="true"></span></span>
+      <span class="hf-sidebar__wordmark">System design<small>Backend katas</small></span>
+    </a>
+
+    <nav class="hf-nav" aria-label="Main navigation">
+      <div class="hf-nav__item"><a class="hf-nav__link" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="learning-map.html"><i class="bi bi-diagram-2 hf-nav__icon"></i><span class="hf-nav__text">Learning map</span></a></div>
+      <div class="hf-nav__section">Tier 1 · Foundations</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="02-data-storage.html"><i class="bi bi-database hf-nav__icon"></i><span class="hf-nav__text">02 · Data &amp; storage</span></a></div>
+      <div class="hf-nav__section">Tier 2 · Building blocks</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="03-apis-contracts.html"><i class="bi bi-plug hf-nav__icon"></i><span class="hf-nav__text">03 · APIs &amp; contracts</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="04-microservices-patterns.html"><i class="bi bi-boxes hf-nav__icon"></i><span class="hf-nav__text">04 · Microservices patterns</span></a></div>
+      <div class="hf-nav__section">Tier 3 · Production</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="05-reliability-observability.html"><i class="bi bi-activity hf-nav__icon"></i><span class="hf-nav__text">05 · Reliability &amp; observability</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
+      <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
+      <div class="hf-nav__section">Applied design</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="roadmap.html" aria-current="page">
+          <i class="bi bi-signpost-split hf-nav__icon"></i><span class="hf-nav__text">Architecture roadmap</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-1" title="Sprint 1 · AZ-104"><span class="hf-nav__text">Sprint 1 · AZ-104</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-2" title="Sprint 2 · SC-500"><span class="hf-nav__text">Sprint 2 · SC-500</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#q1-review" title="Q1 · Review and delivery"><span class="hf-nav__text">Q1 · Review and delivery</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-3" title="Sprint 3 · AZ-305"><span class="hf-nav__text">Sprint 3 · AZ-305</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-4" title="Sprint 4 · AWS SAA"><span class="hf-nav__text">Sprint 4 · AWS SAA</span></a></div>
+        </div>
+      </div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
+    </nav>
+
+    <div class="hf-sidebar__foot">
+      <div class="hf-sidebar__env"><span class="hf-sync__dot"></span><span>Study guide · v1</span></div>
+    </div>
+  </aside>
+
+  <div class="hf-main">
+
+    <header class="hf-header">
+      <button class="hf-header__toggle" data-hf-sidebar-toggle aria-label="Toggle navigation" aria-expanded="true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="hf-header__titles">
+        <div class="hf-header__title">Architecture roadmap</div>
+        <div class="hf-header__crumbs">Backend katas / Interview prep</div>
+      </div>
+
+      <div class="hf-header__spacer"></div>
+
+      <div class="hf-header__actions">
+        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Previous: Interview checklist" title="Previous: Interview checklist"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="books.html" aria-label="Next: Recommended books" title="Next: Recommended books"><i class="bi bi-arrow-right"></i></a>
+      </div>
+    </header>
+
+    <main class="hf-content">
+      <div class="hf-content__inner kt-page">
+      <header class="kt-hero">
+        <span class="hf-eyebrow">Study plan · October 2026 – September 2027</span>
+        <h1 class="kt-hero__title">Four exams, <em>one architect</em>.</h1>
+        <p class="hf-lede">The architecture track as a working roadmap: every week is one decision to understand, prove in Azure and explain. Tick weeks off as you go; the current week opens itself, and the exams count down. Progress is saved in this browser only.</p>
+        <div class="kt-facts">
+          <div class="hf-stat"><span class="hf-stat__label">Weeks</span><span class="hf-stat__value" id="rm-fact-weeks">—</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Hours a week</span><span class="hf-stat__value">10</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Exams passed</span><span class="hf-stat__value" id="rm-fact-exams">—</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Progress</span><span class="hf-stat__value" id="rm-fact-progress">—</span></div>
+        </div>
+      </header>
+
+      <section class="kt-rm-exams" aria-label="Exams">
+        <div class="hf-grid hf-grid--4" id="rm-exams"></div>
+      </section>
+
+      <section class="card kt-rm-timeline" aria-label="Timeline">
+        <div class="card-header">Timeline <span class="hf-meta">Select a sprint to jump to it</span></div>
+        <div class="card-body"><div class="kt-rm-timeline__scroll" id="rm-timeline"></div></div>
+      </section>
+
+      <div class="kt-rm-filters" id="rm-filters" role="toolbar" aria-label="Filter by strand"></div>
+
+      <section class="card kt-rm-sprint" id="sprint-1" data-nav="Sprint 1 · AZ-104"></section>
+      <section class="card kt-rm-sprint" id="sprint-2" data-nav="Sprint 2 · SC-500"></section>
+      <section class="card kt-rm-sprint" id="q1-review" data-nav="Q1 · Review and delivery"></section>
+      <section class="card kt-rm-sprint" id="sprint-3" data-nav="Sprint 3 · AZ-305"></section>
+      <section class="card kt-rm-sprint" id="sprint-4" data-nav="Sprint 4 · AWS SAA"></section>
+
+      <noscript><p class="hf-meta">The roadmap needs JavaScript. The same plan is in plans/architecture-track.md in the repository.</p></noscript>
+      <script src="assets/js/roadmap.js" defer></script>
+
+      <footer>
+        <p class="big">Decide it, prove it, explain it. Then the exam is a formality.</p>
+        <p>backend.systems · study plan · architecture track</p>
+        <p class="colophon">AZ-104 <span>·</span> SC-500 <span>·</span> AZ-305 <span>·</span> AWS SAA</p>
+      </footer>
+
+      </div>
+    </main>
+
+  </div><!-- /.hf-main -->
+</div><!-- /.hf-shell -->
+
+<script src="assets/hume-finbiz/hume-finbiz.js"></script>
+<script src="assets/js/katas.js"></script>
+</body>
+</html>

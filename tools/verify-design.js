@@ -19,7 +19,9 @@
    9  Vendored files are byte-identical to the system (hashes below).
   10  Every page links the site icon, and the icon files exist.
   11  Navigation matches the site map: every page is in tools/build-nav.js and
-      its sidebar and header are what that script writes.                   */
+      its sidebar and header are what that script writes.
+  12  The learning map covers every concept on every page, and its generated
+      data is up to date (tools/build-learning-map.js --check).             */
 
 'use strict';
 const fs = require('fs');
@@ -83,17 +85,18 @@ for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/app
   if (!fs.existsSync(rel(icon))) fail(10, `${icon} is missing -- run python tools/build-icons.py`);
 }
 
-/* 11 ---------------------------------------------------------------------- */
-{
+/* 11, 12 ------------------------------------------------------------------ */
+// Both are a generator's own --check. They print findings on stdout; if one
+// crashes instead (e.g. a page in the site map doesn't exist yet), report the
+// crash rather than pass.
+for (const [rule, script] of [[11, 'build-nav.js'], [12, 'build-learning-map.js']]) {
   const { execFileSync } = require('child_process');
   try {
-    execFileSync(process.execPath, [path.join(__dirname, 'build-nav.js'), '--check'], { stdio: 'pipe' });
+    execFileSync(process.execPath, [path.join(__dirname, script), '--check'], { stdio: 'pipe' });
   } catch (e) {
-    // build-nav prints its findings on stdout; if it crashed instead (e.g. a
-    // page in the site map doesn't exist yet), report that rather than pass.
     const out = String(e.stdout || '').trim();
-    const why = out || String(e.stderr || '').trim().split(/\r?\n/).find(l => /Error/.test(l)) || 'build-nav.js --check failed';
-    why.split(/\r?\n/).filter(Boolean).forEach(l => fail(11, l.trim()));
+    const why = out || String(e.stderr || '').trim().split(/\r?\n/).find(l => /Error/.test(l)) || `${script} --check failed`;
+    why.split(/\r?\n/).filter(Boolean).forEach(l => fail(rule, l.trim()));
   }
 }
 

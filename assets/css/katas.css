@@ -28,6 +28,8 @@
      10  Footer
      11  Overview and reading list
      12  Prep checklist
+     12b Roadmap (roadmap.html)
+     12c Learning map (learning-map.html) and the per-concept mastery bar
      13  Responsive, print, reduced motion
 
    The kata class names (.pattern, .callout-box, .code-pane ...) are kept and
@@ -56,6 +58,7 @@
   --kt-svg-fs-sm:       9px;     /* diagram footnotes, in viewBox units */
   --kt-cover-w:         128px;   /* book cover on the reading list */
   --kt-cover-w-sm:      80px;
+  --kt-lm-panel-w:      380px;   /* learning map: the concept panel */
 
   /* Syntax. Near-monochrome on purpose: weight and ink carry most of it, and
      the two status hues used are there to separate literals from code, not to
@@ -847,6 +850,203 @@ a.hf-iconbtn { text-decoration: none; }
 
 
 /* ==========================================================================
+   12b  ROADMAP (roadmap.html)
+   The study plan as a working tool: exams counting down, a timeline with a
+   "today" line, and week rows you tick off. Rendered by roadmap.js from one
+   data list; the static HTML carries only the containers and the sprint
+   anchors the sidebar lists.
+   Status colour only: done = success, current = ink, upcoming = neutral.
+   ========================================================================== */
+
+.kt-rm-exams { margin: 0 0 var(--hf-sp-6); }
+/* Four exams: four columns while they fit, then two, then one, never 3 + 1. */
+.kt-rm-exams .hf-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kt-rm-exam { gap: var(--hf-sp-2); }
+.kt-rm-exam .hf-stat__value { font-size: var(--hf-fs-h1); letter-spacing: var(--hf-ls-heading); }
+.kt-rm-exam__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--hf-sp-2); flex-wrap: wrap; }
+.kt-rm-exam.is-passed { border-top: 3px solid var(--hf-success-fg); }
+.kt-rm-exam.is-next   { border-top: 3px solid var(--hf-ink); }
+
+.kt-rm-timeline { margin: 0 0 var(--hf-sp-5); }
+.kt-rm-timeline .card-body { padding: var(--hf-sp-3) var(--hf-sp-4) var(--hf-sp-2); }
+.kt-rm-timeline__scroll { overflow-x: auto; }
+.kt-rm-timeline svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.kt-rm-timeline .kt-rm-seg { cursor: pointer; }
+.kt-rm-timeline .kt-rm-seg:hover rect { stroke: var(--hf-ink); }
+
+.kt-rm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hf-sp-2);
+  margin: 0 0 var(--hf-sp-5);
+}
+.kt-rm-filters .hf-caps { margin-right: var(--hf-sp-1); }
+.kt-rm-filters .hf-btn-pill { height: var(--hf-control-h-sm); font-size: var(--hf-fs-xs); }
+
+.kt-rm-sprint { margin: 0 0 var(--hf-sp-5); }
+.kt-rm-sprint .card-header { flex-wrap: wrap; }
+.kt-rm-sprint__title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kt-rm-sprint__name { font-size: var(--hf-fs-h3); font-weight: var(--hf-fw-bold); letter-spacing: -0.48px; }
+.kt-rm-sprint__progress { display: flex; align-items: center; gap: var(--hf-sp-2); min-width: 180px; }
+.kt-rm-sprint__progress .kt-meter { flex: 1 1 auto; margin: 0; color: var(--hf-success-fg); }
+.kt-rm-sprint__progress .hf-meta { white-space: nowrap; }
+.kt-rm-sprint.is-current { border-color: var(--hf-ink); }
+.kt-rm-sprint .hf-alert { margin: var(--hf-sp-3) var(--hf-sp-4) 0; }
+
+/* One week (or a run of weeks): a native <details>, so it opens without JS. */
+.kt-rm-item { border-top: 1px solid var(--hf-hairline-soft); }
+.kt-rm-item:first-of-type { border-top: 0; }
+.kt-rm-item[hidden] { display: none; }
+.kt-rm-item > summary {
+  display: grid;
+  grid-template-columns: auto 92px minmax(0, 1fr) auto;
+  gap: var(--hf-sp-3);
+  align-items: start;
+  padding: var(--hf-sp-3) var(--hf-sp-4);
+  cursor: pointer;
+  list-style: none;
+}
+.kt-rm-item > summary::-webkit-details-marker { display: none; }
+.kt-rm-item > summary:hover { background: var(--hf-surface-hover); }
+.kt-rm-item > summary:focus-visible { box-shadow: var(--hf-focus-ring); }
+.kt-rm-item.is-current > summary { background: var(--hf-surface-alt); box-shadow: inset 3px 0 0 var(--hf-ink); }
+.kt-rm-item.is-done .kt-rm-item__title { color: var(--hf-ink-muted); text-decoration: line-through; }
+
+.kt-rm-item__when { font-family: var(--hf-font-mono); font-size: var(--hf-fs-xs); color: var(--hf-ink-muted); padding-top: 2px; letter-spacing: 0; }
+.kt-rm-item__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kt-rm-item__title { font-weight: var(--hf-fw-semibold); letter-spacing: var(--hf-ls-tight); }
+.kt-rm-item__q { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); }
+.kt-rm-item__tags { display: flex; flex-wrap: wrap; gap: var(--hf-sp-1); justify-content: flex-end; }
+
+.kt-rm-item__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--hf-sp-4);
+  padding: 0 var(--hf-sp-4) var(--hf-sp-4) calc(var(--hf-sp-4) + 18px + var(--hf-sp-3) + 92px + var(--hf-sp-3));
+  font-size: var(--hf-fs-sm);
+  color: var(--hf-ink-secondary);
+}
+.kt-rm-item__body h4 {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  margin: 0 0 var(--hf-sp-1);
+}
+.kt-rm-item__body p { margin: 0; line-height: var(--hf-lh-body); }
+
+.kt-rm-empty { padding: var(--hf-sp-4); }
+
+
+/* ==========================================================================
+   12c  LEARNING MAP (learning-map.html) + the per-concept mastery bar
+   A mind map (or a path) on the left, the selected concept on the right.
+   Mastery colour is status: read = muted, practised = info, can explain =
+   success. The selected node is solid ink, like the active nav item.
+   ========================================================================== */
+
+.kt-lm-nextfact .hf-stat__value { font-size: var(--hf-fs-body-lg); font-weight: var(--hf-fw-semibold); letter-spacing: var(--hf-ls-tight); line-height: var(--hf-lh-snug); }
+.kt-lm-nextup {
+  border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
+  font: inherit; color: var(--hf-ink); text-decoration: underline; text-underline-offset: 3px;
+}
+
+.kt-lm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hf-sp-3) var(--hf-sp-5);
+  margin: 0 0 var(--hf-sp-4);
+}
+.kt-lm-views .btn .bi { font-size: var(--hf-fs-sm); }
+.kt-lm-paths { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hf-sp-2); }
+.kt-lm-paths .hf-btn-pill { height: var(--hf-control-h-sm); font-size: var(--hf-fs-xs); }
+.kt-lm-search { position: relative; flex: 0 1 260px; min-width: 180px; margin-left: auto; }
+.kt-lm-search .bi { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--hf-ink-muted); font-size: var(--hf-fs-xs); pointer-events: none; }
+.kt-lm-search .form-control { padding-left: 30px; }
+
+.kt-lm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--kt-lm-panel-w);
+  gap: var(--hf-sp-4);
+  align-items: start;
+  margin: 0 0 var(--hf-sp-6);
+}
+.kt-lm-main .card-body { padding: var(--hf-sp-3); }
+.kt-lm-mapscroll { overflow-x: auto; }
+.kt-lm-svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.kt-lm-node { cursor: pointer; }
+.kt-lm-node:focus { outline: none; }
+.kt-lm-node:focus-visible rect { stroke: var(--hf-ink); stroke-width: 2; }
+.kt-lm-concept:hover rect { stroke: var(--hf-ink); }
+.kt-lm-stage:hover rect { fill: var(--hf-surface-hover); }
+.kt-lm-concept.is-off-path { opacity: .45; }
+.kt-lm-legend { padding: var(--hf-sp-2) var(--hf-sp-1) 0; }
+.kt-lm-legend .hf-meta { margin: 0; }
+
+/* Sticky on wide screens, so the concept stays in view while you browse the map. */
+.kt-lm-panel { position: sticky; top: calc(var(--hf-header-h) + var(--hf-sp-3)); }
+.kt-lm-panel .card-header { gap: var(--hf-sp-2); }
+.kt-lm-panel__body { display: flex; flex-direction: column; gap: var(--hf-sp-3); }
+.kt-lm-panel__page { margin: 0; }
+.kt-lm-panel__title { font-size: var(--hf-fs-h2); font-weight: var(--hf-fw-medium); letter-spacing: -0.6px; line-height: var(--hf-lh-snug); margin: 0; }
+.kt-lm-panel__summary { font-size: var(--hf-fs-body); color: var(--hf-ink-secondary); margin: 0; line-height: var(--hf-lh-body); }
+.kt-lm-panel__block h3 {
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+  margin: 0 0 var(--hf-sp-1);
+}
+.kt-lm-panel__block p { margin: 0; font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); line-height: var(--hf-lh-body); }
+.kt-lm-read { align-self: flex-start; }
+.kt-lm-mastery { flex-wrap: wrap; }
+.kt-lm-mastery .btn { font-size: var(--hf-fs-xxs); padding: 0 var(--hf-sp-2); }
+.kt-lm-practice { background: var(--hf-canvas-soft); border: 1px solid var(--hf-hairline-soft); border-left: 3px solid var(--hf-ink); border-radius: var(--hf-r-sm); padding: var(--hf-sp-3); }
+.kt-lm-refs { margin: 0; padding-left: var(--hf-sp-5); font-size: var(--hf-fs-sm); }
+.kt-lm-panel__nav { display: flex; align-items: center; justify-content: space-between; gap: var(--hf-sp-2); }
+.kt-lm-panel__nav .hf-meta { text-align: center; }
+
+.kt-lm-chips { display: flex; flex-wrap: wrap; gap: var(--hf-sp-1); }
+.kt-lm-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--hf-hairline); border-radius: var(--hf-r-full);
+  background: var(--hf-surface); color: var(--hf-ink);
+  font-family: var(--hf-font); font-size: var(--hf-fs-xs); letter-spacing: var(--hf-ls-tight);
+  padding: 2px 10px; cursor: pointer; text-align: left;
+}
+.kt-lm-chip:hover { border-color: var(--hf-ink); }
+.kt-lm-chip.is-known { background: var(--hf-success-bg); border-color: var(--hf-success-line); }
+.kt-lm-chip.is-known .bi { color: var(--hf-success-fg); }
+
+/* Path view. */
+.kt-lm-pathintro { font-size: var(--hf-fs-sm); color: var(--hf-ink-secondary); margin: var(--hf-sp-1) var(--hf-sp-1) var(--hf-sp-3); }
+.kt-lm-pathstage { margin: var(--hf-sp-4) var(--hf-sp-1) var(--hf-sp-1); }
+.kt-lm-steps { list-style: none; margin: 0; padding: 0; border: 1px solid var(--hf-hairline-soft); border-radius: var(--hf-r-sm); }
+.kt-lm-steps li + li { border-top: 1px solid var(--hf-hairline-soft); }
+.kt-lm-step {
+  display: grid; grid-template-columns: 2.5em minmax(0, 1fr) auto; gap: var(--hf-sp-3); align-items: center;
+  width: 100%; border: 0; background: var(--hf-surface); text-align: left; cursor: pointer;
+  padding: var(--hf-sp-2) var(--hf-sp-3); font-family: var(--hf-font); color: var(--hf-ink);
+}
+.kt-lm-step:hover { background: var(--hf-surface-hover); }
+.kt-lm-step.is-selected { background: var(--hf-surface-alt); box-shadow: inset 3px 0 0 var(--hf-ink); }
+.kt-lm-step__n { font-family: var(--hf-font-mono); font-size: var(--hf-fs-xs); color: var(--hf-ink-muted); text-align: right; }
+.kt-lm-step__main { display: flex; flex-direction: column; min-width: 0; }
+.kt-lm-step__title { font-size: var(--hf-fs-sm); font-weight: var(--hf-fw-medium); }
+.kt-lm-step__tags { display: flex; gap: var(--hf-sp-1); flex-wrap: wrap; justify-content: flex-end; }
+.kt-lm-step.is-m3 .kt-lm-step__title { color: var(--hf-ink-secondary); }
+
+/* On concept pages: where this concept sits on the map, and your mastery. */
+.kt-lm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hf-sp-2); margin-top: var(--hf-sp-2); }
+.kt-lm-bar .form-select { width: auto; }
+.kt-lm-bar .btn .bi { font-size: var(--hf-fs-xs); }
+
+
+/* ==========================================================================
    13  RESPONSIVE, PRINT, REDUCED MOTION
    Breakpoints match HumeFinbiz (Bootstrap): lg 992, md 768.
    ========================================================================== */
@@ -856,6 +1056,17 @@ a.hf-iconbtn { text-decoration: none; }
   .pattern-head { grid-template-columns: auto minmax(0, 1fr); }
   .difficulty   { grid-column: 2; text-align: left; }
   .difficulty .bars { justify-content: flex-start; }
+  .kt-rm-exams .hf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The map needs its width: the panel drops below it before the map shrinks. */
+@media (max-width: 1279.98px) {
+  .kt-lm-layout { grid-template-columns: minmax(0, 1fr); }
+  .kt-lm-panel { position: static; }
+}
+
+@media (max-width: 575.98px) {
+  .kt-rm-exams .hf-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 767.98px) {
@@ -865,6 +1076,11 @@ a.hf-iconbtn { text-decoration: none; }
   .kt-book__facts, .kt-reminders dl { grid-template-columns: minmax(0, 1fr); gap: var(--hf-sp-1); }
   .kt-book__facts dd, .kt-reminders dd { margin-bottom: var(--hf-sp-3); }
   .kt-tier-row th .hf-meta { display: block; margin: var(--hf-sp-1) 0 0; }
+  .kt-rm-item > summary { grid-template-columns: auto minmax(0, 1fr); }
+  .kt-rm-item__when { grid-column: 2; grid-row: 1; }
+  .kt-rm-item__main { grid-column: 2; }
+  .kt-rm-item__tags { grid-column: 2; justify-content: flex-start; }
+  .kt-rm-item__body { grid-template-columns: minmax(0, 1fr); padding-left: var(--hf-sp-4); }
   .kt-book .card-body {
     grid-template-columns: var(--kt-cover-w-sm) minmax(0, 1fr);
     grid-template-areas:
