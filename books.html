@@ -59,6 +59,10 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#database-internals" title="Database Internals"><span class="hf-nav__text">Database Internals</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#understanding-distributed-systems" title="Understanding Distributed Systems"><span class="hf-nav__text">Understanding Distributed Systems</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#philosophy-of-software-design" title="A Philosophy of Software Design"><span class="hf-nav__text">A Philosophy of Software Design</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering"><span class="hf-nav__text">Fundamentals of Data Engineering</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#streaming-systems" title="Streaming Systems"><span class="hf-nav__text">Streaming Systems</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-quality-fundamentals" title="Data Quality Fundamentals"><span class="hf-nav__text">Data Quality Fundamentals</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-governance-definitive-guide" title="Data Governance: The Definitive Guide"><span class="hf-nav__text">Data Governance: The Definitive Guide</span></a></div>
         </div>
       </div>
     </nav>
@@ -92,22 +96,27 @@
 
       <header class="kt-hero">
         <span class="hf-eyebrow">Reading list</span>
-        <h1 class="kt-hero__title">Four books that <em>complete the picture</em>.</h1>
-        <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
+        <h1 class="kt-hero__title">Eight books that <em>complete the picture</em>.</h1>
+        <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA; for data platforms, add Fundamentals of Data Engineering. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">4</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">8</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Start with</span><span class="hf-stat__value">DDIA</span></div>
           <div class="hf-stat"><span class="hf-stat__label">In the study plan</span><span class="hf-stat__value">Weeks 1–3</span></div>
         </div>
       </header>
 
       <div class="kt-books">
+      <div class="hf-section__head kt-books__group">
+        <h2 class="hf-section__title">Systems and software design</h2>
+        <p class="hf-meta">The depth behind pillars 01–07 and the applied designs.</p>
+      </div>
+
       <section class="card kt-book" id="ddia" data-nav="Designing Data-Intensive Applications" aria-labelledby="ddia-title">
         <div class="card-body">
           <img class="kt-book__cover" src="assets/books/ddia.webp" width="320" height="421" alt="Cover of Designing Data-Intensive Applications" loading="lazy" decoding="async">
           <div class="kt-book__head">
             <span class="hf-status hf-status--solid hf-status--nodot">Must read</span>
-            <h2 class="kt-book__title" id="ddia-title">Designing Data-Intensive Applications</h2>
+            <h3 class="kt-book__title" id="ddia-title">Designing Data-Intensive Applications</h3>
             <p class="hf-meta">Martin Kleppmann &amp; Chris Riccomini · 2nd edition</p>
           </div>
           <p class="kt-book__desc">The single most recommended book for system design interviews. Replication, partitioning, consistency, batch vs stream — the theory behind every page in this guide.</p>
@@ -125,7 +134,7 @@
           <img class="kt-book__cover" src="assets/books/database-internals.webp" width="320" height="423" alt="Cover of Database Internals" loading="lazy" decoding="async">
           <div class="kt-book__head">
             <span class="hf-status hf-status--neutral hf-status--nodot">Deep dive</span>
-            <h2 class="kt-book__title" id="database-internals-title">Database Internals</h2>
+            <h3 class="kt-book__title" id="database-internals-title">Database Internals</h3>
             <p class="hf-meta">Alex Petrov</p>
           </div>
           <p class="kt-book__desc">B-trees, LSM trees, WAL, MVCC, storage engine internals. When an interviewer asks “why Postgres over Cassandra”, this gives you the engine-level reasoning.</p>
@@ -143,7 +152,7 @@
           <img class="kt-book__cover" src="assets/books/understanding-distributed-systems.webp" width="320" height="480" alt="Cover of Understanding Distributed Systems" loading="lazy" decoding="async">
           <div class="kt-book__head">
             <span class="hf-status hf-status--neutral hf-status--nodot">Accessible</span>
-            <h2 class="kt-book__title" id="understanding-distributed-systems-title">Understanding Distributed Systems</h2>
+            <h3 class="kt-book__title" id="understanding-distributed-systems-title">Understanding Distributed Systems</h3>
             <p class="hf-meta">Roberto Vitillo · 2nd edition</p>
           </div>
           <p class="kt-book__desc">A gentler entry point than DDIA. Consensus, failure detection, replication — good for reinforcing pillar 01 before going deeper.</p>
@@ -161,7 +170,7 @@
           <img class="kt-book__cover" src="assets/books/philosophy-of-software-design.webp" width="320" height="419" alt="Cover of A Philosophy of Software Design" loading="lazy" decoding="async">
           <div class="kt-book__head">
             <span class="hf-status hf-status--neutral hf-status--nodot">Thinking</span>
-            <h2 class="kt-book__title" id="philosophy-of-software-design-title">A Philosophy of Software Design</h2>
+            <h3 class="kt-book__title" id="philosophy-of-software-design-title">A Philosophy of Software Design</h3>
             <p class="hf-meta">John Ousterhout</p>
           </div>
           <p class="kt-book__desc">Not about systems — about complexity, abstractions and API surfaces. Deep modules, information hiding, tactical vs strategic programming. The senior mindset book.</p>
@@ -173,11 +182,88 @@
           </dl>
         </div>
       </section>
+
+      <div class="hf-section__head kt-books__group">
+        <h2 class="hf-section__title">Data platforms</h2>
+        <p class="hf-meta">The depth behind pillar 08 and Applied C: one book for the whole lifecycle, then one each for streaming, observability and governance.</p>
+      </div>
+
+      <section class="card kt-book" id="fundamentals-of-data-engineering" data-nav="Fundamentals of Data Engineering" aria-labelledby="fundamentals-of-data-engineering-title">
+        <div class="card-body">
+          <div class="kt-book__cover kt-book__cover--type" role="img" aria-label="Fundamentals of Data Engineering, by Joe Reis and Matt Housley"><span class="kt-book__cover-title">Fundamentals of Data Engineering</span><span class="kt-book__cover-author">Reis · Housley</span></div>
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--solid hf-status--nodot">Must read</span>
+            <h3 class="kt-book__title" id="fundamentals-of-data-engineering-title">Fundamentals of Data Engineering</h3>
+            <p class="hf-meta">Joe Reis &amp; Matt Housley</p>
+          </div>
+          <p class="kt-book__desc">The DDIA of data platforms: the whole lifecycle from source systems and ingestion to storage, transformation and serving, with security, data management, orchestration and DataOps as the “undercurrents” beneath every stage. Tool-agnostic and decision-first, which is exactly how architect interviews ask about data.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="08-data-platforms.html">08 · Data platform architecture</a>, all thirteen concepts; <a href="lakehouse-platform.html">Applied C · Lakehouse platform</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 3 · Data platform architecture (weeks of 19 and 26 April). Read it before the lakehouse capstone.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="streaming-systems" data-nav="Streaming Systems" aria-labelledby="streaming-systems-title">
+        <div class="card-body">
+          <div class="kt-book__cover kt-book__cover--type" role="img" aria-label="Streaming Systems, by Tyler Akidau, Slava Chernyak and Reuven Lax"><span class="kt-book__cover-title">Streaming Systems</span><span class="kt-book__cover-author">Akidau · Chernyak · Lax</span></div>
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Deep dive</span>
+            <h3 class="kt-book__title" id="streaming-systems-title">Streaming Systems</h3>
+            <p class="hf-meta">Tyler Akidau, Slava Chernyak &amp; Reuven Lax</p>
+          </div>
+          <p class="kt-book__desc">Written by the people behind Google Dataflow and Apache Beam. Event time vs processing time, windows, watermarks, triggers and late data, exactly-once processing, and the duality of streams and tables. The first chapters alone change how you answer “batch or stream?”.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="08-data-platforms.html#c11">08 §11 · Stream processing</a>, <a href="01-distributed-systems.html#c9">01 · Exactly-once is a lie</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 3 · Data platform architecture. Chapters 1–3 (the what, where, when and how of streaming, and watermarks) first; the rest when a stream is the answer.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="data-quality-fundamentals" data-nav="Data Quality Fundamentals" aria-labelledby="data-quality-fundamentals-title">
+        <div class="card-body">
+          <div class="kt-book__cover kt-book__cover--type" role="img" aria-label="Data Quality Fundamentals, by Barr Moses, Lior Gavish and Molly Vorwerck"><span class="kt-book__cover-title">Data Quality Fundamentals</span><span class="kt-book__cover-author">Moses · Gavish · Vorwerck</span></div>
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Practical</span>
+            <h3 class="kt-book__title" id="data-quality-fundamentals-title">Data Quality Fundamentals</h3>
+            <p class="hf-meta">Barr Moses, Lior Gavish &amp; Molly Vorwerck</p>
+          </div>
+          <p class="kt-book__desc">Where the five pillars of data observability (freshness, volume, schema, distribution, lineage) come from. Covers testing vs monitoring, anomaly detection, incident management for data, and building a culture where someone owns each dataset.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="08-data-platforms.html#c12">08 §12 · Data observability</a>, <a href="08-data-platforms.html#c9">08 §9 · Correctness</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 3 · Data platform architecture, alongside the observability proof for the tier-1 tables.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="data-governance-definitive-guide" data-nav="Data Governance: The Definitive Guide" aria-labelledby="data-governance-definitive-guide-title">
+        <div class="card-body">
+          <div class="kt-book__cover kt-book__cover--type" role="img" aria-label="Data Governance: The Definitive Guide, by Evren Eryurek and others"><span class="kt-book__cover-title">Data Governance: The Definitive Guide</span><span class="kt-book__cover-author">Eryurek et al.</span></div>
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Reference</span>
+            <h3 class="kt-book__title" id="data-governance-definitive-guide-title">Data Governance: The Definitive Guide</h3>
+            <p class="hf-meta">Evren Eryurek, Uri Gilad, Valliappa Lakshmanan, Anita Kibunguchy-Grant &amp; Jessi Ashdown</p>
+          </div>
+          <p class="kt-book__desc">People, process and tools for governing data at scale: classification and cataloguing, access control and masking, data quality ownership, lineage, auditing, and regulation-driven retention and deletion. Read it for the operating model, not the vendor examples.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="08-data-platforms.html#c13">08 §13 · Governance</a>, <a href="07-security.html#c4">07 · Least privilege</a>, <a href="lakehouse-platform.html#c7">Applied C · Security and governance</a></dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 2 · Storage and databases (week of 4 January), where masking, row-level security and POPIA are the topic.</dd>
+          </dl>
+        </div>
+      </section>
       </div>
 
       <footer>
         <p class="big">Breadth here. Depth there.</p>
-        <p>The study plan on the <a href="prep-checklist.html#study-plan">interview checklist</a> schedules three of these.</p>
+        <p>The study plan on the <a href="prep-checklist.html#study-plan">interview checklist</a> schedules three of these; the <a href="roadmap.html">architecture roadmap</a> schedules the four on data platforms.</p>
       </footer>
       </div>
     </main>
