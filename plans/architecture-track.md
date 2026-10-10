@@ -103,7 +103,7 @@ or use them as catch-up. That's already built into the dates.
 | 10 | 14 Dec | Identity and access: conditional access, ID Protection, PIM, app and workload identities | **Which OAuth flow, and how much standing access?** | A sequence diagram per flow; just-in-time admin with PIM |
 | 11 | 21 Dec | *Holiday: light.* Governance: Azure Policy at scale, Defender for Cloud regulatory compliance | **How do you keep a fleet compliant without reviewing every change?** | A policy initiative assigned and its compliance report read |
 | 12 | 28 Dec | *Holiday: light.* Catch-up week | | |
-| 13 | 4 Jan | Storage and databases: Key Vault, encryption and keys, SQL security, masking, row-level security, POPIA | **Who can see which data, and how is that enforced?** | An app with no secrets in config; RLS + masking for one consumer and for the harness |
+| 13 | 4 Jan | Storage and databases: Key Vault, encryption and keys, SQL security; data governance: classification and sensitivity labels, masking, row-level security, ownership in a catalog (Purview), access audit, POPIA | **Who can see which data, and how is that enforced?** | An app with no secrets in config; RLS + masking for one consumer and for the harness, driven by column labels, with every read in an access log |
 | 14 | 11 Jan | Network security: Firewall, WAF, private endpoints, DDoS, egress control | **Private by default: what does it cost and what does it buy?** | The Sprint 1 network re-reviewed against the threat model |
 | 15 | 18 Jan | Compute security: VMs, containers, App Service, managed identities, secure delivery (CI/CD with **OIDC, no stored credentials**) | **How does code reach production without anyone holding a key?** | A pipeline deploying to Azure with no stored credential |
 | 16 | 25 Jan | **AI security**: Entra Agent ID, Defender for AI, AI gateway, prompt injection through data, tool permissions; posture: secure score, Sentinel basics | **What can an AI agent do, as whom, and how would you know?** | The harness threat model revisited for AI; an alert on a suspicious agent action |
@@ -134,7 +134,7 @@ and monitoring; data storage; business continuity; infrastructure.
 | Weeks of | Topic | The decisions |
 |---|---|---|
 | 5 Apr, 12 Apr | **Identity, governance, monitoring design** | Revisit Sprints 1-2 as *designs*: landing zones, policy strategy, monitoring strategy |
-| 19 Apr, 26 Apr | **Data platform architecture** | Lake vs warehouse vs lakehouse; batch vs CDC; modelling and correctness; serving; **build vs buy: self-run vs Fabric vs Databricks** |
+| 19 Apr, 26 Apr | **Data platform architecture** | Lake vs warehouse vs lakehouse; batch vs CDC; modelling and correctness; serving; **batch or stream** from the freshness SLO (event time, windows, watermarks); data observability (freshness, volume, schema, distribution, lineage); **build vs buy: self-run vs Fabric vs Databricks** |
 | 3 May | **Business continuity design** | RPO/RTO per tier, zones vs regions, backup vs replication |
 | 10 May | **AI architecture** | Tools vs RAG (Azure AI Search), evaluation and trust, ML in the platform |
 | 17 May, 24 May | **Capstone: Applied C, lakehouse under three constraints** | The same requirements solved lean, at scale with fresh data, and managed (Fabric) |
@@ -157,7 +157,7 @@ material: "in Azure I'd use X, in AWS Y, because…".
 | 5 Jul, 12 Jul | Identity and access (IAM, Organizations, SCPs vs Entra/RBAC/Policy) |
 | 19 Jul, 26 Jul | Networking (VPC, security groups vs NSGs, PrivateLink vs private endpoints) |
 | 2 Aug, 9 Aug | Compute and storage (EC2/Lambda/ECS vs VMs/Functions/Container Apps; S3 vs Blob) |
-| 16 Aug, 23 Aug | Data, resilience and cost (RDS/Aurora/DynamoDB, multi-AZ/region, cost tools) |
+| 16 Aug, 23 Aug | Data, resilience and cost (RDS/Aurora/DynamoDB, Kinesis vs Event Hubs, Lake Formation vs Purview, multi-AZ/region, cost tools) |
 | 30 Aug - 30 Sep | Practice tests → sit AWS SAA (mid-to-late September), with a buffer week |
 
 ---
