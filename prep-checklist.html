@@ -59,6 +59,7 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-4" title="4. Back-of-Envelope Estimation"><span class="hf-nav__text">4. Back-of-Envelope Estimation</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-5" title="5. Networking &amp; Infrastructure"><span class="hf-nav__text">5. Networking &amp; Infrastructure</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-6" title="6. SQL &amp; Schema Design"><span class="hf-nav__text">6. SQL &amp; Schema Design</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#area-7" title="7. Data Platforms"><span class="hf-nav__text">7. Data Platforms</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#study-plan" title="Four-week plan"><span class="hf-nav__text">Four-week plan</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#reminders-area" title="Interview day reminders"><span class="hf-nav__text">Interview day reminders</span></a></div>
         </div>
@@ -101,7 +102,7 @@
         <h1 class="kt-hero__title">The checklist before <em>the interview.</em></h1>
         <p class="hf-lede">This site covers system design. But a senior backend interview is 4-5 rounds: system design, coding, behavioural, domain depth, and sometimes architecture review. This page maps every area, shows what's covered and what's not, and gives you a 4-week study plan.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Areas</span><span class="hf-stat__value">6</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Areas</span><span class="hf-stat__value">7</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Study plan</span><span class="hf-stat__value">4 weeks</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Checklist items</span><span class="hf-stat__value">Saved in this browser</span></div>
         </div>
@@ -474,6 +475,60 @@
           <div class="check-title">Migration strategies for large tables</div>
           <div class="check-detail">Adding a column to a 100M-row table: nullable first, backfill in batches, add constraint last. Never ALTER TABLE ADD COLUMN NOT NULL DEFAULT on a huge table in Postgres without checking lock behaviour.</div>
           <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="05-reliability-observability.html#c9">Zero-downtime migrations (page 05)</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- AREA 7: DATA PLATFORMS                                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <div class="check-section" id="area-7" data-nav="7. Data Platforms">
+      <h3><span class="hf-status hf-status--success">Covered</span> 7. Data Platforms</h3>
+      <div class="sub">Architect and senior data-adjacent rounds move past "write the query" to "build a system the business can trust". Page 08 and Applied C cover the material; this is about saying it under pressure.</div>
+
+      <div class="check-item">
+        <button type="button" class="check-box" role="checkbox" aria-checked="false" aria-label="Mark as done"></button>
+        <div class="check-content">
+          <div class="check-title">Explain the eight core data-platform concepts in a minute each</div>
+          <div class="check-detail">CDC, medallion layers, data contracts, stream processing, open table formats, orchestration, data observability, governance. For each: the problem it solves, the trade-off, and when you would not use it.</div>
+          <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="08-data-platforms.html">Data platform architecture (page 08)</a></div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <button type="button" class="check-box" role="checkbox" aria-checked="false" aria-label="Mark as done"></button>
+        <div class="check-content">
+          <div class="check-title">Batch or stream: defend the choice from the freshness SLO</div>
+          <div class="check-detail">Start from how fresh the answer must be, not the tool. Then go deep: event time vs processing time, tumbling, sliding and session windows, watermarks and late data, checkpointed state, and why "exactly-once" still needs an idempotent sink. Practice prompt: "alert when a cold room stays above 8 °C for ten minutes".</div>
+          <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="08-data-platforms.html#c11">Stream processing (page 08 §11)</a> · <a href="08-data-platforms.html#c6">Ingestion and CDC (§6)</a></div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <button type="button" class="check-box" role="checkbox" aria-checked="false" aria-label="Mark as done"></button>
+        <div class="check-content">
+          <div class="check-title">"The pipeline was green but the numbers were wrong." What would have caught it?</div>
+          <div class="check-detail">Reconciliation against source control totals, then the five observability signals: freshness, volume, schema, distribution, lineage. Explain seasonal baselines, alert routing by owner, and how lineage gives the blast radius.</div>
+          <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="08-data-platforms.html#c12">Data observability (page 08 §12)</a> · <a href="08-data-platforms.html#c9">Correctness (§9)</a></div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <button type="button" class="check-box" role="checkbox" aria-checked="false" aria-label="Mark as done"></button>
+        <div class="check-content">
+          <div class="check-title">"Who can see which data, and how do you prove it?"</div>
+          <div class="check-detail">Classification and labels, policies attached to labels, row-level security, masking vs tokenisation vs not loading the column, catalog ownership, access audit. Know the gotchas: open storage bypasses engine controls, and an erased person survives in old table snapshots until they expire.</div>
+          <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="08-data-platforms.html#c13">Governance (page 08 §13)</a> · <a href="lakehouse-platform.html#c7">Lakehouse security and governance</a></div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <button type="button" class="check-box" role="checkbox" aria-checked="false" aria-label="Mark as done"></button>
+        <div class="check-content">
+          <div class="check-title">Whiteboard the lakehouse design under three sets of constraints</div>
+          <div class="check-detail">The same requirements solved lean, at scale with fresh data, and managed. Name the trigger that moves you from one version to the next.</div>
+          <div class="check-resource"><i class="bi bi-geo-alt" aria-hidden="true"></i> <a href="lakehouse-platform.html">Lakehouse platform (Applied C)</a></div>
         </div>
       </div>
     </div>
