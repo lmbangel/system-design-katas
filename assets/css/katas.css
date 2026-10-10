@@ -664,33 +664,6 @@ a.hf-iconbtn { text-decoration: none; }
   background: var(--hf-surface-alt);
 }
 
-/* A book with no cover image yet: a typographic stand-in at a cover's
-   proportions, in the brand's black. Swap for an <img> when one exists. */
-.kt-book__cover--type {
-  aspect-ratio: 3 / 4;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--hf-sp-2);
-  padding: var(--hf-sp-3);
-  background: var(--hf-surface-dark);
-  border-color: var(--hf-hairline-inverse);
-  color: var(--hf-ink-inverse);
-  overflow: hidden;
-}
-.kt-book__cover-title {
-  font-size: var(--hf-fs-sm);
-  font-weight: var(--hf-fw-semibold);
-  line-height: var(--hf-lh-snug);
-  overflow-wrap: anywhere;
-}
-.kt-book__cover-author {
-  font-size: var(--hf-fs-xxs);
-  letter-spacing: var(--hf-ls-caps);
-  text-transform: uppercase;
-}
-
 /* Group headings between the books. */
 .kt-books__group { margin: var(--hf-sp-4) 0 0; }
 .kt-books__group:first-child { margin-top: 0; }
@@ -1121,9 +1094,6 @@ a.hf-iconbtn { text-decoration: none; }
       "facts facts";
     column-gap: var(--hf-sp-4);
   }
-  .kt-book__cover--type { padding: var(--hf-sp-2); }
-  .kt-book__cover-title { font-size: var(--hf-fs-xxs); }
-  .kt-book__cover-author { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
