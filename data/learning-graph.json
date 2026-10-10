@@ -890,6 +890,43 @@
       ],
       "practice": "Define revenue and gross margin once in a dbt semantic layer (or a SQL view layer). Build into a staging schema, reconcile, then swap it in with one transactional rename, and show a reader never sees a half-built version."
     },
+    "08-data-platforms.html#c11": {
+      "stage": "s6",
+      "level": "advanced",
+      "summary": "Computing continuously over an event log: event time vs processing time, tumbling, sliding and session windows, watermarks for late data, and checkpointed state.",
+      "why": "Some decisions cannot wait for a nightly batch, and streams that window by arrival time or drop late events give confidently wrong answers. Choosing stream, micro-batch or batch from the freshness SLO is an architect call.",
+      "prereqs": [
+        "08-data-platforms.html#c6",
+        "01-distributed-systems.html#c9",
+        "04-microservices-patterns.html#p6"
+      ],
+      "practice": "Run Kafka (or Redpanda) and Flink SQL locally. Produce temperature readings with event timestamps, including a burst of 20-minute-old readings from a reconnecting truck. Compare processing-time and event-time tumbling windows, add a 2-minute watermark, and count readings that arrive after their window closed. Kill the job mid-window and show checkpoints restore state, with an idempotent sink so no alert is sent twice."
+    },
+    "08-data-platforms.html#c12": {
+      "stage": "s6",
+      "level": "core",
+      "summary": "Watching every table for freshness, volume, schema, distribution and lineage, with seasonal baselines, owners and blast radius on each alert.",
+      "why": "Pipelines run green while data goes wrong: a renamed column, a half-empty load, a null spike. Observability catches the failures nobody wrote a test for, and lineage says who is affected.",
+      "prereqs": [
+        "08-data-platforms.html#c9",
+        "08-data-platforms.html#c8",
+        "05-reliability-observability.html#c2"
+      ],
+      "practice": "Simulate three weeks of daily loads into a metrics table (row count, null rate per column, schema hash). Plant a 40% drop on a Monday, a renamed column and a null spike, detect each against a same-weekday baseline, and print the downstream impact from a dbt manifest.json."
+    },
+    "08-data-platforms.html#c13": {
+      "stage": "s6",
+      "level": "advanced",
+      "summary": "Classifying columns, attaching row-level security and masking policies to labels, recording ownership in a catalog, and auditing every read of governed data.",
+      "why": "Personal data on a shared platform carries legal duties (POPIA, GDPR). Policies tied to labels scale where per-table grants do not, and engine-level controls fail if the storage underneath is open.",
+      "prereqs": [
+        "07-security.html#c4",
+        "03-apis-contracts.html#c8",
+        "07-security.html#c8",
+        "08-data-platforms.html#c10"
+      ],
+      "practice": "In Postgres, label two personal columns, add row-level security by entity driven by a session setting (with FORCE so the owner is bound too), and a masked view for analysts. Prove an analyst sees masked, scoped rows and HR sees all. Then delete a person from an Iceberg or Delta table and show they remain in an old snapshot until it expires."
+    },
     "payment-system.html#c1": {
       "stage": "s7",
       "level": "core",
@@ -1248,6 +1285,7 @@
         "07-security.html#c9",
         "08-data-platforms.html#c1",
         "08-data-platforms.html#c2",
+        "08-data-platforms.html#c11",
         "payment-system.html#c1",
         "payment-system.html#c2",
         "payment-system.html#c3",
@@ -1339,6 +1377,9 @@
         "08-data-platforms.html#c8",
         "08-data-platforms.html#c9",
         "08-data-platforms.html#c10",
+        "08-data-platforms.html#c11",
+        "08-data-platforms.html#c12",
+        "08-data-platforms.html#c13",
         "payment-system.html#c1",
         "payment-system.html#c2",
         "payment-system.html#c3",

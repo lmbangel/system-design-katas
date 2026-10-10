@@ -56,6 +56,9 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c8" title="Orchestration · assets, partitions, backfills"><span class="hf-nav__text">Orchestration · assets, partitions, backfills</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c9" title="Correctness · reconciliation, contracts, freshness"><span class="hf-nav__text">Correctness · reconciliation, contracts, freshness</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c10" title="Serving · marts, semantic layer, atomic publish, build vs buy"><span class="hf-nav__text">Serving · marts, semantic layer, atomic publish, build vs buy</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c11" title="Stream processing · event time, windows, watermarks, state"><span class="hf-nav__text">Stream processing · event time, windows, watermarks, state</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c12" title="Data observability · volume, schema, distribution, lineage"><span class="hf-nav__text">Data observability · volume, schema, distribution, lineage</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c13" title="Governance · classification, masking, ownership, access audit"><span class="hf-nav__text">Governance · classification, masking, ownership, access audit</span></a></div>
         </div>
       </div>
       <div class="hf-nav__section">Applied design</div>
@@ -101,8 +104,8 @@
         <h1 class="kt-hero__title">Numbers the business can <em>sign off on</em>.</h1>
         <p class="hf-lede">The ERP runs the business; the data platform explains it. Columnar files on object storage, table formats that add transactions, ingestion that survives retries, models with a declared grain, and reconciliation that proves the totals before anyone sees them. Tools change every couple of years; these first principles do not. Every example follows Northwind Cold Chain, a fictional group with an ERP and a WMS in each of four entities, four currencies and a month-end close that has to tie out.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">10</span></div>
-          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">55 min</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">13</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">70 min</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Languages</span><span class="hf-stat__value">SQL · Python · Config</span></div>
         </div>
       </header>
@@ -1748,10 +1751,455 @@
     </div>
   </section>
 
+  <!-- ============ C11 · STREAM PROCESSING · EVENT TIME, WINDOWS, WATERMARKS, STATE ============ -->
+  <section class="pattern" id="c11">
+    <div class="pattern-head"><div class="pattern-num">11</div><div class="pattern-title-wrap"><h2>Stream processing · event time, windows, watermarks, state</h2><div class="pattern-tags"><span class="tag">Streaming</span><span class="tag">Deep dive</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c11-arr-sec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">WINDOW BY WHEN IT HAPPENED, NOT WHEN IT ARRIVED</text>
+          <rect x="20" y="32" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="68" y="48" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">reefer sensors</text>
+          <text x="68" y="62" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">every 30 s</text>
+          <rect x="136" y="32" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="184" y="48" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">event log</text>
+          <text x="184" y="62" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Kafka · Event Hubs</text>
+          <rect x="252" y="32" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="300" y="48" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">stream job</text>
+          <text x="300" y="62" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">state + checkpoints</text>
+          <rect x="368" y="32" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="416" y="48" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">alert · bronze</text>
+          <text x="416" y="62" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">within a minute</text>
+          <line x1="117" y1="52" x2="134" y2="52" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c11-arr-sec)"/>
+          <line x1="233" y1="52" x2="250" y2="52" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c11-arr-sec)"/>
+          <line x1="349" y1="52" x2="366" y2="52" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c11-arr-sec)"/>
+          <text x="20" y="94" text-anchor="start" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8" letter-spacing="1.5">EVENT TIME →</text>
+          <rect x="40" y="102" width="126" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <rect x="177" y="102" width="126" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <rect x="314" y="102" width="126" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <circle cx="58" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="82" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="140" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="152" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="195" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="224" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="250" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="284" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="330" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="352" cy="124" r="3.5" fill="var(--hf-ink)"/>
+          <circle cx="103" cy="124" r="3.5" fill="var(--hf-warning-fg)"/>
+          <line x1="372" y1="98" x2="372" y2="152" stroke="var(--hf-info-fg)" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <text x="372" y="94" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">watermark</text>
+          <text x="103" y="162" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">08:00–08:10 · emitted</text>
+          <text x="240" y="162" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">08:10–08:20 · emitted</text>
+          <text x="377" y="162" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">08:20–08:30 · open</text>
+          <text x="103" y="180" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">late reading for 08:05</text>
+          <text x="103" y="193" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">→ side output, batch fixes it</text>
+          <text x="372" y="180" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">newest event − 2 min</text>
+          <text x="372" y="193" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">windows behind it close</text>
+          <text x="240" y="214" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600" letter-spacing="1.5">THREE WINDOW SHAPES</text>
+          <rect x="20" y="222" width="134" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="87" y="238" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">TUMBLING</text>
+          <text x="87" y="255" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">fixed, no overlap</text>
+          <text x="87" y="270" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">avg temp per 10 min</text>
+          <rect x="173" y="222" width="134" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="240" y="238" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">SLIDING</text>
+          <text x="240" y="255" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">fixed, overlapping</text>
+          <text x="240" y="270" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">10 min, every 1 min</text>
+          <rect x="326" y="222" width="134" height="62" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="393" y="238" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">SESSION</text>
+          <text x="393" y="255" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">closes after a gap</text>
+          <text x="393" y="270" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">one door-open episode</text>
+          <text x="240" y="306" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">state is the job’s memory; checkpoints make it survive a crash</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Batch answers <em>what happened yesterday</em>; stream processing answers while it is still happening. Northwind's cold rooms and reefer trucks report a temperature every 30 seconds, and a vaccine consignment is written off if a unit stays above 8 °C for ten minutes. A 06:00 batch is useless for that. A stream job computes continuously over an unbounded, ordered log (Kafka, Event Hubs), and three ideas make the answer right. <strong>Event time vs processing time</strong>: window by when the reading was taken, not when it arrived. A truck that crosses a dead zone uploads twenty minutes of buffered readings at once; windowed by arrival, they all land in the wrong bucket. <strong>Windows</strong> cut the endless stream into finite groups: tumbling (fixed, no overlap), sliding or hopping (fixed, overlapping) and session (closed by a gap in activity). <strong>Watermarks</strong> are the job's claim that it has probably seen everything up to time <em>T</em>, usually the newest event time minus a bound on lateness. When the watermark passes the end of a window, the window emits. Readings later than the watermark plus the <strong>allowed lateness</strong> go to a side output, never silently dropped, and the batch layer corrects for them.</p>
+        <p><strong>State and checkpoints.</strong> A window, or a rule like <em>ten minutes above 8 °C</em>, needs memory per key: per unit. The engine keeps it in a local state store partitioned like the topic, and periodically checkpoints the state <em>together with the input offsets</em>. After a crash it restores both and replays from the checkpoint, so the results are as if nothing failed: <strong>effectively once</strong>. That promise ends at the engine's edge. A sink that is neither transactional nor idempotent, such as a webhook that pages someone, will see duplicates after a restart, so give every side effect a deterministic key (unit plus window start) and let the sink ignore repeats. It is the same discipline as idempotent landing in ingestion.</p>
+        <p><strong>Trade-off: stream vs micro-batch vs batch.</strong> Streaming costs always-on compute, state you have to operate and upgrade, harder reprocessing, and time-based logic that is hard to test. Start from the real freshness SLO. Seconds (a cold-chain breach, card fraud, stock reservations) justify a stream. Minutes are a micro-batch every few minutes. Hours are batch. Among engines, Flink is the most complete on event time and state; Kafka Streams is a library inside your own service with no cluster to run; Spark Structured Streaming fits where Spark already runs; Azure Stream Analytics and Fabric Real-Time Intelligence are the managed options in a Microsoft estate. The common shape is <em>stream for the alert, batch for the books</em>: the stream also lands raw events in bronze, and finance numbers are still reconciled in batch.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>The freshness SLO is seconds, not hours</li><li>Acting on events: alerts, fraud, reservations</li><li>Continuous aggregates feeding an operations screen</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Streaming because it sounds modern when the SLO is 06:00</li><li>Processing-time windows over data that devices buffer</li><li>Dropping late events silently</li><li>Trusting "exactly-once" in front of a non-idempotent sink</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c6">Ingestion</a>, <a href="01-distributed-systems.html#c9">Exactly-once is a lie</a>, <a href="04-microservices-patterns.html#p6">Event-driven architecture</a>, <a href="05-reliability-observability.html#c7">Backpressure</a>, <a href="#c9">Freshness SLOs</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/" target="_blank" rel="noopener">Flink: timely stream processing</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c11-sql">SQL · Flink</button><button class="tab py" data-target="c11-py">Python · FastAPI</button><button class="tab cfg" data-target="c11-cfg">YAML · Flink config</button></div>
+      <div class="code-pane active" id="c11-sql"><pre><span class="c">-- Readings arrive late and out of order. The watermark says how long to wait.</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">reefer_readings</span> (
+    <span class="n">unit_id</span>     <span class="t">STRING</span>,
+    <span class="n">reading_ts</span>  <span class="t">TIMESTAMP</span>(<span class="num">3</span>),             <span class="c">-- event time: when the sensor read it</span>
+    <span class="n">temp_c</span>      <span class="t">DECIMAL</span>(<span class="num">4</span>, <span class="num">1</span>),
+    <span class="k">WATERMARK</span> <span class="k">FOR</span> <span class="n">reading_ts</span> <span class="k">AS</span> <span class="n">reading_ts</span> <span class="o">-</span> <span class="k">INTERVAL</span> <span class="s">'2'</span> <span class="k">MINUTE</span>
+) <span class="k">WITH</span> (
+    <span class="s">'connector'</span> <span class="o">=</span> <span class="s">'kafka'</span>,
+    <span class="s">'topic'</span> <span class="o">=</span> <span class="s">'reefer.readings'</span>,
+    <span class="s">'properties.bootstrap.servers'</span> <span class="o">=</span> <span class="s">'kafka:9092'</span>,
+    <span class="s">'properties.group.id'</span> <span class="o">=</span> <span class="s">'cold-chain-alerts'</span>,
+    <span class="s">'scan.startup.mode'</span> <span class="o">=</span> <span class="s">'group-offsets'</span>,
+    <span class="s">'format'</span> <span class="o">=</span> <span class="s">'json'</span>
+);
+
+<span class="c">-- Ten-minute tumbling windows by event time, per unit. A window emits</span>
+<span class="c">-- once the watermark passes its end; every reading above 8 C is a breach.</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">cold_chain_breaches</span>
+<span class="k">SELECT</span> <span class="n">unit_id</span>, <span class="n">window_start</span>, <span class="n">window_end</span>,
+       <span class="n">MIN</span>(<span class="n">temp_c</span>) <span class="k">AS</span> <span class="n">min_temp_c</span>,
+       <span class="n">COUNT</span>(<span class="o">*</span>)    <span class="k">AS</span> <span class="n">readings</span>
+<span class="k">FROM</span> <span class="k">TABLE</span>(
+    <span class="n">TUMBLE</span>(<span class="k">TABLE</span> <span class="n">reefer_readings</span>, <span class="k">DESCRIPTOR</span>(<span class="n">reading_ts</span>), <span class="k">INTERVAL</span> <span class="s">'10'</span> <span class="k">MINUTE</span>))
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="n">unit_id</span>, <span class="n">window_start</span>, <span class="n">window_end</span>
+<span class="k">HAVING</span> <span class="n">MIN</span>(<span class="n">temp_c</span>) <span class="o">&gt;</span> <span class="num">8.0</span>;
+
+<span class="c">-- A breach from 08:06 to 08:16 straddles two tumbling windows and is missed.</span>
+<span class="c">-- HOP(TABLE reefer_readings, DESCRIPTOR(reading_ts), INTERVAL '1' MINUTE, INTERVAL '10' MINUTE)</span>
+<span class="c">-- catches it, at roughly ten times the state.</span></pre></div>
+      <div class="code-pane" id="c11-py"><pre><span class="c"># The alert sink. After a restart Flink may deliver the same breach again,</span>
+<span class="c"># so the page goes out once per (unit, window), whatever arrives.</span>
+<span class="k">from</span> <span class="n">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="n">status</span>
+<span class="k">from</span> <span class="n">pydantic</span> <span class="k">import</span> <span class="t">BaseModel</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()   <span class="c"># app.state.pool: an asyncpg pool opened in the lifespan</span>
+
+
+<span class="k">class</span> <span class="t">Breach</span>(<span class="t">BaseModel</span>):
+    <span class="n">unit_id</span>: <span class="t">str</span>
+    <span class="n">window_start</span>: <span class="n">datetime</span>
+    <span class="n">window_end</span>: <span class="n">datetime</span>
+    <span class="n">min_temp_c</span>: <span class="t">float</span>
+
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">post</span>(<span class="s">"/alerts/cold-chain"</span>, <span class="n">status_code</span><span class="o">=</span><span class="n">status</span>.<span class="n">HTTP_202_ACCEPTED</span>)
+<span class="k">async</span> <span class="k">def</span> <span class="n">cold_chain_breach</span>(<span class="n">b</span>: <span class="t">Breach</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="n">alert_id</span> <span class="o">=</span> <span class="s">f"{b.unit_id}:{b.window_start.isoformat()}"</span>   <span class="c"># deterministic key</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">app</span>.<span class="n">state</span>.<span class="n">pool</span>.<span class="n">acquire</span>() <span class="k">as</span> <span class="n">con</span>, <span class="n">con</span>.<span class="n">transaction</span>():
+        <span class="n">inserted</span> <span class="o">=</span> <span class="k">await</span> <span class="n">con</span>.<span class="n">fetchval</span>(
+            <span class="s">"""
+            INSERT INTO alerts (alert_id, unit_id, window_start, min_temp_c)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (alert_id) DO NOTHING
+            RETURNING alert_id
+            """</span>,
+            <span class="n">alert_id</span>, <span class="n">b</span>.<span class="n">unit_id</span>, <span class="n">b</span>.<span class="n">window_start</span>, <span class="n">b</span>.<span class="n">min_temp_c</span>,
+        )
+        <span class="k">if</span> <span class="n">inserted</span>:
+            <span class="c"># Same transaction: the outbox relay pages on-call, with retries.</span>
+            <span class="k">await</span> <span class="n">con</span>.<span class="n">execute</span>(
+                <span class="s">"INSERT INTO outbox (topic, key, payload) VALUES ('page.on-call', $1, $2)"</span>,
+                <span class="n">alert_id</span>, <span class="n">b</span>.<span class="n">model_dump_json</span>(),
+            )
+    <span class="k">return</span> {<span class="s">"alert_id"</span>: <span class="n">alert_id</span>, <span class="s">"duplicate"</span>: <span class="n">inserted</span> <span class="k">is</span> <span class="k">None</span>}</pre></div>
+      <div class="code-pane" id="c11-cfg"><pre><span class="c"># conf/config.yaml: state survives a crash because it is checkpointed with the offsets.</span>
+<span class="n">execution.checkpointing.interval</span>: <span class="s">30s</span>
+<span class="n">execution.checkpointing.mode</span>: <span class="s">EXACTLY_ONCE</span>          <span class="c"># state and offsets in one snapshot</span>
+<span class="n">execution.checkpointing.dir</span>: <span class="s">s3://northwind-stream/checkpoints/cold-chain</span>
+<span class="n">execution.checkpointing.incremental</span>: <span class="k">true</span>
+<span class="n">state.backend.type</span>: <span class="s">rocksdb</span>                         <span class="c"># state larger than memory</span>
+<span class="n">restart-strategy.type</span>: <span class="s">exponential-delay</span>
+
+<span class="c"># An idle Kafka partition holds the watermark back, and no window ever closes.</span>
+<span class="n">table.exec.source.idle-timeout</span>: <span class="num">1</span> <span class="s">min</span>
+
+<span class="c"># Bound the state: units that stop reporting are forgotten after a day.</span>
+<span class="n">table.exec.state.ttl</span>: <span class="num">1</span> <span class="s">d</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C12 · DATA OBSERVABILITY · VOLUME, SCHEMA, DISTRIBUTION, LINEAGE ============ -->
+  <section class="pattern" id="c12">
+    <div class="pattern-head"><div class="pattern-num">12</div><div class="pattern-title-wrap"><h2>Data observability · volume, schema, distribution, lineage</h2><div class="pattern-tags"><span class="tag">Quality</span><span class="tag">Operations</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c12-arr-sec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">WATCH THE DATA, NOT JUST THE JOB</text>
+          <rect x="20" y="34" width="76" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-danger-fg)" stroke-width="1.2"/>
+          <text x="58" y="53" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="9">erp_ke</text>
+          <rect x="113" y="34" width="76" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="151" y="53" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">bronze</text>
+          <rect x="206" y="34" width="76" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="244" y="53" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">silver</text>
+          <rect x="299" y="34" width="76" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="337" y="53" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9">gold</text>
+          <rect x="392" y="34" width="76" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="430" y="53" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9">dashboards</text>
+          <line x1="97" y1="49" x2="111" y2="49" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c12-arr-sec)"/>
+          <line x1="190" y1="49" x2="204" y2="49" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c12-arr-sec)"/>
+          <line x1="283" y1="49" x2="297" y2="49" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c12-arr-sec)"/>
+          <line x1="376" y1="49" x2="390" y2="49" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c12-arr-sec)"/>
+          <text x="58" y="80" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="8">column renamed</text>
+          <text x="244" y="80" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">lineage</text>
+          <text x="384" y="80" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">impact: 3 dashboards + AI</text>
+          <text x="240" y="104" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600" letter-spacing="1.5">FIVE SIGNALS PER TABLE, EVERY RUN</text>
+          <rect x="14" y="114" width="84" height="96" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="56" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">FRESHNESS</text>
+          <text x="56" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">newest source</text>
+          <text x="56" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">change vs SLO</text>
+          <text x="56" y="196" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">05:42 ✓</text>
+          <rect x="106" y="114" width="84" height="96" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="148" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">VOLUME</text>
+          <text x="148" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">rows vs same</text>
+          <text x="148" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">weekday × 4</text>
+          <text x="148" y="196" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">−3% ✓</text>
+          <rect x="198" y="114" width="84" height="96" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="240" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">SCHEMA</text>
+          <text x="240" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">columns, types</text>
+          <text x="240" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">vs last run</text>
+          <text x="240" y="196" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="8">renamed ✗</text>
+          <rect x="290" y="114" width="84" height="96" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="332" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">DISTRIBUTION</text>
+          <text x="332" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">null rate,</text>
+          <text x="332" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">range, mix</text>
+          <text x="332" y="196" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="8">nulls 2→100%</text>
+          <rect x="382" y="114" width="84" height="96" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="424" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">LINEAGE</text>
+          <text x="424" y="152" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">upstream cause,</text>
+          <text x="424" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">downstream reach</text>
+          <text x="424" y="196" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">3 dashboards</text>
+          <rect x="60" y="226" width="360" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="240" y="244" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">one alert, to the owner, with the blast radius</text>
+          <text x="240" y="261" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">erp_ke.invoice_lines: schema changed → 3 dashboards, AI assistant</text>
+          <text x="240" y="302" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">tests catch what you expected; observability catches what you didn’t</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Reconciliation proves one release is right. <strong>Data observability</strong> tells you something is going wrong across hundreds of tables before anyone asks. It is the data platform's version of the golden signals, and it watches five things on every run. <strong>Freshness</strong>: the newest source change included, against its SLO. <strong>Volume</strong>: row counts against what this table usually gets on this kind of day. <strong>Schema</strong>: a column added, dropped, renamed or retyped since the last run. <strong>Distribution</strong>: null rates, ranges and category mix, such as a currency column that is suddenly a third USD. <strong>Lineage</strong>: which upstream change caused this, and which downstream tables, dashboards and assistant answers are now wrong. Tests check what you thought to write down; observability catches what you did not. When Northwind's Kenyan ERP is upgraded and renames the discount field, freshness is green and volume is normal, but the null rate on <code>discount_pct</code> jumps from 2% to 100%, and the margin dashboards drift quietly.</p>
+        <p>The mechanics are cheap. Record a few numbers per table on every run (row count, null rate per key column, min and max, a hash of the column list) into a metrics table, mostly from statistics the run already has. Compare each against a <strong>seasonality-aware baseline</strong>, such as the same weekday over the last four weeks, not a fixed threshold, because Monday loads are not Sunday loads. Route each alert by <strong>ownership</strong> from the catalog, and attach the <strong>blast radius</strong> from lineage, so the message reads <em>erp_ke.invoice_lines changed schema; three dashboards and the assistant's margin tool are affected</em> rather than <em>test failed</em>. Lineage comes free from dbt's manifest or the orchestrator's asset graph; keep it there, not in a diagram nobody updates.</p>
+        <p><strong>Trade-off: coverage vs alert fatigue.</strong> Anomaly detection on every column of every table produces noise, and a team that has learned to ignore alerts is worse off than one with five good ones. Start with freshness, volume and schema on tier-1 datasets (anything finance signs or the assistant reads), and add distribution checks where an incident has shown the need. Buy a platform (Monte Carlo, Databricks Lakehouse Monitoring, Purview data quality) when tables number in the hundreds and many teams own them. For Northwind, dbt tests plus a small metrics table, or the open-source elementary package, cover it.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Sources owned by teams who change them without notice</li><li>More tables than people can eyeball</li><li>Data feeding decisions or an AI assistant before 09:00</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Fixed thresholds on seasonal volumes</li><li>Alerts without an owner or a blast radius</li><li>Anomaly detection on everything from day one</li><li>Lineage kept by hand in a slide</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c9">Reconciliation & freshness</a>, <a href="#c8">Orchestration</a>, <a href="05-reliability-observability.html#c2">Golden signals</a>, <a href="05-reliability-observability.html#c1">SLOs</a>, <a href="03-apis-contracts.html#c3">Schema evolution</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://docs.elementary-data.com/data-tests/anomaly-detection-tests/volume-anomalies" target="_blank" rel="noopener">elementary: volume anomalies</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c12-sql">SQL · Postgres</button><button class="tab py" data-target="c12-py">Python · FastAPI</button><button class="tab cfg" data-target="c12-cfg">YAML · dbt + elementary</button></div>
+      <div class="code-pane active" id="c12-sql"><pre><span class="c">-- obs.run_metrics(dataset, run_date, row_count, null_pct jsonb, schema_hash)</span>
+<span class="c">-- is written by every run, mostly from statistics the run already has.</span>
+
+<span class="c">-- Volume: today's rows against the same weekday over the last four weeks.</span>
+<span class="k">with</span> <span class="n">baseline</span> <span class="k">as</span> (
+    <span class="k">select</span> <span class="n">dataset</span>,
+           <span class="n">avg</span>(<span class="n">row_count</span>)    <span class="k">as</span> <span class="n">mean_rows</span>,
+           <span class="n">stddev</span>(<span class="n">row_count</span>) <span class="k">as</span> <span class="n">sd_rows</span>
+    <span class="k">from</span> <span class="n">obs.run_metrics</span>
+    <span class="k">where</span> <span class="n">run_date</span> <span class="k">in</span> (<span class="k">current_date</span> <span class="o">-</span> <span class="num">7</span>, <span class="k">current_date</span> <span class="o">-</span> <span class="num">14</span>, <span class="k">current_date</span> <span class="o">-</span> <span class="num">21</span>, <span class="k">current_date</span> <span class="o">-</span> <span class="num">28</span>)
+    <span class="k">group</span> <span class="k">by</span> <span class="n">dataset</span>
+)
+<span class="k">select</span> <span class="n">m.dataset</span>, <span class="n">m.row_count</span>, <span class="n">round</span>(<span class="n">b.mean_rows</span>) <span class="k">as</span> <span class="n">expected</span>
+<span class="k">from</span> <span class="n">obs.run_metrics</span> <span class="k">as</span> <span class="n">m</span>
+<span class="k">join</span> <span class="n">baseline</span> <span class="k">as</span> <span class="n">b</span> <span class="k">using</span> (<span class="n">dataset</span>)
+<span class="k">where</span> <span class="n">m.run_date</span> <span class="o">=</span> <span class="k">current_date</span>
+  <span class="k">and</span> <span class="n">abs</span>(<span class="n">m.row_count</span> <span class="o">-</span> <span class="n">b.mean_rows</span>) <span class="o">&gt;</span> <span class="num">3</span> <span class="o">*</span> <span class="n">greatest</span>(<span class="n">b.sd_rows</span>, <span class="num">0.05</span> <span class="o">*</span> <span class="n">b.mean_rows</span>);
+
+<span class="c">-- Schema: a different hash from yesterday means a column moved, appeared or changed type.</span>
+<span class="k">select</span> <span class="n">t.dataset</span>, <span class="n">y.schema_hash</span> <span class="k">as</span> <span class="n">yesterday</span>, <span class="n">t.schema_hash</span> <span class="k">as</span> <span class="n">today</span>
+<span class="k">from</span> <span class="n">obs.run_metrics</span> <span class="k">as</span> <span class="n">t</span>
+<span class="k">join</span> <span class="n">obs.run_metrics</span> <span class="k">as</span> <span class="n">y</span> <span class="k">on</span> <span class="n">y.dataset</span> <span class="o">=</span> <span class="n">t.dataset</span> <span class="k">and</span> <span class="n">y.run_date</span> <span class="o">=</span> <span class="n">t.run_date</span> <span class="o">-</span> <span class="num">1</span>
+<span class="k">where</span> <span class="n">t.run_date</span> <span class="o">=</span> <span class="k">current_date</span>
+  <span class="k">and</span> <span class="n">t.schema_hash</span> <span class="k">is</span> <span class="k">distinct</span> <span class="k">from</span> <span class="n">y.schema_hash</span>;
+
+<span class="c">-- Computing schema_hash for one table:</span>
+<span class="k">select</span> <span class="n">md5</span>(<span class="n">string_agg</span>(<span class="n">column_name</span> <span class="o">||</span> <span class="s">':'</span> <span class="o">||</span> <span class="n">data_type</span>, <span class="s">','</span> <span class="k">order</span> <span class="k">by</span> <span class="n">column_name</span>)) <span class="k">as</span> <span class="n">schema_hash</span>
+<span class="k">from</span> <span class="n">information_schema.columns</span>
+<span class="k">where</span> <span class="n">table_schema</span> <span class="o">=</span> <span class="s">'silver'</span> <span class="k">and</span> <span class="n">table_name</span> <span class="o">=</span> <span class="s">'erp_ke_invoice_lines'</span>;</pre></div>
+      <div class="code-pane" id="c12-py"><pre><span class="c"># Impact analysis: when a source breaks, who downstream is affected, and who owns it?</span>
+<span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="n">deque</span>
+
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">HTTPException</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+
+<span class="c"># Edges from dbt's manifest.json or the orchestrator's asset graph, refreshed per deploy.</span>
+<span class="n">LINEAGE</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">list</span>[<span class="t">str</span>]] <span class="o">=</span> <span class="n">load_lineage</span>()   <span class="c"># upstream -&gt; [downstream]</span>
+<span class="n">OWNERS</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">str</span>] <span class="o">=</span> <span class="n">load_owners</span>()           <span class="c"># asset -&gt; owning team, from the catalog</span>
+
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">get</span>(<span class="s">"/lineage/{asset}/impact"</span>)
+<span class="k">def</span> <span class="n">impact</span>(<span class="n">asset</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">dict</span>:
+    <span class="k">if</span> <span class="n">asset</span> <span class="k">not</span> <span class="k">in</span> <span class="n">LINEAGE</span> <span class="k">and</span> <span class="n">asset</span> <span class="k">not</span> <span class="k">in</span> <span class="n">OWNERS</span>:
+        <span class="k">raise</span> <span class="t">HTTPException</span>(<span class="n">status_code</span><span class="o">=</span><span class="num">404</span>, <span class="n">detail</span><span class="o">=</span><span class="s">f"unknown asset {asset}"</span>)
+    <span class="n">seen</span>, <span class="n">queue</span> <span class="o">=</span> <span class="t">set</span>(), <span class="n">deque</span>([<span class="n">asset</span>])
+    <span class="k">while</span> <span class="n">queue</span>:                                 <span class="c"># breadth-first, downstream only</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="k">in</span> <span class="n">LINEAGE</span>.<span class="n">get</span>(<span class="n">queue</span>.<span class="n">popleft</span>(), []):
+            <span class="k">if</span> <span class="n">child</span> <span class="k">not</span> <span class="k">in</span> <span class="n">seen</span>:
+                <span class="n">seen</span>.<span class="n">add</span>(<span class="n">child</span>)
+                <span class="n">queue</span>.<span class="n">append</span>(<span class="n">child</span>)
+    <span class="n">affected</span> <span class="o">=</span> <span class="n">sorted</span>(<span class="n">seen</span>)
+    <span class="k">return</span> {
+        <span class="s">"asset"</span>: <span class="n">asset</span>,
+        <span class="s">"affected"</span>: <span class="n">affected</span>,
+        <span class="s">"notify"</span>: <span class="n">sorted</span>({<span class="n">OWNERS</span>[<span class="n">a</span>] <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="n">affected</span> <span class="k">if</span> <span class="n">a</span> <span class="k">in</span> <span class="n">OWNERS</span>}),
+        <span class="s">"tier_1"</span>: [<span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="n">affected</span> <span class="k">if</span> <span class="n">a</span>.<span class="n">startswith</span>((<span class="s">"gold."</span>, <span class="s">"mart_"</span>, <span class="s">"dashboard."</span>))],
+    }</pre></div>
+      <div class="code-pane" id="c12-cfg"><pre><span class="c"># models/gold/_fct_invoice_lines.yml: the five signals on a tier-1 table.</span>
+<span class="n">models</span>:
+  - <span class="n">name</span>: <span class="s">fct_invoice_lines</span>
+    <span class="n">config</span>:
+      <span class="n">meta</span>:
+        <span class="n">owner</span>: <span class="s">finance-data</span>
+        <span class="n">tier</span>: <span class="num">1</span>
+    <span class="n">data_tests</span>:
+      - <span class="n">elementary.freshness_anomalies</span>:
+          <span class="n">timestamp_column</span>: <span class="s">_source_updated_at</span>
+      - <span class="n">elementary.volume_anomalies</span>:
+          <span class="n">timestamp_column</span>: <span class="s">_loaded_at</span>
+          <span class="n">time_bucket</span>: {<span class="n">period</span>: <span class="s">day</span>, <span class="n">count</span>: <span class="num">1</span>}
+          <span class="n">seasonality</span>: <span class="s">day_of_week</span>          <span class="c"># Mondays compared with Mondays</span>
+      - <span class="s">elementary.schema_changes</span>
+    <span class="n">columns</span>:
+      - <span class="n">name</span>: <span class="s">discount_pct</span>
+        <span class="n">data_tests</span>:
+          - <span class="n">elementary.column_anomalies</span>:
+              <span class="n">column_anomalies</span>: [<span class="s">null_percent</span>, <span class="s">max</span>]
+              <span class="n">timestamp_column</span>: <span class="s">_loaded_at</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C13 · GOVERNANCE · CLASSIFICATION, MASKING, OWNERSHIP, ACCESS AUDIT ============ -->
+  <section class="pattern" id="c13">
+    <div class="pattern-head"><div class="pattern-num">13</div><div class="pattern-title-wrap"><h2>Governance · classification, masking, ownership, access audit</h2><div class="pattern-tags"><span class="tag">Security</span><span class="tag">Architecture</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c13-arr-sec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">CLASSIFY ONCE, ENFORCE ON EVERY READ</text>
+          <rect x="20" y="32" width="200" height="66" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="120" y="48" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600" letter-spacing="1.5">CATALOG</text>
+          <text x="120" y="64" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">owner: fleet ops</text>
+          <text x="120" y="77" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">national_id → pii.national_id</text>
+          <text x="120" y="90" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">phone → pii.contact</text>
+          <rect x="260" y="32" width="200" height="66" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="360" y="48" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600" letter-spacing="1.5">POLICY ON THE LABEL</text>
+          <text x="360" y="64" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">pii → masked unless hr_admin</text>
+          <text x="360" y="77" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">rows → caller’s entities</text>
+          <text x="360" y="90" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">follows lineage to gold</text>
+          <line x1="221" y1="65" x2="258" y2="65" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c13-arr-sec)"/>
+          <line x1="360" y1="98" x2="300" y2="116" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c13-arr-sec)"/>
+          <rect x="130" y="118" width="220" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="240" y="132" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">query engine</text>
+          <text x="240" y="145" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">the only path: storage is locked</text>
+          <line x1="180" y1="152" x2="90" y2="172" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c13-arr-sec)"/>
+          <line x1="240" y1="152" x2="240" y2="172" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c13-arr-sec)"/>
+          <line x1="300" y1="152" x2="390" y2="172" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c13-arr-sec)"/>
+          <rect x="20" y="174" width="134" height="68" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="87" y="190" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">ANALYST · ZA</text>
+          <text x="87" y="207" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">rows: ZA only</text>
+          <text x="87" y="221" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">id: *********4087</text>
+          <text x="87" y="235" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">phone: null</text>
+          <rect x="173" y="174" width="134" height="68" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="240" y="190" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">HR ADMIN</text>
+          <text x="240" y="207" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">rows: all entities</text>
+          <text x="240" y="221" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">id: full value</text>
+          <text x="240" y="235" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">phone: full value</text>
+          <rect x="326" y="174" width="134" height="68" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="393" y="190" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">AI ASSISTANT</text>
+          <text x="393" y="207" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">rows: caller’s scope</text>
+          <text x="393" y="221" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">no pii columns</text>
+          <text x="393" y="235" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">metric tools only</text>
+          <rect x="60" y="254" width="360" height="28" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="240" y="272" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">access log: who · what · why · rows → append-only store</text>
+          <text x="240" y="306" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">the best mask is the column you never loaded</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Security protects the systems; <strong>governance</strong> decides who may see which data, and proves it afterwards. It has four parts. <strong>Classify</strong>: give every column a sensitivity label (internal, confidential, personal), because personal information under POPIA, such as Northwind's driver ID numbers and phone numbers in the WMS or payroll in the ERP, carries legal duties. <strong>Own</strong>: every dataset has an owner and a steward, recorded in a catalog (Purview, Unity Catalog) alongside its lineage and definitions. <strong>Control</strong>: role-based grants on schemas, <strong>row-level security</strong> so the Kenyan team sees Kenyan rows, and <strong>column masking</strong> so analysts see <code>*********4087</code> where HR sees the full ID. <strong>Audit</strong>: record who read what, when, why and how many rows, especially for personal data and for every AI assistant tool call.</p>
+        <p><strong>Attach policy to the label, not the table.</strong> Tag <code>national_id</code> as <code>pii.national_id</code> once, and the masking policy follows it into every table derived from it; Unity Catalog and Purview can propagate tags along lineage. There are three ways to protect a value. <strong>Dynamic masking</strong> stores the value in the clear and hides it at query time: fine for analysts, useless against anyone who can read the files. <strong>Tokenisation or pseudonymisation</strong> replaces the value at rest with a deterministic token, so joins still work; use it for data that leaves the platform and for development copies. <strong>Minimisation</strong> is the strongest: the bronze contract names which personal fields are needed, and the rest are never loaded. Erasure requests meet table formats here: deleting a driver from an Iceberg or Delta table leaves them in old snapshots until those expire, so set snapshot retention with the privacy policy in mind.</p>
+        <p><strong>Trade-off: central control vs federated ownership.</strong> A central team cannot classify every column on a growing platform, and domain teams do not know the policy. The usual answer is central policies and labels, domain owners who apply them, and CI that enforces them: a new gold column without a classification fails the build. Remember that masking and row-level security are <em>engine</em> controls. Anyone with direct access to the lake's storage account bypasses them, so lock storage down until the query engines are the only path to the data.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Personal or regulated data on the platform (POPIA, GDPR, PCI)</li><li>Several entities or teams share one platform</li><li>An AI assistant or a partner queries the data</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Masking only in the BI tool while the lake files stay open</li><li>Policies hand-copied table by table</li><li>Production personal data in development copies</li><li>A classification spreadsheet nobody updates</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="07-security.html#c4">Least privilege</a>, <a href="03-apis-contracts.html#c8">RBAC vs ABAC</a>, <a href="07-security.html#c8">Audit logging</a>, <a href="#c5">Table formats</a>, <a href="#c10">Serving</a>, <a href="lakehouse-platform.html#c7">Lakehouse governance</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html" target="_blank" rel="noopener">PostgreSQL row security policies</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c13-sql">SQL · Postgres</button><button class="tab py" data-target="c13-py">Python · FastAPI</button><button class="tab cfg" data-target="c13-cfg">YAML · dbt</button></div>
+      <div class="code-pane active" id="c13-sql"><pre><span class="c">-- Classification lives with the column, where tools and CI can read it.</span>
+<span class="k">COMMENT</span> <span class="k">ON</span> <span class="k">COLUMN</span> <span class="n">gold.dim_driver.national_id</span> <span class="k">IS</span> <span class="s">'class=pii.national_id; owner=fleet-ops'</span>;
+<span class="k">COMMENT</span> <span class="k">ON</span> <span class="k">COLUMN</span> <span class="n">gold.dim_driver.phone</span>       <span class="k">IS</span> <span class="s">'class=pii.contact; owner=fleet-ops'</span>;
+
+<span class="c">-- Rows: each session sees only its entities. The pool sets app.entity_ids from</span>
+<span class="c">-- the verified token; no setting means no rows, not all rows.</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">gold.dim_driver</span> <span class="k">ENABLE</span> <span class="k">ROW</span> <span class="k">LEVEL</span> <span class="k">SECURITY</span>;
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">gold.dim_driver</span> <span class="k">FORCE</span> <span class="k">ROW</span> <span class="k">LEVEL</span> <span class="k">SECURITY</span>;    <span class="c">-- applies to the owner too</span>
+<span class="k">CREATE</span> <span class="k">POLICY</span> <span class="n">entity_scope</span> <span class="k">ON</span> <span class="n">gold.dim_driver</span>
+    <span class="k">USING</span> (<span class="n">entity_id</span> <span class="o">=</span> <span class="k">ANY</span> (<span class="n">string_to_array</span>(<span class="n">current_setting</span>(<span class="s">'app.entity_ids'</span>, <span class="k">true</span>), <span class="s">','</span>)));
+
+<span class="c">-- Columns: analysts get a masked view; only hr_admin is granted the table.</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">mart_ops.drivers</span> <span class="k">AS</span>
+<span class="k">SELECT</span> <span class="n">driver_sk</span>, <span class="n">entity_id</span>, <span class="n">depot</span>,
+       <span class="k">CASE</span> <span class="k">WHEN</span> <span class="n">pg_has_role</span>(<span class="s">'hr_admin'</span>, <span class="s">'member'</span>) <span class="k">THEN</span> <span class="n">national_id</span>
+            <span class="k">ELSE</span> <span class="s">'*********'</span> <span class="o">||</span> <span class="n">right</span>(<span class="n">national_id</span>, <span class="num">4</span>) <span class="k">END</span> <span class="k">AS</span> <span class="n">national_id</span>,
+       <span class="k">CASE</span> <span class="k">WHEN</span> <span class="n">pg_has_role</span>(<span class="s">'hr_admin'</span>, <span class="s">'member'</span>) <span class="k">THEN</span> <span class="n">phone</span> <span class="k">END</span> <span class="k">AS</span> <span class="n">phone</span>
+<span class="k">FROM</span> <span class="n">gold.dim_driver</span>;
+
+<span class="k">REVOKE</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="n">gold.dim_driver</span> <span class="k">FROM</span> <span class="n">analyst</span>;
+<span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="n">mart_ops.drivers</span> <span class="k">TO</span> <span class="n">analyst</span>;
+<span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="n">gold.dim_driver</span> <span class="k">TO</span> <span class="n">hr_admin</span>;</pre></div>
+      <div class="code-pane" id="c13-py"><pre><span class="c"># Every read of governed data leaves a record: who, what, why, how much.</span>
+<span class="k">import</span> <span class="n">json</span>
+<span class="k">import</span> <span class="n">logging</span>
+<span class="k">from</span> <span class="n">datetime</span> <span class="k">import</span> <span class="n">datetime</span>, <span class="n">timezone</span>
+
+<span class="k">from</span> <span class="n">fastapi</span> <span class="k">import</span> <span class="t">FastAPI</span>, <span class="t">Request</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="t">FastAPI</span>()
+<span class="n">audit</span> <span class="o">=</span> <span class="n">logging</span>.<span class="n">getLogger</span>(<span class="s">"audit"</span>)   <span class="c"># shipped to an append-only store, not the app's DB</span>
+
+
+<span class="o">@</span><span class="n">app</span>.<span class="n">middleware</span>(<span class="s">"http"</span>)
+<span class="k">async</span> <span class="k">def</span> <span class="n">access_log</span>(<span class="n">request</span>: <span class="t">Request</span>, <span class="n">call_next</span>):
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span>(<span class="n">request</span>)
+    <span class="n">caller</span> <span class="o">=</span> <span class="n">getattr</span>(<span class="n">request</span>.<span class="n">state</span>, <span class="s">"caller"</span>, <span class="k">None</span>)   <span class="c"># set by the auth dependency</span>
+    <span class="n">audit</span>.<span class="n">info</span>(<span class="n">json</span>.<span class="n">dumps</span>({
+        <span class="s">"at"</span>: <span class="n">datetime</span>.<span class="n">now</span>(<span class="n">timezone</span>.<span class="n">utc</span>).<span class="n">isoformat</span>(),
+        <span class="s">"subject"</span>: <span class="n">caller</span>.<span class="n">subject</span> <span class="k">if</span> <span class="n">caller</span> <span class="k">else</span> <span class="k">None</span>,
+        <span class="s">"agent"</span>: <span class="n">caller</span>.<span class="n">agent</span> <span class="k">if</span> <span class="n">caller</span> <span class="k">else</span> <span class="k">None</span>,      <span class="c"># "ai-assistant" on a tool call</span>
+        <span class="s">"purpose"</span>: <span class="n">caller</span>.<span class="n">purpose</span> <span class="k">if</span> <span class="n">caller</span> <span class="k">else</span> <span class="k">None</span>,  <span class="c"># declared when the token was issued</span>
+        <span class="s">"path"</span>: <span class="n">request</span>.<span class="n">url</span>.<span class="n">path</span>,                       <span class="c"># which dataset or metric</span>
+        <span class="s">"filters"</span>: <span class="t">dict</span>(<span class="n">request</span>.<span class="n">query_params</span>),          <span class="c"># never the response body</span>
+        <span class="s">"rows"</span>: <span class="n">response</span>.<span class="n">headers</span>.<span class="n">get</span>(<span class="s">"x-row-count"</span>),
+        <span class="s">"status"</span>: <span class="n">response</span>.<span class="n">status_code</span>,
+    }))
+    <span class="k">return</span> <span class="n">response</span></pre></div>
+      <div class="code-pane" id="c13-cfg"><pre><span class="c"># models/gold/_dim_driver.yml: classification travels with the model.</span>
+<span class="n">models</span>:
+  - <span class="n">name</span>: <span class="s">dim_driver</span>
+    <span class="n">config</span>:
+      <span class="n">meta</span>:
+        <span class="n">owner</span>: <span class="s">fleet-ops</span>
+        <span class="n">steward</span>: <span class="s">data-governance</span>
+        <span class="n">contains_pii</span>: <span class="k">true</span>
+    <span class="n">columns</span>:
+      - <span class="n">name</span>: <span class="s">driver_sk</span>
+        <span class="n">config</span>: {<span class="n">meta</span>: {<span class="n">class</span>: <span class="s">internal</span>}}
+      - <span class="n">name</span>: <span class="s">entity_id</span>
+        <span class="n">config</span>: {<span class="n">meta</span>: {<span class="n">class</span>: <span class="s">internal</span>, <span class="n">row_filter</span>: <span class="s">entity_scope</span>}}
+      - <span class="n">name</span>: <span class="s">national_id</span>
+        <span class="n">config</span>: {<span class="n">meta</span>: {<span class="n">class</span>: <span class="s">pii.national_id</span>, <span class="n">mask</span>: <span class="s">last4</span>}}
+      - <span class="n">name</span>: <span class="s">phone</span>
+        <span class="n">config</span>: {<span class="n">meta</span>: {<span class="n">class</span>: <span class="s">pii.contact</span>, <span class="n">mask</span>: <span class="s">hide</span>}}
+<span class="c"># CI fails the build when a gold column has no class, or a mask has no</span>
+<span class="c"># matching policy in mart_ops. Classify at the door, not after the audit.</span></pre></div>
+    </div>
+  </section>
+
   <footer>
     <p class="big">Separate the workload. Layer by contract. Reconcile or it isn't true.</p>
     <p>backend.systems · pillar 08 · data platform architecture</p>
-    <p class="colophon">OLTP vs OLAP <span>·</span> Parquet <span>·</span> Object storage <span>·</span> Medallion <span>·</span> Table formats <span>·</span> Ingestion <span>·</span> Dimensional modelling <span>·</span> Orchestration <span>·</span> Reconciliation <span>·</span> Serving</p>
+    <p class="colophon">OLTP vs OLAP <span>·</span> Parquet <span>·</span> Object storage <span>·</span> Medallion <span>·</span> Table formats <span>·</span> Ingestion <span>·</span> Dimensional modelling <span>·</span> Orchestration <span>·</span> Reconciliation <span>·</span> Serving <span>·</span> Streaming <span>·</span> Observability <span>·</span> Governance</p>
   </footer>
 
       </div>
