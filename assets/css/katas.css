@@ -461,9 +461,11 @@ a.hf-iconbtn { text-decoration: none; }
 .callout-box li { margin-bottom: var(--hf-sp-1); }
 .callout-box li:last-child { margin-bottom: 0; }
 
-/* Connects-to and real-world reference: a quiet inset with an ink rule. */
+/* Connects-to, the docs reference and the book chapters to read: a quiet
+   inset with an ink rule. */
 .connects,
-.reference {
+.reference,
+.reading {
   margin-top: var(--hf-sp-3);
   padding: var(--hf-sp-3) var(--hf-sp-4);
   background: var(--hf-canvas-soft);
@@ -482,7 +484,8 @@ a.hf-iconbtn { text-decoration: none; }
   color: var(--hf-ink-muted);
   margin-right: var(--hf-sp-2);
 }
-.reference .bi { color: var(--hf-ink); margin-right: var(--hf-sp-1); }
+.reference .bi,
+.reading .bi { color: var(--hf-ink); margin-right: var(--hf-sp-1); }
 
 
 /* ==========================================================================

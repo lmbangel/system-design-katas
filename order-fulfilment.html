@@ -197,6 +197,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Key components</div><ul><li><strong>Order service:</strong> saga orchestrator, state machine, source of truth</li><li><strong>Inventory:</strong> stock levels, reservations, restock events</li><li><strong>Tracking:</strong> event-sourced timeline, CQRS read model, push notifications</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Interview red flags</div><ul><li>Deducting inventory at checkout (should reserve, deduct at ship)</li><li>No state machine for order lifecycle</li><li>Polling carrier APIs instead of event-driven tracking</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p5">Saga</a>, <a href="04-microservices-patterns.html#p6">Event sourcing</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://shopify.engineering/shopify-fulfillment-network" target="_blank">Shopify — Building the Fulfilment Network</a> · <a href="https://engineering.grab.com/scaling-grab-order-management" target="_blank">Grab — Scaling order management</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#fundamentals-of-software-architecture" title="Fundamentals of Software Architecture, 2nd edition">Fundamentals of Software Architecture</a> ch. 15 Event-Driven Architecture Style (1st ed. ch. 14) · <a href="books.html#understanding-distributed-systems" title="Understanding Distributed Systems, 2nd edition">Understanding Distributed Systems</a> ch. 21 Microservices</div>
       </div>
     </div>
     <div class="code-block">
@@ -323,6 +324,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Reserve at checkout, deduct at ship — never deduct early</li><li>Reservation TTL (15min) — auto-release abandoned carts</li><li>Atomic WHERE clause or Redis DECR for concurrency</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Deducting stock at checkout — cancellation logic becomes nightmarish</li><li>SELECT then UPDATE (TOCTOU race) — use atomic operations</li><li>No reservation expiry — ghost reservations eat your inventory</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="01-distributed-systems.html#c6">Transactions</a>, <a href="06-performance-scale.html#c9">Hot keys</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://shopify.engineering/surviving-flashes-of-high-write-volume" target="_blank">Shopify — Surviving flash sales</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#ddia" title="Designing Data-Intensive Applications, 2nd edition">DDIA</a> ch. 8 Transactions (1st ed. ch. 7)</div>
       </div>
     </div>
     <div class="code-block">
@@ -437,6 +439,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>PostGIS <code>ST_Distance</code> or H3 hex index for geospatial queries</li><li>Weighted scoring: distance + cost + capacity</li><li>Split shipment only below cost threshold</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Always picking nearest — ignores cost and capacity</li><li>No split shipment logic — some orders become unfulfillable</li><li>Hardcoded warehouse assignment — doesn't scale with new facilities</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="#c5">Geospatial</a>, <a href="#c2">Inventory</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://engineering.zalando.com/posts/2022/06/logistics-optimization.html" target="_blank">Zalando — Logistics optimisation</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#ddia" title="Designing Data-Intensive Applications, 2nd edition">DDIA</a> ch. 4 Storage and Retrieval (1st ed. ch. 3)</div>
       </div>
     </div>
     <div class="code-block">
@@ -580,6 +583,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Orchestrator (Temporal) owns the saga, persists state</li><li>Cancel allowed until <code>packed</code>, after = return flow</li><li>Every step emits domain events for downstream consumers</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Cancel after ship = customer confusion (use return instead)</li><li>No compensation for warehouse assignment</li><li>State transitions via direct DB updates instead of state machine</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="payment-system.html#c4">Payment state machine</a>, <a href="payment-system.html#c5">Saga</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://doordash.engineering/2020/08/14/order-management-system/" target="_blank">DoorDash — Building the Order Platform</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#understanding-distributed-systems" title="Understanding Distributed Systems, 2nd edition">Understanding Distributed Systems</a> ch. 13 Asynchronous transactions</div>
       </div>
     </div>
     <div class="code-block">
@@ -729,6 +733,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Kafka for tracking events, ES for read model (CQRS)</li><li>H3 hex index for "find nearby" at O(1) per point</li><li>Push notifications via WebSocket or Firebase on state change</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Polling carrier APIs every 30s — use webhooks from carriers</li><li>PostGIS radius queries on millions of live drivers — use H3</li><li>Single tracking table in Postgres — won't scale to 100k events/s</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p6">Event sourcing</a>, <a href="04-microservices-patterns.html#p3">CQRS</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://www.uber.com/blog/h3/" target="_blank">Uber — H3: hexagonal hierarchical spatial index</a> · <a href="https://doordash.engineering/2022/03/29/how-doordash-designed-a-real-time-tracking-system/" target="_blank">DoorDash — Real-time tracking</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#ddia" title="Designing Data-Intensive Applications, 2nd edition">DDIA</a> ch. 4 Storage and Retrieval (1st ed. ch. 3), ch. 12 Stream Processing (1st ed. ch. 11)</div>
       </div>
     </div>
     <div class="code-block">
@@ -822,6 +827,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>V1: carrier SLA table + warehouse avg processing time</li><li>V2: p50/p90 from historical lane data (30-day window)</li><li>Narrow the estimate as package progresses through stages</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>Single point estimate ("arrives Tuesday") — use a range</li><li>Not accounting for warehouse backlog</li><li>Over-engineering ML when a lookup table is 90% as good</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="#c5">Tracking</a>, <a href="#c3">Warehouse</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://www.uber.com/blog/deepeta-how-uber-predicts-arrival-times/" target="_blank">Uber — DeepETA</a> · <a href="https://shopify.engineering/predicting-delivery-date" target="_blank">Shopify — Delivery date prediction</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering">Fundamentals of Data Engineering</a> ch. 9 Serving Data for Analytics, Machine Learning, and Reverse ETL · <a href="books.html#streaming-systems" title="Streaming Systems">Streaming Systems</a> ch. 4 Advanced Windowing</div>
       </div>
     </div>
     <div class="code-block">
@@ -927,6 +933,7 @@
         <p><strong>Trade-off: refund-on-ship vs refund-on-inspect.</strong> Refund-on-ship delights customers but you eat the cost if the item never arrives or arrives damaged. Refund-on-inspect is safer but the 5-10 day wait generates support tickets. Most companies refund-on-ship for trusted customers (high order history) and refund-on-inspect for new accounts.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Separate return state machine from order state machine</li><li>Inspection grades: A (restock), B (discount), C (dispose)</li><li>Refund timing based on customer trust score</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>No return state machine — returns tracked in spreadsheets</li><li>Restocking without inspection — damaged items shipped again</li><li>No inventory add-back on restock — phantom stock loss</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="payment-system.html#c2">Ledger</a> (refund = reverse entry), <a href="#c2">Inventory</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#understanding-distributed-systems" title="Understanding Distributed Systems, 2nd edition">Understanding Distributed Systems</a> ch. 13 Asynchronous transactions</div>
       </div>
     </div>
     <div class="code-block">
@@ -1061,6 +1068,7 @@
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design decisions</div><ul><li>Kafka as event log (write) → ES as read model (query)</li><li>Projector service: Kafka consumer → denormalise into ES</li><li>Rebuild read model by replaying Kafka from offset 0</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Traps</div><ul><li>CQRS for everything — overkill for simple CRUD</li><li>No replay capability — can't rebuild a corrupted read model</li><li>Treating ES as source of truth (it's a projection, not the source)</li></ul></div></div>
         <div class="connects"><strong>Connects to</strong> <a href="04-microservices-patterns.html#p3">CQRS</a>, <a href="04-microservices-patterns.html#p6">Event sourcing</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Real-world:</strong> <a href="https://doordash.engineering/2020/09/22/building-doordash-order-tracking/" target="_blank">DoorDash — Building real-time order tracking</a> · <a href="https://engineering.deliveryhero.com/event-driven-architecture/" target="_blank">Delivery Hero — Event-driven architecture</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#ddia" title="Designing Data-Intensive Applications, 2nd edition">DDIA</a> ch. 12 Stream Processing (1st ed. ch. 11) · <a href="books.html#streaming-systems" title="Streaming Systems">Streaming Systems</a> ch. 6 Streams and Tables</div>
       </div>
     </div>
     <div class="code-block">

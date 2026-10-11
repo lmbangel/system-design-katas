@@ -97,6 +97,14 @@ its sections `id` + `data-nav="Label"` (concept sections are picked up from
 their `<h2>` automatically), and run `node tools/build-nav.js`. A hand edit to
 a sidebar fails `verify-design.js`.
 
+**Read lines.** Every concept ends with the book chapters to read, written
+by `tools/build-reading.js` from `data/reading.json`. That file holds each
+book's verified table of contents and, per concept, the chapters to read; DDIA
+and Fundamentals of Software Architecture also show the 1st-edition chapter,
+and the two free Google books link each chapter online. A new concept with no
+entry, or a chapter that is not in its book's contents, fails
+`verify-design.js` (rule 13). The learning map shows the same reading.
+
 **Brand.** Links home, same deviation and reason as the reports portal.
 
 **Brand mark.** The sibling apps put a two-letter monogram in

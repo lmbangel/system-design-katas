@@ -65,6 +65,9 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#streaming-systems" title="Streaming Systems"><span class="hf-nav__text">Streaming Systems</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-quality-fundamentals" title="Data Quality Fundamentals"><span class="hf-nav__text">Data Quality Fundamentals</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-governance-definitive-guide" title="Data Governance: The Definitive Guide"><span class="hf-nav__text">Data Governance: The Definitive Guide</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#fundamentals-of-software-architecture" title="Fundamentals of Software Architecture"><span class="hf-nav__text">Fundamentals of Software Architecture</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#site-reliability-engineering" title="Site Reliability Engineering"><span class="hf-nav__text">Site Reliability Engineering</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#building-secure-reliable-systems" title="Building Secure and Reliable Systems"><span class="hf-nav__text">Building Secure and Reliable Systems</span></a></div>
         </div>
       </div>
     </nav>
@@ -98,10 +101,10 @@
 
       <header class="kt-hero">
         <span class="hf-eyebrow">Reading list</span>
-        <h1 class="kt-hero__title">Eight books that <em>complete the picture</em>.</h1>
-        <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA; for data platforms, add Fundamentals of Data Engineering. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
+        <h1 class="kt-hero__title">Eleven books that <em>complete the picture</em>.</h1>
+        <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA; for data platforms, add Fundamentals of Data Engineering; for the architect’s role, Fundamentals of Software Architecture. Every concept in the guide ends with the chapters to read. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">8</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">11</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Start with</span><span class="hf-stat__value">DDIA</span></div>
           <div class="hf-stat"><span class="hf-stat__label">In the study plan</span><span class="hf-stat__value">Weeks 1–3</span></div>
         </div>
@@ -261,11 +264,70 @@
           </dl>
         </div>
       </section>
+
+      <div class="hf-section__head kt-books__group">
+        <h2 class="hf-section__title">Architecture, reliability and security</h2>
+        <p class="hf-meta">The architect's job, then how Google runs and secures production. Both Google books are free to read online.</p>
+      </div>
+
+      <section class="card kt-book" id="fundamentals-of-software-architecture" data-nav="Fundamentals of Software Architecture" aria-labelledby="fundamentals-of-software-architecture-title">
+        <div class="card-body">
+          <img class="kt-book__cover" src="assets/books/fundamentals-of-software-architecture.webp" width="320" height="420" alt="Cover of Fundamentals of Software Architecture, 2nd edition" loading="lazy" decoding="async">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--solid hf-status--nodot">Must read</span>
+            <h3 class="kt-book__title" id="fundamentals-of-software-architecture-title">Fundamentals of Software Architecture</h3>
+            <p class="hf-meta">Mark Richards &amp; Neal Ford · 2nd edition</p>
+          </div>
+          <p class="kt-book__desc">The broadest single book on the architect’s job: architecture characteristics and how to measure them, modularity, the major styles from layered to microservices and event-driven, architecture decisions and ADRs, risk, diagramming and presenting, and working with teams. Chosen over its sequel, <em>Software Architecture: The Hard Parts</em>, for breadth; the sequel goes deeper on splitting distributed systems, which pages 04 and the applied designs cover.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="architecture-decisions.html">Architecture decisions</a>, <a href="04-microservices-patterns.html">04 · Microservices patterns</a>, the applied designs</dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 3 · Architecture design (from 5 April), before AZ-305. Read the decisions chapter with the ADR page.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="site-reliability-engineering" data-nav="Site Reliability Engineering" aria-labelledby="site-reliability-engineering-title">
+        <div class="card-body">
+          <img class="kt-book__cover" src="assets/books/site-reliability-engineering.webp" width="320" height="410" alt="Cover of Site Reliability Engineering" loading="lazy" decoding="async">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Free online</span>
+            <h3 class="kt-book__title" id="site-reliability-engineering-title">Site Reliability Engineering</h3>
+            <p class="hf-meta">Betsy Beyer, Chris Jones, Jennifer Petoff &amp; Niall Richard Murphy (eds.) · Google</p>
+          </div>
+          <p class="kt-book__desc">How Google runs production: embracing risk, service level objectives and error budgets, monitoring and the four golden signals, handling overload, cascading failures, release engineering, incident management and blameless postmortems. Free to read at <a href="https://sre.google/sre-book/table-of-contents/" target="_blank" rel="noopener">sre.google</a>; the “Read” lines link straight to each chapter.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="05-reliability-observability.html">05 · Reliability &amp; observability</a>, <a href="06-performance-scale.html">06 · Performance &amp; scale</a> (overload)</dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Q1 · Reliability and cost (from 8 March).</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="building-secure-reliable-systems" data-nav="Building Secure and Reliable Systems" aria-labelledby="building-secure-reliable-systems-title">
+        <div class="card-body">
+          <img class="kt-book__cover" src="assets/books/building-secure-reliable-systems.webp" width="320" height="410" alt="Cover of Building Secure and Reliable Systems" loading="lazy" decoding="async">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--neutral hf-status--nodot">Free online</span>
+            <h3 class="kt-book__title" id="building-secure-reliable-systems-title">Building Secure and Reliable Systems</h3>
+            <p class="hf-meta">Heather Adkins, Betsy Beyer, Paul Blankinship, Piotr Lewandowski, Ana Oprea &amp; Adam Stubblefield · Google</p>
+          </div>
+          <p class="kt-book__desc">Security and reliability treated as one discipline: understanding adversaries, least privilege, designing for understandability, resilience and recovery, mitigating denial of service, writing, testing and deploying code safely, and investigating systems. Free to read online from <a href="https://sre.google/books/" target="_blank" rel="noopener">sre.google</a>.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="07-security.html">07 · Security</a>, <a href="03-apis-contracts.html">03 · APIs &amp; contracts</a> (authn and authz)</dd>
+            <dt>In the study plan</dt>
+            <dd>Roadmap, Sprint 2 · Security architecture (from 7 December), alongside SC-500.</dd>
+          </dl>
+        </div>
+      </section>
       </div>
 
       <footer>
         <p class="big">Breadth here. Depth there.</p>
-        <p>The study plan on the <a href="prep-checklist.html#study-plan">interview checklist</a> schedules three of these; the <a href="roadmap.html">architecture roadmap</a> schedules the four on data platforms.</p>
+        <p>The study plan on the <a href="prep-checklist.html#study-plan">interview checklist</a> schedules three of these; the <a href="roadmap.html">architecture roadmap</a> schedules the rest.</p>
       </footer>
       </div>
     </main>

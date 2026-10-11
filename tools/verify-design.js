@@ -21,7 +21,10 @@
   11  Navigation matches the site map: every page is in tools/build-nav.js and
       its sidebar and header are what that script writes.
   12  The learning map covers every concept on every page, and its generated
-      data is up to date (tools/build-learning-map.js --check).             */
+      data is up to date (tools/build-learning-map.js --check).
+  13  Every concept names the book chapters to read, every chapter exists in
+      its book's table of contents, and the pages are up to date
+      (tools/build-reading.js --check).                                      */
 
 'use strict';
 const fs = require('fs');
@@ -85,11 +88,11 @@ for (const icon of ['favicon.ico', 'assets/brand/favicon.svg', 'assets/brand/app
   if (!fs.existsSync(rel(icon))) fail(10, `${icon} is missing -- run python tools/build-icons.py`);
 }
 
-/* 11, 12 ------------------------------------------------------------------ */
-// Both are a generator's own --check. They print findings on stdout; if one
+/* 11, 12, 13 -------------------------------------------------------------- */
+// Each is a generator's own --check. They print findings on stdout; if one
 // crashes instead (e.g. a page in the site map doesn't exist yet), report the
 // crash rather than pass.
-for (const [rule, script] of [[11, 'build-nav.js'], [12, 'build-learning-map.js']]) {
+for (const [rule, script] of [[11, 'build-nav.js'], [12, 'build-learning-map.js'], [13, 'build-reading.js']]) {
   const { execFileSync } = require('child_process');
   try {
     execFileSync(process.execPath, [path.join(__dirname, script), '--check'], { stdio: 'pipe' });
