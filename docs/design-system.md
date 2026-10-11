@@ -80,6 +80,11 @@ site, so nothing on the pages repeats it:
   while you read it keeps the highlighted section in view. Only the sidebar
   scrolls; the page never jumps.
 - The header's previous / next arrows are the single sequential control.
+- On screens 1400px and wider, **On this page** sits to the right of the
+  content and stays in view while you scroll: short section labels, the
+  concept number, the same scroll-spy bar, and *Back to top*. `katas.js`
+  builds it from the sidebar's tier-2 links, so the site map is still the
+  one source; below 1400px it is hidden and the sidebar does the job.
 
 The old design's on-page contents cards and page-end previous / next cards
 were removed: each duplicated the sidebar or the header. "Connects to" links
@@ -132,7 +137,7 @@ prefixed `.kt-`.
 | `.masthead` | `.kt-hero`: `.hf-eyebrow`, a thin display headline, `.hf-lede`, `.hf-stat` tiles |
 | Emphasis in headlines (yellow italic serif) | Semibold, upright — hierarchy from weight, not colour |
 | `.principle` (coloured top borders) | Flat card, hairline border |
-| `.toc` (on-page contents) | **Removed.** The sidebar lists the page's sections and scroll-spies them |
+| `.toc` (on-page contents) | **Replaced** by `.kt-toc`, *On this page*: built from the sidebar's links, shown from 1400px |
 | `.tag.hot/.cool/.warm/...` | All `.hf-status--neutral`: they were categories, not states |
 | `.pattern-num` (120px outlined numeral) | Solid black square, the sidebar brand mark |
 | `.callout-box.use` / `.avoid` | `.hf-alert--success` / `--danger` in all but name |

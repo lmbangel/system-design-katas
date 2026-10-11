@@ -4,7 +4,9 @@
 
    1. Shell        HumeFinbiz.init(): sidebar toggle, collapse, flyouts.
    2. Code tabs    One code block, three languages. Scoped per block.
-   3. Scroll spy   Marks the tier-2 nav link of the concept on screen.
+   3. On this page A contents list on the right (wide screens), and the
+                   scroll spy that marks the section on screen in it and in
+                   the sidebar.
    4. Checklist    prep-checklist.html. State persists per item in localStorage.
    5. Map bar      under each concept title: "On the learning map" + mastery.
 
@@ -86,27 +88,92 @@
     });
   });
 
-  /* ------------------------------------------------------- 3 scroll spy */
+  /* ---------------------------------------- 3 on this page + scroll spy */
 
+  // Each section id maps to its links: the sidebar's tier-2 link and, on
+  // wide screens, its entry in "On this page".
   var spyLinks = {};
-  document.querySelectorAll('.hf-nav__link--t2[href^="#"]').forEach(function (a) {
-    spyLinks[a.getAttribute('href').slice(1)] = a;
+  var t2 = document.querySelectorAll('.hf-nav__link--t2[href^="#"]');
+  t2.forEach(function (a) {
+    spyLinks[a.getAttribute('href').slice(1)] = [a];
   });
+
+  // "On this page": a compact contents list on the right. It is built from
+  // the sidebar's tier-2 links, which tools/build-nav.js writes from the page
+  // itself, so the two never disagree. CSS shows it from 1400px wide; below
+  // that the sidebar already lists the sections.
+  var page = document.querySelector('.kt-page');
+  if (page && t2.length > 2) {
+    var toc = document.createElement('aside');
+    toc.className = 'kt-toc';
+    toc.setAttribute('aria-labelledby', 'kt-toc-label');
+    var tocInner = document.createElement('div');
+    tocInner.className = 'kt-toc__inner';
+    var tocLabel = document.createElement('p');
+    tocLabel.className = 'kt-toc__label';
+    tocLabel.id = 'kt-toc-label';
+    tocLabel.textContent = 'On this page';
+    var list = document.createElement('ol');
+    list.className = 'kt-toc__list';
+
+    t2.forEach(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      var full = a.textContent.trim();
+      var link = document.createElement('a');
+      link.className = 'kt-toc__link';
+      link.href = '#' + id;
+      link.title = full;
+      var num = target.querySelector('.pattern-num');
+      if (num) {
+        var n = document.createElement('span');
+        n.className = 'kt-toc__num';
+        n.textContent = num.textContent.trim();
+        link.appendChild(n);
+      }
+      // Short labels: "Stream processing · event time, ..." reads as "Stream
+      // processing", and a numbered "Version A, lean: push agents, ..." as
+      // "Version A, lean". Unnumbered titles (books) keep their colon.
+      var short = full.split(' · ')[0];
+      if (num) short = short.split(': ')[0];
+      var text = document.createElement('span');
+      text.textContent = short;
+      link.appendChild(text);
+      var li = document.createElement('li');
+      li.appendChild(link);
+      list.appendChild(li);
+      spyLinks[id].push(link);
+    });
+
+    var top = document.createElement('button');
+    top.type = 'button';
+    top.className = 'kt-toc__top';
+    top.innerHTML = '<i class="bi bi-arrow-up" aria-hidden="true"></i> Back to top';
+    top.addEventListener('click', function () { window.scrollTo({ top: 0 }); });
+
+    tocInner.appendChild(tocLabel);
+    tocInner.appendChild(list);
+    tocInner.appendChild(top);
+    toc.appendChild(tocInner);
+    page.appendChild(toc);
+    page.classList.add('kt-has-toc');
+  }
 
   if ('IntersectionObserver' in window && Object.keys(spyLinks).length) {
     var current = null;
     var setCurrent = function (id) {
       if (id === current) return;
-      if (current && spyLinks[current]) {
-        spyLinks[current].classList.remove('is-active');
-        spyLinks[current].removeAttribute('aria-current');
-      }
+      (spyLinks[current] || []).forEach(function (a) {
+        a.classList.remove('is-active');
+        a.removeAttribute('aria-current');
+      });
       current = id;
-      if (spyLinks[id]) {
-        spyLinks[id].classList.add('is-active');
-        spyLinks[id].setAttribute('aria-current', 'location');
-        revealInNav(spyLinks[id]);
-      }
+      (spyLinks[id] || []).forEach(function (a) {
+        a.classList.add('is-active');
+        a.setAttribute('aria-current', 'location');
+      });
+      if (spyLinks[id]) revealInNav(spyLinks[id][0]);
     };
 
     // A section counts as "on screen" once its top passes the upper third.
