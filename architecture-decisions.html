@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<!-- LOAD ORDER IS MANDATORY: bootstrap -> icons -> archivo -> hume-finbiz -> katas.
+     hume-finbiz.css re-points Bootstrap's own custom properties; reordering
+     silently un-themes the page. See docs/design-system.md. -->
+<link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/vendor/archivo/archivo.css">
+<link rel="stylesheet" href="assets/hume-finbiz/hume-finbiz.css">
+<link rel="stylesheet" href="assets/css/katas.css">
+<title>Architecture Decisions · backend.systems</title>
+</head>
+<body>
+<div class="hf-shell">
+
+  <aside class="hf-sidebar">
+    <a class="hf-sidebar__brand" href="index.html" aria-label="Overview">
+      <span class="hf-sidebar__mark"><span class="kt-mark" aria-hidden="true"></span></span>
+      <span class="hf-sidebar__wordmark">System design<small>Backend katas</small></span>
+    </a>
+
+    <nav class="hf-nav" aria-label="Main navigation">
+      <div class="hf-nav__item"><a class="hf-nav__link" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="learning-map.html"><i class="bi bi-diagram-2 hf-nav__icon"></i><span class="hf-nav__text">Learning map</span></a></div>
+      <div class="hf-nav__section">Tier 1 · Foundations</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="02-data-storage.html"><i class="bi bi-database hf-nav__icon"></i><span class="hf-nav__text">02 · Data &amp; storage</span></a></div>
+      <div class="hf-nav__section">Tier 2 · Building blocks</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="03-apis-contracts.html"><i class="bi bi-plug hf-nav__icon"></i><span class="hf-nav__text">03 · APIs &amp; contracts</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="04-microservices-patterns.html"><i class="bi bi-boxes hf-nav__icon"></i><span class="hf-nav__text">04 · Microservices patterns</span></a></div>
+      <div class="hf-nav__section">Tier 3 · Production</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="05-reliability-observability.html"><i class="bi bi-activity hf-nav__icon"></i><span class="hf-nav__text">05 · Reliability &amp; observability</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
+      <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
+      <div class="hf-nav__section">Applied design</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
+      <div class="hf-nav__section">Architecture practice</div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="architecture-decisions.html" aria-current="page">
+          <i class="bi bi-journal-check hf-nav__icon"></i><span class="hf-nav__text">Architecture decisions</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c1" title="What an ADR is · the why that code cannot hold"><span class="hf-nav__text">What an ADR is · the why that code cannot hold</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c2" title="When to write one · architecturally significant decisions"><span class="hf-nav__text">When to write one · architecturally significant decisions</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c3" title="What goes in one · the template, field by field"><span class="hf-nav__text">What goes in one · the template, field by field</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c4" title="Lifecycle and home · numbered, immutable, superseded"><span class="hf-nav__text">Lifecycle and home · numbered, immutable, superseded</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c5" title="Writing one people trust · a worked example"><span class="hf-nav__text">Writing one people trust · a worked example</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c6" title="Reviews, governance and interviews · ADRs in use"><span class="hf-nav__text">Reviews, governance and interviews · ADRs in use</span></a></div>
+        </div>
+      </div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="roadmap.html"><i class="bi bi-signpost-split hf-nav__icon"></i><span class="hf-nav__text">Architecture roadmap</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
+    </nav>
+
+    <div class="hf-sidebar__foot">
+      <div class="hf-sidebar__env"><span class="hf-sync__dot"></span><span>Study guide · v1</span></div>
+    </div>
+  </aside>
+
+  <div class="hf-main">
+
+    <header class="hf-header">
+      <button class="hf-header__toggle" data-hf-sidebar-toggle aria-label="Toggle navigation" aria-expanded="true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="hf-header__titles">
+        <div class="hf-header__title">Architecture decisions</div>
+        <div class="hf-header__crumbs">Backend katas / Architecture practice</div>
+      </div>
+
+      <div class="hf-header__spacer"></div>
+
+      <div class="hf-header__actions">
+        <a class="hf-iconbtn" href="lakehouse-platform.html" aria-label="Previous: Lakehouse platform" title="Previous: Lakehouse platform"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Next: Interview checklist" title="Next: Interview checklist"><i class="bi bi-arrow-right"></i></a>
+      </div>
+    </header>
+
+    <main class="hf-content">
+      <div class="hf-content__inner kt-page">
+      <header class="kt-hero">
+        <span class="hf-eyebrow">Architecture practice · Decisions</span>
+        <h1 class="kt-hero__title">Write down <em>why</em>, not just what.</h1>
+        <p class="hf-lede">Code shows what a system does. It never says why it is built that way, which options lost, or what would change the answer. An architecture decision record (ADR) is a one-page note that does. This page covers what counts as an architecture decision, what goes in the record, how records live and change, how to write one people trust, and how to use them in reviews and interviews. The examples follow Northwind Cold Chain's data platform.</p>
+        <div class="kt-facts">
+          <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">6</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">30 min</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Formats</span><span class="hf-stat__value">Markdown · Shell · Policy</span></div>
+        </div>
+      </header>
+
+  <section class="principles">
+    <div class="principle"><div class="num">PRINCIPLE 01</div><h4>Decisions decay; records don't.</h4><p>The reasons behind a choice leave with the people who made it. A one-page record outlives them, and tells the next person whether the reasons still hold.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 02</div><h4>Significant means hard to reverse.</h4><p>Record the one-way doors: platforms, protocols, identity, regions, and the things you chose not to do. Leave library choices to the pull request.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 03</div><h4>The options are the point.</h4><p>A decision without the alternatives it beat is an announcement. Describe each option as its supporters would, then say what your choice costs.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 04</div><h4>Supersede, never edit.</h4><p>An accepted record is history. When the answer changes, write a new one that links back, and name the triggers that would change it again.</p></div>
+  </section>
+
+  <!-- ============ C1 · WHAT AN ADR IS · THE WHY THAT CODE CANNOT HOLD ============ -->
+  <section class="pattern" id="c1">
+    <div class="pattern-head"><div class="pattern-num">01</div><div class="pattern-title-wrap"><h2>What an ADR is · the why that code cannot hold</h2><div class="pattern-tags"><span class="tag">Start here</span><span class="tag">Practice</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c1-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker><marker id="c1-arr-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-success-fg)"/></marker><marker id="c1-arr-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-danger-fg)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">THE CODE SAYS WHAT; THE RECORD SAYS WHY</text>
+          <rect x="20" y="50" width="130" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="85" y="70" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">2025 · decision</text>
+          <text x="85" y="84" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">marts on DuckDB + dbt</text>
+          <rect x="200" y="32" width="260" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="330" y="48" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">code and config</text>
+          <text x="330" y="62" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">what: dbt models, one VM, a Dagster job</text>
+          <rect x="200" y="82" width="260" height="66" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="330" y="98" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">ADR-0007</text>
+          <text x="330" y="112" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">why: 300 GB, two engineers, 06:00 SLO</text>
+          <text x="330" y="125" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">rejected: Fabric F8, Databricks</text>
+          <text x="330" y="138" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">revisit: 2 TB or a 15-minute SLO</text>
+          <line x1="151" y1="66" x2="198" y2="54" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c1-arr)"/>
+          <line x1="151" y1="82" x2="198" y2="108" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c1-arr)"/>
+          <line x1="20" y1="172" x2="460" y2="172" stroke="var(--hf-hairline-strong)" stroke-width="1"/>
+          <text x="40" y="166" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">2025</text>
+          <text x="240" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">2026 · the team changes</text>
+          <text x="440" y="166" text-anchor="end" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">2027</text>
+          <rect x="20" y="194" width="200" height="50" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="120" y="214" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">a new architect, 2027:</text>
+          <text x="120" y="230" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">“why not Fabric? we run M365”</text>
+          <rect x="250" y="188" width="210" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-danger-fg)" stroke-width="1.2"/>
+          <text x="355" y="209" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="8">no record: re-argue it, or keep it blindly</text>
+          <rect x="250" y="232" width="210" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="355" y="253" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">ADR-0007: are the triggers hit yet?</text>
+          <line x1="221" y1="210" x2="248" y2="205" stroke="var(--hf-danger-fg)" stroke-width="1.2" marker-end="url(#c1-arr-bad)"/>
+          <line x1="221" y1="228" x2="248" y2="248" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c1-arr-ok)"/>
+          <text x="240" y="302" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">an ADR is the architecture’s memory, one decision at a time</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>A year after the lakehouse goes live, a new architect asks why the finance marts run on DuckDB and dbt when the whole company runs on Microsoft 365 and Fabric is one licence away. The people who decided have moved on. Without a record, the team has two bad options: argue it again from nothing, or keep it out of superstition (“they must have had a reason”). An <strong>architecture decision record (ADR)</strong> is the fix: a short text file, one per decision, that says what was decided, in what situation, which options lost, and what the decision costs. Michael Nygard proposed the format in 2011 with five parts: title, status, context, decision, consequences. Every richer template since is a variation on that.</p>
+        <p>An ADR is <em>not</em> a design document. A design document describes how a whole system works and changes as the system changes; an ADR captures one decision at one point in time, with the forces acting on it then, and is never rewritten afterwards. Together, the numbered ADRs form a <strong>decision log</strong>: the architecture's memory. They live in the repository next to the code they govern, are reviewed as pull requests, and are read by the next person who wonders <em>why</em>. Code tells you what the system does; it can never tell you which alternatives were weighed, or what would have to change for the answer to change.</p>
+        <p><strong>Trade-off: writing time vs memory.</strong> A good ADR takes 20 to 60 minutes. It pays that back the first time someone asks why, at every onboarding, in every audit, and above all when circumstances change: a record that names its assumptions tells you whether the decision still holds or whether its time is up. The cost of not writing one is invisible until it is large.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>A decision will outlive the people who made it</li><li>Teams rotate, or vendors and contractors come and go</li><li>Regulated or audited environments where “why” must be shown</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>ADRs as an approval form filled in before any thinking</li><li>Writing them after the fact to justify a choice already made</li><li>One giant document holding every decision</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">When to write one</a>, <a href="#c3">What goes in one</a>, <a href="08-data-platforms.html#c10">Build vs buy</a>, <a href="lakehouse-platform.html#c8">Lakehouse trade-offs</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions" target="_blank" rel="noopener">Michael Nygard: Documenting architecture decisions</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab md active" data-target="c1-md">Markdown · Nygard’s original</button><button class="tab sh" data-target="c1-sh">Shell · adr-tools</button></div>
+      <div class="code-pane active" id="c1-md"><pre><span class="k"># 7. Run the finance marts on DuckDB and dbt</span>
+
+Date: 2025-03-14
+
+<span class="k">## Status</span>
+
+Accepted
+
+<span class="k">## Context</span>
+
+Finance needs a month-end pack that ties to each entity's trial balance by
+06:00. The data is about 300 GB across four entities. Two engineers run the
+platform and neither wants to operate a cluster.
+
+<span class="k">## Decision</span>
+
+We will build the finance marts with dbt on DuckDB on one VM, orchestrated
+by Dagster, with Parquet on object storage as the lake.
+
+<span class="k">## Consequences</span>
+
+Running cost is low and every part runs on a laptop. We operate and upgrade
+it ourselves, DuckDB allows one writer, and Power BI imports rather than
+reading live. We revisit this at 2 TB or a 15-minute freshness SLO.</pre></div>
+      <div class="code-pane" id="c1-sh"><pre><span class="c"># adr-tools (github.com/npryce/adr-tools): numbered Markdown files in docs/adr</span>
+<span class="k">adr</span> <span class="n">init</span> <span class="n">docs/adr</span>                     <span class="c"># writes 0001-record-architecture-decisions.md</span>
+<span class="k">adr</span> <span class="n">new</span> <span class="s">"Run the finance marts on DuckDB and dbt"</span>
+<span class="k">adr</span> <span class="n">list</span>
+<span class="c"># docs/adr/0001-record-architecture-decisions.md</span>
+<span class="c"># docs/adr/0002-run-the-finance-marts-on-duckdb-and-dbt.md</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C2 · WHEN TO WRITE ONE · ARCHITECTURALLY SIGNIFICANT DECISIONS ============ -->
+  <section class="pattern" id="c2">
+    <div class="pattern-head"><div class="pattern-num">02</div><div class="pattern-title-wrap"><h2>When to write one · architecturally significant decisions</h2><div class="pattern-tags"><span class="tag">Practice</span><span class="tag">Core</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker><marker id="c2-arr-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-success-fg)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">IS THIS ARCHITECTURALLY SIGNIFICANT?</text>
+          <rect x="20" y="36" width="250" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="145" y="55" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">hard or costly to reverse?</text>
+          <text x="294" y="48" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="271" y1="51" x2="318" y2="51" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c2-arr-ok)"/>
+          <rect x="20" y="76" width="250" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="145" y="95" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">crosses a team or system boundary?</text>
+          <text x="294" y="88" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="271" y1="91" x2="318" y2="91" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c2-arr-ok)"/>
+          <rect x="20" y="116" width="250" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="145" y="135" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">changes a quality attribute?</text>
+          <text x="294" y="128" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="271" y1="131" x2="318" y2="131" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c2-arr-ok)"/>
+          <rect x="20" y="156" width="250" height="30" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="145" y="175" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">real options people disagree on?</text>
+          <text x="294" y="168" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="271" y1="171" x2="318" y2="171" stroke="var(--hf-success-fg)" stroke-width="1.2" marker-end="url(#c2-arr-ok)"/>
+          <rect x="320" y="36" width="140" height="150" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="390" y="58" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600" letter-spacing="1.5">WRITE AN ADR</text>
+          <text x="390" y="84" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">lake vs Fabric</text>
+          <text x="390" y="102" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Entra ID + OIDC</text>
+          <text x="390" y="120" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Service Bus as the bus</text>
+          <text x="390" y="138" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">one region, two zones</text>
+          <text x="390" y="156" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">no Kubernetes</text>
+          <text x="138" y="210" text-anchor="end" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">all no</text>
+          <line x1="145" y1="194" x2="145" y2="218" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c2-arr)"/>
+          <rect x="20" y="222" width="250" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="145" y="241" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9">a PR description or a code comment</text>
+          <text x="145" y="256" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">a library inside one service, naming, lint</text>
+          <rect x="320" y="222" width="140" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="390" y="241" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">deciding NOT to</text>
+          <text x="390" y="256" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">is a decision too</text>
+          <text x="240" y="302" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">if a new senior hire or an auditor would ask why, write it down</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Not every choice deserves a record; a log of trivia hides the decisions that matter. Write an ADR for an <strong>architecturally significant</strong> decision. Four practical tests: it is <strong>hard or costly to reverse</strong> (a one-way door: a data platform, an identity provider, a region); it <strong>crosses a boundary</strong>, so other teams or systems must live with it; it <strong>changes a quality attribute</strong> such as security, cost, latency, availability or operability; or there are <strong>real options</strong> on which reasonable people disagree. Any yes, write one. All no, and the pull request description or a code comment is enough: which JSON library a service uses, naming, formatting.</p>
+        <p>Two kinds get forgotten. <strong>Decisions not to do something</strong> (not adopting Kubernetes, not splitting the monolith yet, not buying a feature store) are the ones re-asked most often, so they deserve a record most. And <strong>constraints you accept from outside</strong> (the company standard is Entra ID; POPIA requires personal data in South Africa) are decisions for your system even when someone else made them: record that you accepted them and what they cost. A small team typically writes ten to twenty ADRs a year; a hundred means the bar is too low, none means decisions are happening in meetings and being lost.</p>
+        <p><strong>Trade-off: completeness vs signal.</strong> Too few and the reasoning is lost; too many and nobody reads them. Use the test above, and when in doubt, write a short one: three paragraphs that exist beat a perfect template that does not.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Choosing a platform, protocol, identity model or region</li><li>Saying no to something that will be proposed again</li><li>Accepting a constraint that shapes your design</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>ADRs for library choices inside one service</li><li>A decision log nobody reads because it is 90% trivia</li><li>Deciding in meetings and recording nothing</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c1">What an ADR is</a>, <a href="#c6">Reviews and governance</a>, <a href="07-security.html#c2">Threat modelling</a>, <a href="04-microservices-patterns.html#p12">Strangler fig</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://adr.github.io/" target="_blank" rel="noopener">adr.github.io: architectural decision records</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab md active" data-target="c2-md">Markdown · PR template</button><button class="tab md2" data-target="c2-md2">Markdown · a decision not to</button></div>
+      <div class="code-pane active" id="c2-md"><pre><span class="c">&lt;!-- .github/pull_request_template.md --&gt;</span>
+<span class="k">## What changes</span>
+
+<span class="k">## Does this need an ADR?</span>
+
+Tick any that apply. One tick means link an ADR (new or existing) below.
+
+<span class="o">- [ ]</span> Hard or costly to reverse (platform, protocol, identity, region, vendor)
+<span class="o">- [ ]</span> Crosses a team or system boundary
+<span class="o">- [ ]</span> Changes security, cost, latency, availability or operability
+<span class="o">- [ ]</span> There were real alternatives and we picked one
+
+ADR: docs/adr/NNNN-title.md</pre></div>
+      <div class="code-pane" id="c2-md2"><pre><span class="k"># 11. Do not adopt Kubernetes for the data platform</span>
+
+Status: Accepted · 2025-06-02
+
+<span class="k">## Context</span>
+
+The platform runs four containers (Dagster, dbt runner, DuckDB service, an
+ingest API). Two engineers operate it. The lake is object storage; nothing
+needs autoscaling beyond one VM's headroom for at least 12 months.
+
+<span class="k">## Decision</span>
+
+We will run the containers on Azure Container Apps, not AKS or any other
+Kubernetes cluster.
+
+<span class="k">## Consequences</span>
+
+<span class="o">-</span> No cluster upgrades, node pools or ingress controllers to operate.
+<span class="o">-</span> Less control over scheduling and networking; one region only.
+<span class="o">-</span> Revisit if we exceed 20 containers or need a capability Container Apps lacks.</pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C3 · WHAT GOES IN ONE · THE TEMPLATE, FIELD BY FIELD ============ -->
+  <section class="pattern" id="c3">
+    <div class="pattern-head"><div class="pattern-num">03</div><div class="pattern-title-wrap"><h2>What goes in one · the template, field by field</h2><div class="pattern-tags"><span class="tag">Practice</span><span class="tag">Core</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">ONE PAGE, NINE PARTS</text>
+          <rect x="40" y="32" width="250" height="254" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="54" y="54" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600"># ADR-0007 · title</text>
+          <line x1="48" y1="64" x2="282" y2="64" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="81" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Status · Accepted · 2025-03-14</text>
+          <line x1="48" y1="91" x2="282" y2="91" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="108" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Context · forces, with numbers</text>
+          <line x1="48" y1="118" x2="282" y2="118" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="135" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Decision drivers · ranked</text>
+          <line x1="48" y1="145" x2="282" y2="145" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="162" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Considered options · two or more</text>
+          <line x1="48" y1="172" x2="282" y2="172" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="189" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Decision · we will … because …</text>
+          <line x1="48" y1="199" x2="282" y2="199" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="216" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Consequences · good and bad</text>
+          <line x1="48" y1="226" x2="282" y2="226" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="243" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Confirmation · how we will know</text>
+          <line x1="48" y1="253" x2="282" y2="253" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="54" y="270" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Revisit when · named triggers</text>
+          <line x1="292" y1="105" x2="306" y2="105" stroke="var(--hf-info-fg)" stroke-width="1"/>
+          <text x="310" y="108" text-anchor="start" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">facts the losing side would sign</text>
+          <line x1="292" y1="159" x2="306" y2="159" stroke="var(--hf-info-fg)" stroke-width="1"/>
+          <text x="310" y="162" text-anchor="start" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">steelman what you rejected</text>
+          <line x1="292" y1="213" x2="306" y2="213" stroke="var(--hf-info-fg)" stroke-width="1"/>
+          <text x="310" y="216" text-anchor="start" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">include what hurts</text>
+          <line x1="292" y1="267" x2="306" y2="267" stroke="var(--hf-info-fg)" stroke-width="1"/>
+          <text x="310" y="270" text-anchor="start" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">turns a decision into a test</text>
+          <text x="240" y="310" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">short beats complete: one to two pages</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>A useful ADR has nine parts. The <strong>title</strong> is the decision as a short imperative phrase (<em>Run the finance marts on DuckDB and dbt</em>), with a number that is never reused. <strong>Status</strong> and date: proposed, accepted, rejected, deprecated or superseded. <strong>Context</strong> is the situation and its forces: requirements, constraints, quality attributes, with numbers (300 GB, two engineers, ready by 06:00), written so neutrally that the people who preferred the losing option would agree with it. <strong>Decision drivers</strong> are the qualities that matter most, ranked. <strong>Considered options</strong> are at least two real ones, plus “do nothing” when that is genuinely possible, each with its pros and cons.</p>
+        <p>The <strong>decision</strong> reads “we will … because …”, and the because points back at the drivers. <strong>Consequences</strong> list what becomes easier and what becomes harder, including costs, risks and their mitigations; an ADR whose consequences are all good is a sales pitch. <strong>Confirmation</strong> says how you will know it was implemented and works: a test, a policy, a metric. <strong>Revisit when</strong> names the triggers that would reopen it (data over 2 TB, a 15-minute SLO, a third engineer), which turns a decision into something you can check. Two well-known formats: Nygard's minimal five sections, and MADR (Markdown Any Decision Records), which adds drivers, options and confirmation. A one-sentence <strong>Y-statement</strong> makes a good summary line: <em>in the context of …, facing …, we decided for … and against …, to achieve …, accepting ….</em></p>
+        <p><strong>Trade-off: minimal vs complete.</strong> Nygard's template is quick and gets written; MADR's is thorough and sometimes does not. Start minimal and add options and triggers, the two parts that most improve an ADR. Length is not quality: one to two pages, and link to longer analysis instead of pasting it.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Any architecturally significant decision</li><li>Choices with real alternatives that will be questioned later</li><li>Decisions with conditions under which they stop being right</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Context written as an argument for the winner</li><li>Options listed without their downsides</li><li>Consequences that are all good</li><li>No revisit triggers, so nobody knows when it expires</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c5">A worked example</a>, <a href="#c4">Lifecycle</a>, <a href="05-reliability-observability.html#c1">SLOs as drivers</a>, <a href="08-data-platforms.html#c10">Build vs buy</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://adr.github.io/madr/" target="_blank" rel="noopener">MADR: Markdown Any Decision Records</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab md active" data-target="c3-md">Markdown · template</button><button class="tab md2" data-target="c3-md2">Markdown · Y-statements</button></div>
+      <div class="code-pane active" id="c3-md"><pre><span class="k"># NNNN. &lt;Decision as a short imperative phrase&gt;</span>
+
+<span class="o">-</span> <span class="n">**Status:**</span> Proposed | Accepted | Rejected | Deprecated | Superseded by <span class="t">[NNNN](NNNN-title.md)</span>
+<span class="o">-</span> <span class="n">**Date:**</span> YYYY-MM-DD
+<span class="o">-</span> <span class="n">**Deciders:**</span> &lt;who decides&gt;   <span class="n">**Consulted:**</span> &lt;whose advice was taken&gt;
+
+<span class="k">## Context</span>
+
+&lt;The situation and its forces, with numbers. Neutral enough that the people
+who preferred another option would agree with it.&gt;
+
+<span class="k">## Decision drivers</span>
+
+<span class="o">1.</span> &lt;Most important quality, e.g. ready by 06:00 on 99% of days&gt;
+<span class="o">2.</span> &lt;...&gt;
+
+<span class="k">## Considered options</span>
+
+<span class="o">1.</span> &lt;Option A&gt;: &lt;one line&gt;. Good: &lt;...&gt;. Bad: &lt;...&gt;.
+<span class="o">2.</span> &lt;Option B&gt;: ...
+<span class="o">3.</span> Do nothing: ...
+
+<span class="k">## Decision</span>
+
+We will &lt;option&gt;, because &lt;reasons tied to the drivers&gt;.
+
+<span class="k">## Consequences</span>
+
+<span class="o">-</span> Good: &lt;what becomes easier or cheaper&gt;
+<span class="o">-</span> Bad: &lt;what becomes harder, the risk, and its mitigation&gt;
+
+<span class="k">## Confirmation</span>
+
+&lt;How we will know it is implemented and working: a test, policy or metric.&gt;
+
+<span class="k">## Revisit when</span>
+
+<span class="o">-</span> &lt;Trigger 1, measurable&gt;
+<span class="o">-</span> &lt;Trigger 2&gt;</pre></div>
+      <div class="code-pane" id="c3-md2"><pre><span class="c">&lt;!-- One sentence per decision: a summary line for the top of an ADR or an index. --&gt;</span>
+
+In the context of <span class="n">**finance reporting for four entities**</span>, facing **a 06:00
+deadline with two engineers and 300 GB<span class="n">**, we decided for **</span>DuckDB and dbt on
+one VM<span class="n">** and against **</span>Fabric and Databricks<span class="n">**, to achieve **</span>the lowest running
+cost and simple operations<span class="n">**, accepting **</span>that we operate it ourselves and
+revisit at 2 TB**.
+
+In the context of <span class="n">**service-to-service calls**</span>, facing **zero-trust network
+rules<span class="n">**, we decided for **</span>managed identities with Entra ID tokens** and against
+<span class="n">**shared secrets and mTLS everywhere**</span>, to achieve <span class="n">**no stored credentials**</span>,
+accepting <span class="n">**a dependency on Entra ID availability**</span>.</pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C4 · LIFECYCLE AND HOME · NUMBERED, IMMUTABLE, SUPERSEDED ============ -->
+  <section class="pattern" id="c4">
+    <div class="pattern-head"><div class="pattern-num">04</div><div class="pattern-title-wrap"><h2>Lifecycle and home · numbered, immutable, superseded</h2><div class="pattern-tags"><span class="tag">Practice</span><span class="tag">Operations</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">PROPOSE, ACCEPT, SUPERSEDE: NEVER EDIT</text>
+          <rect x="20" y="36" width="110" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="75" y="50" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">Proposed</text>
+          <text x="75" y="64" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">an open PR</text>
+          <rect x="185" y="36" width="110" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="240" y="50" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">Accepted</text>
+          <text x="240" y="64" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">merged</text>
+          <rect x="185" y="96" width="110" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="240" y="110" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">Rejected</text>
+          <text x="240" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">kept, with why</text>
+          <rect x="350" y="36" width="110" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="405" y="50" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">Superseded</text>
+          <text x="405" y="64" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">by ADR-0012</text>
+          <rect x="350" y="96" width="110" height="34" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="405" y="110" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">Deprecated</text>
+          <text x="405" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">no longer applies</text>
+          <line x1="131" y1="53" x2="183" y2="53" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c4-arr)"/>
+          <line x1="131" y1="62" x2="183" y2="108" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c4-arr)"/>
+          <line x1="296" y1="53" x2="348" y2="53" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c4-arr)"/>
+          <line x1="296" y1="62" x2="348" y2="108" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c4-arr)"/>
+          <text x="157" y="47" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">review</text>
+          <rect x="20" y="152" width="440" height="118" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="34" y="172" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">docs/adr/</text>
+          <text x="48" y="192" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">0001-record-architecture-decisions.md</text>
+          <text x="446" y="192" text-anchor="end" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">Accepted</text>
+          <text x="48" y="210" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">0007-run-finance-marts-on-duckdb-and-dbt.md</text>
+          <text x="446" y="210" text-anchor="end" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">Superseded by 0012</text>
+          <text x="48" y="228" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">0011-do-not-adopt-kubernetes.md</text>
+          <text x="446" y="228" text-anchor="end" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">Accepted</text>
+          <text x="48" y="246" text-anchor="start" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">0012-move-finance-marts-to-fabric.md</text>
+          <text x="446" y="246" text-anchor="end" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">Accepted</text>
+          <text x="48" y="262" text-anchor="start" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">README.md · the index, generated</text>
+          <text x="240" y="302" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">an accepted ADR is history: change the decision with a new one</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>ADRs live in the repository next to the code they govern, as numbered Markdown files in <code>docs/adr/</code>; cross-cutting decisions (identity, landing zone, network) go in an architecture repository that service repos link to. The first ADR is the decision to keep ADRs. A new ADR starts as <strong>Proposed</strong> in a pull request: the PR discussion is the decision meeting, and the approvals are the deciders' sign-off. Merged, it is <strong>Accepted</strong>; declined, it is kept as <strong>Rejected</strong> with the reason, because the next person to propose it should find that answer.</p>
+        <p>Accepted ADRs are <strong>immutable</strong>. When the situation changes, you do not edit ADR-0007; you write ADR-0012, <em>Move the finance marts to Fabric</em>, which says “supersedes ADR-0007” and links back, and ADR-0007's status changes to <strong>Superseded by 0012</strong>. Only status and links ever change on an old record. That history is the value: it shows what was believed when, and why the answer changed, which is exactly what an auditor or a new architect needs. Decisions that stop applying without a replacement, say when a system is retired, become <strong>Deprecated</strong>. Keep an index (a README generated by adr-tools or log4brains) so the log can be read as a list.</p>
+        <p><strong>Trade-off: repository vs wiki.</strong> In the repository, ADRs are versioned, reviewed like code and seen by the engineers who need them; in a wiki, managers and other teams find them more easily but they drift from the code. Keep the repository as the source and publish a rendered view (a static site, or a wiki page generated from it) for everyone else.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Every team that writes code against an architecture</li><li>Decisions that need a visible approval trail</li><li>Platforms where several repos share one set of decisions</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Editing an accepted ADR to match a new decision</li><li>Deleting rejected ADRs</li><li>ADRs in a wiki nobody updates while the code moves on</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c3">The template</a>, <a href="#c6">Reviews and governance</a>, <a href="05-reliability-observability.html#c8">Deployment strategies</a>, <a href="07-security.html#c8">Audit logging</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://github.com/npryce/adr-tools" target="_blank" rel="noopener">adr-tools on GitHub</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sh active" data-target="c4-sh">Shell · adr-tools</button><button class="tab py" data-target="c4-py">Python · CI check</button></div>
+      <div class="code-pane active" id="c4-sh"><pre><span class="c"># Supersede ADR 7 with a new decision: links both ways, updates 7's status.</span>
+<span class="k">adr</span> <span class="n">new</span> <span class="o">-s</span> <span class="num">7</span> <span class="s">"Move the finance marts to Fabric"</span>
+
+<span class="c"># Link related decisions without superseding.</span>
+<span class="k">adr</span> <span class="n">link</span> <span class="num">12</span> <span class="s">"Depends on"</span> <span class="num">3</span> <span class="s">"Is depended on by"</span>
+
+<span class="c"># Regenerate the index for the README.</span>
+<span class="k">adr</span> <span class="n">generate</span> <span class="n">toc</span> <span class="o">&gt;</span> <span class="n">docs/adr/README.md</span></pre></div>
+      <div class="code-pane" id="c4-py"><pre><span class="c"># scripts/check_adrs.py: run in CI. Plain Python, no service: it reads files.</span>
+<span class="c"># Fails when an ADR has no valid status, a required section is missing, or a</span>
+<span class="c"># "Superseded by" points at an ADR that does not exist.</span>
+<span class="k">import</span> <span class="n">re</span>
+<span class="k">import</span> <span class="n">sys</span>
+<span class="k">from</span> <span class="n">pathlib</span> <span class="k">import</span> <span class="t">Path</span>
+
+<span class="n">REQUIRED</span> <span class="o">=</span> [<span class="s">"## Context"</span>, <span class="s">"## Decision"</span>, <span class="s">"## Consequences"</span>]
+<span class="n">STATUSES</span> <span class="o">=</span> (<span class="s">"Proposed"</span>, <span class="s">"Accepted"</span>, <span class="s">"Rejected"</span>, <span class="s">"Deprecated"</span>, <span class="s">"Superseded by"</span>)
+
+<span class="n">adrs</span> <span class="o">=</span> <span class="n">sorted</span>(<span class="t">Path</span>(<span class="s">"docs/adr"</span>).<span class="n">glob</span>(<span class="s">"[0-9][0-9][0-9][0-9]-*.md"</span>))
+<span class="n">numbers</span> <span class="o">=</span> {<span class="t">int</span>(<span class="n">p</span>.<span class="n">name</span>[:<span class="num">4</span>]) <span class="k">for</span> <span class="n">p</span> <span class="k">in</span> <span class="n">adrs</span>}
+<span class="n">problems</span> <span class="o">=</span> []
+
+<span class="k">for</span> <span class="n">path</span> <span class="k">in</span> <span class="n">adrs</span>:
+    <span class="n">text</span> <span class="o">=</span> <span class="n">path</span>.<span class="n">read_text</span>(<span class="n">encoding</span><span class="o">=</span><span class="s">"utf-8"</span>)
+    <span class="n">status</span> <span class="o">=</span> <span class="n">re</span>.<span class="n">search</span>(<span class="s">r"Status:\**\s*(.+)"</span>, <span class="n">text</span>) <span class="k">or</span> <span class="n">re</span>.<span class="n">search</span>(<span class="s">r"## Status\s+(.+)"</span>, <span class="n">text</span>)
+    <span class="k">if</span> <span class="k">not</span> <span class="n">status</span> <span class="k">or</span> <span class="k">not</span> <span class="n">status</span>.<span class="n">group</span>(<span class="num">1</span>).<span class="n">strip</span>().<span class="n">startswith</span>(<span class="n">STATUSES</span>):
+        <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"{path.name}: no valid status"</span>)
+    <span class="k">for</span> <span class="n">heading</span> <span class="k">in</span> <span class="n">REQUIRED</span>:
+        <span class="k">if</span> <span class="n">heading</span> <span class="k">not</span> <span class="k">in</span> <span class="n">text</span>:
+            <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"{path.name}: missing {heading}"</span>)
+    <span class="k">for</span> <span class="n">ref</span> <span class="k">in</span> <span class="n">re</span>.<span class="n">findall</span>(<span class="s">r"Superseded by \[?(\d{4})"</span>, <span class="n">text</span>):
+        <span class="k">if</span> <span class="t">int</span>(<span class="n">ref</span>) <span class="k">not</span> <span class="k">in</span> <span class="n">numbers</span>:
+            <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"{path.name}: superseded by {ref}, which does not exist"</span>)
+
+<span class="n">print</span>(<span class="s">"\n"</span>.<span class="n">join</span>(<span class="n">problems</span>) <span class="k">or</span> <span class="s">f"{len(adrs)} ADRs OK"</span>)
+<span class="n">sys</span>.<span class="n">exit</span>(<span class="num">1</span> <span class="k">if</span> <span class="n">problems</span> <span class="k">else</span> <span class="num">0</span>)</pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C5 · WRITING ONE PEOPLE TRUST · A WORKED EXAMPLE ============ -->
+  <section class="pattern" id="c5">
+    <div class="pattern-head"><div class="pattern-num">05</div><div class="pattern-title-wrap"><h2>Writing one people trust · a worked example</h2><div class="pattern-tags"><span class="tag">Practice</span><span class="tag">Deep dive</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">ADR-0007 · OPTIONS AGAINST DRIVERS</text>
+          <rect x="214" y="30" width="72" height="196" rx="3" fill="var(--hf-success-fg)" fill-opacity="0.08" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="20" y="46" text-anchor="start" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">driver</text>
+          <text x="250" y="46" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">A · self-run</text>
+          <text x="332" y="46" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">B · Fabric</text>
+          <text x="414" y="46" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">C · Databricks</text>
+          <line x1="20" y1="60" x2="460" y2="60" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="76" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">running cost</text>
+          <text x="250" y="76" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">low</text>
+          <text x="332" y="76" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">medium</text>
+          <text x="414" y="76" text-anchor="middle" fill="var(--hf-danger-fg)" font-family="var(--hf-font-mono)" font-size="8">high</text>
+          <line x1="20" y1="86" x2="460" y2="86" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="102" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">ops load on two people</text>
+          <text x="250" y="102" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">high</text>
+          <text x="332" y="102" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">low</text>
+          <text x="414" y="102" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">medium</text>
+          <line x1="20" y1="112" x2="460" y2="112" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="128" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">ready by 06:00</text>
+          <text x="250" y="128" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <text x="332" y="128" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <text x="414" y="128" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="20" y1="138" x2="460" y2="138" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="154" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">exact reconciliation</text>
+          <text x="250" y="154" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <text x="332" y="154" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <text x="414" y="154" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="20" y1="164" x2="460" y2="164" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="180" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">Power BI fit</text>
+          <text x="250" y="180" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">import</text>
+          <text x="332" y="180" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">Direct Lake</text>
+          <text x="414" y="180" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">connector</text>
+          <line x1="20" y1="190" x2="460" y2="190" stroke="var(--hf-hairline)" stroke-width="1"/>
+          <text x="20" y="206" text-anchor="start" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="8">cost to leave</text>
+          <text x="250" y="206" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">low</text>
+          <text x="332" y="206" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">medium</text>
+          <text x="414" y="206" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">medium</text>
+          <rect x="20" y="238" width="440" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="240" y="256" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">We will run the finance marts on DuckDB and dbt (A).</text>
+          <text x="240" y="272" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">accepting: we operate it · revisit at 2 TB, a 15-min SLO or a third engineer</text>
+          <text x="240" y="308" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">numbers, not adjectives; say what hurts</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>A trustworthy ADR reads like an honest briefing, not a sales pitch. Northwind's ADR-0007 starts from the facts: four entities, about 300 GB growing 20% a year, a month-end pack that must tie to each trial balance by 06:00, two data engineers, a Microsoft 365 estate with Power BI. It names the <strong>drivers</strong> in order: tie-out correctness, ready by 06:00, running cost, operating load, Power BI fit, cost to leave. It weighs three <strong>real options</strong>: (A) self-run DuckDB, dbt and Dagster on one VM; (B) Microsoft Fabric on an F-capacity; (C) Databricks. Each option is written up the way its supporter would describe it, then marked against the drivers.</p>
+        <p>The <strong>decision</strong> is A, <em>because</em> it meets the two hard drivers at the lowest running cost and the data fits one machine for at least two years. The <strong>consequences</strong> include the ones that hurt: the two engineers operate and upgrade it, DuckDB allows one writer at a time, and Power BI imports rather than reading live. Each has a mitigation or an owner. Then the <strong>triggers</strong>: data above 2 TB, a freshness SLO under 15 minutes, or a third engineer joining. Eighteen months later the freshness trigger fires, and ADR-0012 proposes Fabric, supersedes 0007, and is approved in a week, because nobody has to reconstruct the original reasoning. That is what the record is for.</p>
+        <p>What makes an ADR trusted: <strong>numbers instead of adjectives</strong> (“300 GB” rather than “small”); <strong>steelmanned alternatives</strong>, so the losing side recognises its own argument; <strong>consequences that hurt</strong>; <strong>measurable triggers</strong>; and <strong>brevity</strong>, linking to the spike results or cost model rather than pasting them. <strong>Trade-off: rigour vs speed.</strong> Time-box the analysis: run a short spike, write the ADR from what you learned, and let the triggers cover what you could not know yet.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Platform and vendor choices with a multi-year cost</li><li>Decisions you will present to a review board or in an interview</li><li>Any decision whose right answer depends on growth</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Adjectives in place of measurements</li><li>A straw-man version of the option you rejected</li><li>Hiding the downside in the hope nobody asks</li><li>Pasting the whole cost model into the ADR</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c3">The template</a>, <a href="08-data-platforms.html#c10">Build vs buy</a>, <a href="lakehouse-platform.html#c8">Triggers to move</a>, <a href="05-reliability-observability.html#c1">SLOs</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record" target="_blank" rel="noopener">Azure Well-Architected: maintain an ADR</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab md active" data-target="c5-md">Markdown · ADR-0007</button><button class="tab md2" data-target="c5-md2">Markdown · ADR-0012</button></div>
+      <div class="code-pane active" id="c5-md"><pre><span class="k"># 7. Run the finance marts on DuckDB and dbt</span>
+
+<span class="o">-</span> <span class="n">**Status:**</span> Superseded by <span class="t">[0012](0012-move-finance-marts-to-fabric.md)</span>
+<span class="o">-</span> <span class="n">**Date:**</span> 2025-03-14
+<span class="o">-</span> <span class="n">**Deciders:**</span> Head of data, lead data engineer   <span class="n">**Consulted:**</span> Finance, security
+
+<span class="k">## Context</span>
+
+Four entities, about 300 GB, growing roughly 20% a year. The month-end pack
+must tie to each entity's trial balance and be ready by 06:00. Two data
+engineers run the platform. The company runs Microsoft 365 and Power BI.
+
+<span class="k">## Decision drivers</span>
+
+<span class="o">1.</span> Totals tie to the source exactly
+<span class="o">2.</span> Ready by 06:00 on 99% of days
+<span class="o">3.</span> Running cost
+<span class="o">4.</span> Operating load on two people
+<span class="o">5.</span> Power BI fit
+<span class="o">6.</span> Cost to leave
+
+<span class="k">## Considered options</span>
+
+<span class="o">1.</span> <span class="n">**Self-run:**</span> DuckDB, dbt, Dagster on one VM; Parquet on Blob Storage.
+<span class="o">2.</span> <span class="n">**Fabric:**</span> OneLake, Delta, Direct Lake to Power BI, on an F-capacity.
+<span class="o">3.</span> <span class="n">**Databricks:**</span> Unity Catalog, Delta, SQL warehouse.
+
+<span class="o">|</span> Driver           <span class="o">|</span> Self-run <span class="o">|</span> Fabric      <span class="o">|</span> Databricks <span class="o">|</span>
+<span class="o">|</span>------------------<span class="o">|</span>----------<span class="o">|</span>-------------<span class="o">|</span>------------<span class="o">|</span>
+<span class="o">|</span> Running cost     <span class="o">|</span> low      <span class="o">|</span> medium      <span class="o">|</span> high       <span class="o">|</span>
+<span class="o">|</span> Ops load         <span class="o">|</span> high     <span class="o">|</span> low         <span class="o">|</span> medium     <span class="o">|</span>
+<span class="o">|</span> Ready by 06:00   <span class="o">|</span> yes      <span class="o">|</span> yes         <span class="o">|</span> yes        <span class="o">|</span>
+<span class="o">|</span> Power BI fit     <span class="o">|</span> import   <span class="o">|</span> Direct Lake <span class="o">|</span> connector  <span class="o">|</span>
+<span class="o">|</span> Cost to leave    <span class="o">|</span> low      <span class="o">|</span> medium      <span class="o">|</span> medium     <span class="o">|</span>
+
+<span class="k">## Decision</span>
+
+We will run the finance marts on DuckDB and dbt (option 1), because it meets
+drivers 1 and 2 at the lowest running cost, and the data fits one machine
+for at least two years.
+
+<span class="k">## Consequences</span>
+
+<span class="o">-</span> Good: lowest cost; everything runs on a laptop; open formats keep the exit cheap.
+<span class="o">-</span> Bad: we operate and upgrade it (mitigation: a runbook, monthly patch window).
+<span class="o">-</span> Bad: DuckDB allows one writer (mitigation: Dagster serialises the writes).
+<span class="o">-</span> Bad: Power BI imports on a schedule; no live reads.
+
+<span class="k">## Confirmation</span>
+
+Reconciliation blocks any publish that does not tie; a freshness SLO alert
+fires if gold is not ready by 06:00.
+
+<span class="k">## Revisit when</span>
+
+<span class="o">-</span> Data exceeds 2 TB
+<span class="o">-</span> Finance needs a freshness SLO under 15 minutes
+<span class="o">-</span> The team grows past two engineers</pre></div>
+      <div class="code-pane" id="c5-md2"><pre><span class="k"># 12. Move the finance marts to Fabric</span>
+
+<span class="o">-</span> <span class="n">**Status:**</span> Accepted
+<span class="o">-</span> <span class="n">**Date:**</span> 2026-09-08
+<span class="o">-</span> <span class="n">**Supersedes:**</span> <span class="t">[0007](0007-run-finance-marts-on-duckdb-and-dbt.md)</span>
+
+<span class="k">## Context</span>
+
+ADR-0007's second trigger has fired: operations now need stock and margin
+within 15 minutes of a sale, and a third engineer has joined. Data is 700 GB.
+Everything else in 0007's context still holds.
+
+<span class="k">## Decision</span>
+
+We will move the finance marts to Microsoft Fabric with Delta tables in
+OneLake and Direct Lake to Power BI, keeping dbt for transformations.
+
+<span class="k">## Consequences</span>
+
+<span class="o">-</span> Good: near-real-time reads in Power BI; no VM or upgrades to run.
+<span class="o">-</span> Bad: capacity cost and sizing to watch (owner: head of data, monthly).
+<span class="o">-</span> Neutral: Parquet and dbt carry over; the reconciliation checks are unchanged.</pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C6 · REVIEWS, GOVERNANCE AND INTERVIEWS · ADRS IN USE ============ -->
+  <section class="pattern" id="c6">
+    <div class="pattern-head"><div class="pattern-num">06</div><div class="pattern-title-wrap"><h2>Reviews, governance and interviews · ADRs in use</h2><div class="pattern-tags"><span class="tag">Practice</span><span class="tag">Architecture</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c6-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="20" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">DECIDE CLOSE TO THE WORK; REVIEW ABOVE A LINE</text>
+          <rect x="20" y="36" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="68" y="53" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">team drafts</text>
+          <text x="68" y="67" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Proposed ADR</text>
+          <rect x="132" y="36" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="180" y="53" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">advice</text>
+          <text x="180" y="67" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">affected + experts</text>
+          <rect x="244" y="36" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-info-fg)" stroke-width="1.2"/>
+          <text x="292" y="53" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">over the line?</text>
+          <text x="292" y="67" text-anchor="middle" fill="var(--hf-info-fg)" font-family="var(--hf-font-mono)" font-size="8">cost, security</text>
+          <rect x="364" y="36" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+          <text x="412" y="53" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">accepted</text>
+          <text x="412" y="67" text-anchor="middle" fill="var(--hf-success-fg)" font-family="var(--hf-font-mono)" font-size="8">merged PR</text>
+          <line x1="117" y1="56" x2="130" y2="56" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+          <line x1="229" y1="56" x2="242" y2="56" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+          <line x1="341" y1="56" x2="362" y2="56" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+          <text x="352" y="50" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">no</text>
+          <rect x="244" y="104" width="96" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1.2"/>
+          <text x="292" y="121" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">ARB review</text>
+          <text x="292" y="135" text-anchor="middle" fill="var(--hf-warning-fg)" font-family="var(--hf-font-mono)" font-size="8">async, ≤ 5 days</text>
+          <line x1="292" y1="77" x2="292" y2="102" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+          <text x="300" y="92" text-anchor="start" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="8">yes</text>
+          <line x1="341" y1="124" x2="410" y2="78" stroke="var(--hf-ink-secondary)" stroke-width="1.2" marker-end="url(#c6-arr)"/>
+          <rect x="20" y="166" width="215" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="127.5" y="185" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">enforce it</text>
+          <text x="127.5" y="199" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">Azure Policy denies public storage</text>
+          <rect x="245" y="166" width="215" height="44" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-hairline-strong)" stroke-width="1.2"/>
+          <text x="352.5" y="185" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">watch the triggers</text>
+          <text x="352.5" y="199" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">data size, SLO, team → revisit</text>
+          <rect x="20" y="228" width="440" height="46" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+          <text x="240" y="246" text-anchor="middle" fill="var(--hf-ink)" font-family="var(--hf-font-mono)" font-size="9" font-weight="600">in an interview: context → options → decision → consequences → triggers</text>
+          <text x="240" y="263" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font-mono)" font-size="8">the same shape, out loud, in two minutes</text>
+          <text x="240" y="304" text-anchor="middle" fill="var(--hf-ink-secondary)" font-family="var(--hf-font)" font-size="10" font-style="italic">the record is the review; slides are optional</text>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>ADRs change how architecture is governed. A review board that meets weekly to approve slides becomes a bottleneck; one that reads Proposed ADRs asynchronously, and only above a line (spend over a threshold, a security boundary, a change that affects other teams), keeps decisions moving. Below the line, the <strong>advice process</strong> works well: anyone may make a decision after seeking advice from the people it affects and from those with relevant expertise, and the ADR records that advice. Accepted decisions should be <strong>enforced, not remembered</strong>: a fitness function in CI, or a policy such as Azure Policy denying storage accounts with public network access, with the ADR number in its description so the rule explains itself.</p>
+        <p>For a solutions architect, the decision log is also the portfolio. AZ-305 case studies are ADR prompts in disguise: requirements and constraints in, a justified choice out. In a design interview, narrate every major choice in ADR shape: the context and its numbers, two or three options, the decision and why, the consequences you accept, and what would change your mind. In a behavioural round, “tell me about a difficult technical decision” is answered best from a real ADR: the forces, the alternatives, the outcome, and what happened when a trigger fired. Keep two or three sanitised examples ready.</p>
+        <p><strong>Trade-off: governance vs autonomy.</strong> Central approval of everything is slow and teaches teams to avoid writing ADRs; no review at all lets decisions conflict across teams. Set the line explicitly, publish it, review above it asynchronously, and let teams own everything below it.</p>
+        <div class="callout">
+          <div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>Several teams share a platform or landing zone</li><li>Decisions carry security or cost risk above a threshold</li><li>Preparing for AZ-305 case studies and design interviews</li></ul></div>
+          <div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>A review board that approves slides, not records</li><li>Decisions enforced only by memory</li><li>Interview answers that name a tool without the trade-off</li></ul></div>
+        </div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">When to write one</a>, <a href="#c5">A worked example</a>, <a href="07-security.html#c4">Least privilege</a>, <a href="prep-checklist.html#area-1">Interview checklist</a></div>
+        <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/azure/governance/policy/overview" target="_blank" rel="noopener">Azure Policy overview</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab json active" data-target="c6-json">JSON · Azure Policy</button><button class="tab md" data-target="c6-md">Markdown · interview answer</button></div>
+      <div class="code-pane active" id="c6-json"><pre>{
+  <span class="n">"properties"</span>: {
+    <span class="n">"displayName"</span>: <span class="s">"Storage accounts must disable public network access (ADR-0003)"</span>,
+    <span class="n">"description"</span>: <span class="s">"Enforces ADR-0003: data is reachable only through private endpoints."</span>,
+    <span class="n">"mode"</span>: <span class="s">"Indexed"</span>,
+    <span class="n">"metadata"</span>: { <span class="n">"category"</span>: <span class="s">"Storage"</span>, <span class="n">"adr"</span>: <span class="s">"docs/adr/0003-private-endpoints-only.md"</span> },
+    <span class="n">"policyRule"</span>: {
+      <span class="n">"if"</span>: {
+        <span class="n">"allOf"</span>: [
+          { <span class="n">"field"</span>: <span class="s">"type"</span>, <span class="n">"equals"</span>: <span class="s">"Microsoft.Storage/storageAccounts"</span> },
+          { <span class="n">"field"</span>: <span class="s">"Microsoft.Storage/storageAccounts/publicNetworkAccess"</span>, <span class="n">"notEquals"</span>: <span class="s">"Disabled"</span> }
+        ]
+      },
+      <span class="n">"then"</span>: { <span class="n">"effect"</span>: <span class="s">"deny"</span> }
+    }
+  }
+}</pre></div>
+      <div class="code-pane" id="c6-md"><pre><span class="c">&lt;!-- "Why that database?" answered in ADR shape, in about two minutes. --&gt;</span>
+
+<span class="n">**Context.**</span> Four entities, 300 GB, finance needs numbers that tie by 06:00,
+and two engineers run everything.
+
+<span class="n">**Options.**</span> Self-run DuckDB and dbt, Microsoft Fabric, or Databricks.
+
+<span class="n">**Decision.**</span> Self-run, because it meets correctness and the deadline at the
+lowest cost, and the data fits one machine for two years.
+
+<span class="n">**Consequences.**</span> We operate it ourselves and Power BI imports rather than
+reading live. Both were acceptable for a nightly close.
+
+<span class="n">**Triggers.**</span> At 2 TB, a 15-minute freshness need, or a bigger team, we move to
+Fabric. One of those fired 18 months later, and we did.</pre></div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="big">Decide in the open. Write down why. Name what would change your mind.</p>
+    <p>backend.systems · architecture practice · decision records</p>
+    <p class="colophon">ADRs <span>·</span> Significance <span>·</span> Template <span>·</span> Lifecycle <span>·</span> Worked example <span>·</span> Governance <span>·</span> Interviews</p>
+  </footer>
+
+      </div>
+    </main>
+
+  </div><!-- /.hf-main -->
+</div><!-- /.hf-shell -->
+
+<script src="assets/hume-finbiz/hume-finbiz.js"></script>
+<script src="assets/js/katas.js"></script>
+</body>
+</html>

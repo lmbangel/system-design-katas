@@ -1207,6 +1207,68 @@
         "02-data-storage.html#c9"
       ],
       "practice": "Write a one-page decision record choosing between the three versions for a given set of numbers. Include a scoring table, how each fails, the measurable trigger that would move you, and the seam that makes moving cheap."
+    },
+    "architecture-decisions.html#c1": {
+      "stage": "s7",
+      "level": "foundation",
+      "summary": "An architecture decision record is a one-page note per significant decision: the context, the decision, the options that lost, and the consequences.",
+      "why": "Code shows what a system does, never why. Without records, teams re-argue old decisions or keep them blindly, and nobody can tell when a decision has expired.",
+      "prereqs": [],
+      "practice": "Pick a real decision from your current system (a database, an identity provider, a hosting choice). Write it as a Nygard-style ADR in under 30 minutes: title, status, context, decision, consequences."
+    },
+    "architecture-decisions.html#c2": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Write an ADR when a decision is hard to reverse, crosses a team or system boundary, changes a quality attribute, or chooses between real options; decisions not to do something count too.",
+      "why": "Too few records lose the reasoning; too many bury it. A clear significance test keeps the log short enough to read and complete enough to trust.",
+      "prereqs": [
+        "architecture-decisions.html#c1"
+      ],
+      "practice": "List the last ten technical decisions on your team. Apply the four tests to each, mark which deserved an ADR, and write one for a decision not to do something."
+    },
+    "architecture-decisions.html#c3": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "The nine parts of a useful ADR: title, status, context, decision drivers, considered options, decision, consequences, confirmation, and revisit triggers; Nygard vs MADR; Y-statements.",
+      "why": "The options and the triggers are what make a record useful later: they show what was rejected and when the decision stops being right.",
+      "prereqs": [
+        "architecture-decisions.html#c1"
+      ],
+      "practice": "Take your ADR from the first exercise and extend it to the full template: add ranked drivers, two real alternatives written as their supporters would, consequences that hurt, and three measurable revisit triggers. Add a Y-statement summary."
+    },
+    "architecture-decisions.html#c4": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "ADRs live as numbered Markdown in the repository, are proposed and reviewed as pull requests, and are never edited once accepted: a changed decision is a new ADR that supersedes the old one.",
+      "why": "Immutable history shows what was believed when and why it changed, which is what auditors and new architects need. Records outside the repository drift from the code.",
+      "prereqs": [
+        "architecture-decisions.html#c3"
+      ],
+      "practice": "Set up docs/adr with adr-tools in a sample repository. Write two ADRs, supersede the first with a third, generate the index, and add a CI check that fails on a missing status or a broken supersede link."
+    },
+    "architecture-decisions.html#c5": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "A worked ADR for a platform choice: neutral context with numbers, ranked drivers, three steelmanned options, a decision tied to the drivers, honest consequences, and the triggers that later supersede it.",
+      "why": "An ADR is trusted only if the losing side recognises its own argument and the downsides are stated. This is also the shape of a strong design-interview answer.",
+      "prereqs": [
+        "architecture-decisions.html#c3",
+        "08-data-platforms.html#c10",
+        "lakehouse-platform.html#c8"
+      ],
+      "practice": "Write the build-vs-buy ADR for a data platform you know, comparing at least three options against ranked drivers with real numbers. Have someone who prefers a losing option review the context for neutrality, then write the superseding ADR for when a trigger fires."
+    },
+    "architecture-decisions.html#c6": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "Using ADRs to govern architecture: asynchronous review above a published line, the advice process below it, decisions enforced by policy and fitness functions, and ADR-shaped answers in interviews.",
+      "why": "Review boards that approve slides become bottlenecks, and decisions enforced only by memory erode. For an architect, the decision log is also the portfolio.",
+      "prereqs": [
+        "architecture-decisions.html#c4",
+        "architecture-decisions.html#c5",
+        "07-security.html#c4"
+      ],
+      "practice": "Write the review line for a team (what needs board review and what does not). Turn one ADR into an Azure Policy or a CI fitness function that cites it, and rehearse a two-minute ADR-shaped answer to \"why that database?\"."
     }
   },
   "paths": [
@@ -1296,7 +1358,10 @@
         "order-fulfilment.html#c2",
         "order-fulfilment.html#c4",
         "order-fulfilment.html#c5",
-        "order-fulfilment.html#c8"
+        "order-fulfilment.html#c8",
+        "architecture-decisions.html#c1",
+        "architecture-decisions.html#c2",
+        "architecture-decisions.html#c3"
       ]
     },
     {
@@ -1396,6 +1461,12 @@
         "order-fulfilment.html#c6",
         "order-fulfilment.html#c7",
         "order-fulfilment.html#c8",
+        "architecture-decisions.html#c1",
+        "architecture-decisions.html#c2",
+        "architecture-decisions.html#c3",
+        "architecture-decisions.html#c4",
+        "architecture-decisions.html#c5",
+        "architecture-decisions.html#c6",
         "lakehouse-platform.html#c1",
         "lakehouse-platform.html#c5",
         "lakehouse-platform.html#c2",

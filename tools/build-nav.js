@@ -52,6 +52,9 @@ const SITE = [
   { file: 'order-fulfilment.html', title: 'Order fulfilment', icon: 'truck' },
   { file: 'lakehouse-platform.html', title: 'Lakehouse platform', icon: 'bricks' },
 
+  { section: 'Architecture practice', crumb: 'Architecture practice' },
+  { file: 'architecture-decisions.html', title: 'Architecture decisions', icon: 'journal-check' },
+
   { section: 'Interview prep', crumb: 'Interview prep' },
   { file: 'prep-checklist.html', title: 'Interview checklist', icon: 'list-check' },
   { file: 'roadmap.html', title: 'Architecture roadmap', icon: 'signpost-split' },
