@@ -417,6 +417,23 @@
     pr.appendChild(el('p', null, c.practice));
     body.appendChild(pr);
 
+    if (c.reading && c.reading.length) {
+      var rd = el('div', 'kt-lm-panel__block');
+      rd.appendChild(el('h3', null, 'Read in the books'));
+      var rl = el('ul', 'kt-lm-refs');
+      c.reading.forEach(function (b) {
+        var li = el('li'), a = el('a', null, b.short);
+        a.href = b.card; a.title = b.title;
+        li.appendChild(a);
+        li.appendChild(document.createTextNode(' ' + b.chapters.map(function (ch) {
+          return 'ch. ' + ch.ch + ' ' + ch.title + (ch.first ? ' (1st ed. ch. ' + ch.first + ')' : '');
+        }).join(', ')));
+        rl.appendChild(li);
+      });
+      rd.appendChild(rl);
+      body.appendChild(rd);
+    }
+
     if (c.references.length) {
       var refs = el('div', 'kt-lm-panel__block');
       refs.appendChild(el('h3', null, 'Reference material'));

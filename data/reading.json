@@ -1,0 +1,1691 @@
+{
+  "books": {
+    "ddia": {
+      "title": "Designing Data-Intensive Applications, 2nd edition",
+      "short": "DDIA",
+      "card": "books.html#ddia",
+      "source": "O'Reilly table of contents, ISBN 9781098119058 (2nd ed.) and 9781491903063 (1st ed.)",
+      "toc": {
+        "1": {
+          "title": "Trade-Offs in Data Systems Architecture",
+          "first": 1
+        },
+        "2": {
+          "title": "Defining Nonfunctional Requirements",
+          "first": 1
+        },
+        "3": {
+          "title": "Data Models and Query Languages",
+          "first": 2
+        },
+        "4": {
+          "title": "Storage and Retrieval",
+          "first": 3
+        },
+        "5": {
+          "title": "Encoding and Evolution",
+          "first": 4
+        },
+        "6": {
+          "title": "Replication",
+          "first": 5
+        },
+        "7": {
+          "title": "Sharding",
+          "first": 6
+        },
+        "8": {
+          "title": "Transactions",
+          "first": 7
+        },
+        "9": {
+          "title": "The Trouble with Distributed Systems",
+          "first": 8
+        },
+        "10": {
+          "title": "Consistency and Consensus",
+          "first": 9
+        },
+        "11": {
+          "title": "Batch Processing",
+          "first": 10
+        },
+        "12": {
+          "title": "Stream Processing",
+          "first": 11
+        },
+        "13": {
+          "title": "A Philosophy of Streaming Systems",
+          "first": 12
+        },
+        "14": {
+          "title": "Doing the Right Thing",
+          "first": 12
+        }
+      }
+    },
+    "dbi": {
+      "title": "Database Internals",
+      "short": "Database Internals",
+      "card": "books.html#database-internals",
+      "source": "O'Reilly table of contents, ISBN 9781492040330",
+      "toc": {
+        "1": {
+          "title": "Introduction and Overview (storage engines)"
+        },
+        "2": {
+          "title": "B-Tree Basics"
+        },
+        "3": {
+          "title": "File Formats"
+        },
+        "4": {
+          "title": "Implementing B-Trees"
+        },
+        "5": {
+          "title": "Transaction Processing and Recovery"
+        },
+        "6": {
+          "title": "B-Tree Variants"
+        },
+        "7": {
+          "title": "Log-Structured Storage"
+        },
+        "8": {
+          "title": "Introduction and Overview (distributed systems)"
+        },
+        "9": {
+          "title": "Failure Detection"
+        },
+        "10": {
+          "title": "Leader Election"
+        },
+        "11": {
+          "title": "Replication and Consistency"
+        },
+        "12": {
+          "title": "Anti-Entropy and Dissemination"
+        },
+        "13": {
+          "title": "Distributed Transactions"
+        },
+        "14": {
+          "title": "Consensus"
+        }
+      }
+    },
+    "uds": {
+      "title": "Understanding Distributed Systems, 2nd edition",
+      "short": "Understanding Distributed Systems",
+      "card": "books.html#understanding-distributed-systems",
+      "source": "contents of the official sample, understandingdistributed.systems/sample.pdf (v2.0.0)",
+      "toc": {
+        "1": {
+          "title": "Introduction"
+        },
+        "2": {
+          "title": "Reliable links"
+        },
+        "3": {
+          "title": "Secure links"
+        },
+        "4": {
+          "title": "Discovery"
+        },
+        "5": {
+          "title": "APIs"
+        },
+        "6": {
+          "title": "System models"
+        },
+        "7": {
+          "title": "Failure detection"
+        },
+        "8": {
+          "title": "Time"
+        },
+        "9": {
+          "title": "Leader election"
+        },
+        "10": {
+          "title": "Replication"
+        },
+        "11": {
+          "title": "Coordination avoidance"
+        },
+        "12": {
+          "title": "Transactions"
+        },
+        "13": {
+          "title": "Asynchronous transactions"
+        },
+        "14": {
+          "title": "HTTP caching"
+        },
+        "15": {
+          "title": "Content delivery networks"
+        },
+        "16": {
+          "title": "Partitioning"
+        },
+        "17": {
+          "title": "File storage"
+        },
+        "18": {
+          "title": "Network load balancing"
+        },
+        "19": {
+          "title": "Data storage"
+        },
+        "20": {
+          "title": "Caching"
+        },
+        "21": {
+          "title": "Microservices"
+        },
+        "22": {
+          "title": "Control planes and data planes"
+        },
+        "23": {
+          "title": "Messaging"
+        },
+        "24": {
+          "title": "Common failure causes"
+        },
+        "25": {
+          "title": "Redundancy"
+        },
+        "26": {
+          "title": "Fault isolation"
+        },
+        "27": {
+          "title": "Downstream resiliency"
+        },
+        "28": {
+          "title": "Upstream resiliency"
+        },
+        "29": {
+          "title": "Testing"
+        },
+        "30": {
+          "title": "Continuous delivery and deployment"
+        },
+        "31": {
+          "title": "Monitoring"
+        },
+        "32": {
+          "title": "Observability"
+        },
+        "33": {
+          "title": "Manageability"
+        }
+      }
+    },
+    "aposd": {
+      "title": "A Philosophy of Software Design, 2nd edition",
+      "short": "A Philosophy of Software Design",
+      "card": "books.html#philosophy-of-software-design",
+      "source": "chapter 10 title as published in both editions (author's site confirms the 2nd edition adds only \"Decide What Matters\" near the end)",
+      "toc": {
+        "10": {
+          "title": "Define Errors Out of Existence"
+        }
+      }
+    },
+    "fode": {
+      "title": "Fundamentals of Data Engineering",
+      "short": "Fundamentals of Data Engineering",
+      "card": "books.html#fundamentals-of-data-engineering",
+      "source": "O'Reilly table of contents, ISBN 9781098108298",
+      "toc": {
+        "1": {
+          "title": "Data Engineering Described"
+        },
+        "2": {
+          "title": "The Data Engineering Lifecycle"
+        },
+        "3": {
+          "title": "Designing Good Data Architecture"
+        },
+        "4": {
+          "title": "Choosing Technologies Across the Data Engineering Lifecycle"
+        },
+        "5": {
+          "title": "Data Generation in Source Systems"
+        },
+        "6": {
+          "title": "Storage"
+        },
+        "7": {
+          "title": "Ingestion"
+        },
+        "8": {
+          "title": "Queries, Modeling, and Transformation"
+        },
+        "9": {
+          "title": "Serving Data for Analytics, Machine Learning, and Reverse ETL"
+        },
+        "10": {
+          "title": "Security and Privacy"
+        },
+        "11": {
+          "title": "The Future of Data Engineering"
+        }
+      }
+    },
+    "ss": {
+      "title": "Streaming Systems",
+      "short": "Streaming Systems",
+      "card": "books.html#streaming-systems",
+      "source": "O'Reilly table of contents, ISBN 9781491983867",
+      "toc": {
+        "1": {
+          "title": "Streaming 101"
+        },
+        "2": {
+          "title": "The What, Where, When, and How of Data Processing"
+        },
+        "3": {
+          "title": "Watermarks"
+        },
+        "4": {
+          "title": "Advanced Windowing"
+        },
+        "5": {
+          "title": "Exactly-Once and Side Effects"
+        },
+        "6": {
+          "title": "Streams and Tables"
+        },
+        "7": {
+          "title": "The Practicalities of Persistent State"
+        },
+        "8": {
+          "title": "Streaming SQL"
+        },
+        "9": {
+          "title": "Streaming Joins"
+        },
+        "10": {
+          "title": "The Evolution of Large-Scale Data Processing"
+        }
+      }
+    },
+    "dqf": {
+      "title": "Data Quality Fundamentals",
+      "short": "Data Quality Fundamentals",
+      "card": "books.html#data-quality-fundamentals",
+      "source": "O'Reilly table of contents, ISBN 9781098112035",
+      "toc": {
+        "1": {
+          "title": "Why Data Quality Deserves Attention—Now"
+        },
+        "2": {
+          "title": "Assembling the Building Blocks of a Reliable Data System"
+        },
+        "3": {
+          "title": "Collecting, Cleaning, Transforming, and Testing Data"
+        },
+        "4": {
+          "title": "Monitoring and Anomaly Detection for Your Data Pipelines"
+        },
+        "5": {
+          "title": "Architecting for Data Reliability"
+        },
+        "6": {
+          "title": "Fixing Data Quality Issues at Scale"
+        },
+        "7": {
+          "title": "Building End-to-End Lineage"
+        },
+        "8": {
+          "title": "Democratizing Data Quality"
+        },
+        "9": {
+          "title": "Data Quality in the Real World: Conversations and Case Studies"
+        },
+        "10": {
+          "title": "Pioneering the Future of Reliable Data Systems"
+        }
+      }
+    },
+    "dg": {
+      "title": "Data Governance: The Definitive Guide",
+      "short": "Data Governance",
+      "card": "books.html#data-governance-definitive-guide",
+      "source": "O'Reilly table of contents, ISBN 9781492063483",
+      "toc": {
+        "1": {
+          "title": "What Is Data Governance?"
+        },
+        "2": {
+          "title": "Ingredients of Data Governance: Tools"
+        },
+        "3": {
+          "title": "Ingredients of Data Governance: People and Processes"
+        },
+        "4": {
+          "title": "Data Governance over a Data Life Cycle"
+        },
+        "5": {
+          "title": "Improving Data Quality"
+        },
+        "6": {
+          "title": "Governance of Data in Flight"
+        },
+        "7": {
+          "title": "Data Protection"
+        },
+        "8": {
+          "title": "Monitoring"
+        },
+        "9": {
+          "title": "Building a Culture of Data Privacy and Security"
+        }
+      }
+    },
+    "fosa": {
+      "title": "Fundamentals of Software Architecture, 2nd edition",
+      "short": "Fundamentals of Software Architecture",
+      "card": "books.html#fundamentals-of-software-architecture",
+      "source": "O'Reilly table of contents, ISBN 9781098175504 (2nd ed.) and 9781492043447 (1st ed.)",
+      "toc": {
+        "1": {
+          "title": "Introduction",
+          "first": 1
+        },
+        "2": {
+          "title": "Architectural Thinking",
+          "first": 2
+        },
+        "3": {
+          "title": "Modularity",
+          "first": 3
+        },
+        "4": {
+          "title": "Architectural Characteristics Defined",
+          "first": 4
+        },
+        "5": {
+          "title": "Identifying Architectural Characteristics",
+          "first": 5
+        },
+        "6": {
+          "title": "Measuring and Governing Architecture Characteristics",
+          "first": 6
+        },
+        "7": {
+          "title": "The Scope of Architectural Characteristics",
+          "first": 7
+        },
+        "8": {
+          "title": "Component-Based Thinking",
+          "first": 8
+        },
+        "9": {
+          "title": "Foundations",
+          "first": 9
+        },
+        "10": {
+          "title": "Layered Architecture Style",
+          "first": 10
+        },
+        "11": {
+          "title": "The Modular Monolith Architecture Style"
+        },
+        "12": {
+          "title": "Pipeline Architecture Style",
+          "first": 11
+        },
+        "13": {
+          "title": "Microkernel Architecture Style",
+          "first": 12
+        },
+        "14": {
+          "title": "Service-Based Architecture Style",
+          "first": 13
+        },
+        "15": {
+          "title": "Event-Driven Architecture Style",
+          "first": 14
+        },
+        "16": {
+          "title": "Space-Based Architecture Style",
+          "first": 15
+        },
+        "17": {
+          "title": "Orchestration-Driven Service-Oriented Architecture",
+          "first": 16
+        },
+        "18": {
+          "title": "Microservices Architecture",
+          "first": 17
+        },
+        "19": {
+          "title": "Choosing the Appropriate Architecture Style",
+          "first": 18
+        },
+        "20": {
+          "title": "Architectural Patterns"
+        },
+        "21": {
+          "title": "Architectural Decisions",
+          "first": 19
+        },
+        "22": {
+          "title": "Analyzing Architecture Risk",
+          "first": 20
+        },
+        "23": {
+          "title": "Diagramming Architecture",
+          "first": 21
+        },
+        "24": {
+          "title": "Making Teams Effective",
+          "first": 22
+        },
+        "25": {
+          "title": "Negotiation and Leadership Skills",
+          "first": 23
+        },
+        "26": {
+          "title": "Architectural Intersections"
+        },
+        "27": {
+          "title": "The Laws of Software Architecture, Revisited"
+        }
+      }
+    },
+    "sre": {
+      "title": "Site Reliability Engineering",
+      "short": "Site Reliability Engineering",
+      "card": "books.html#site-reliability-engineering",
+      "source": "sre.google/sre-book/table-of-contents/ and O'Reilly ISBN 9781491929117",
+      "toc": {
+        "3": {
+          "title": "Embracing Risk",
+          "url": "https://sre.google/sre-book/embracing-risk/"
+        },
+        "4": {
+          "title": "Service Level Objectives",
+          "url": "https://sre.google/sre-book/service-level-objectives/"
+        },
+        "6": {
+          "title": "Monitoring Distributed Systems",
+          "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+        },
+        "8": {
+          "title": "Release Engineering",
+          "url": "https://sre.google/sre-book/release-engineering/"
+        },
+        "10": {
+          "title": "Practical Alerting from Time-Series Data",
+          "url": "https://sre.google/sre-book/practical-alerting/"
+        },
+        "12": {
+          "title": "Effective Troubleshooting",
+          "url": "https://sre.google/sre-book/effective-troubleshooting/"
+        },
+        "14": {
+          "title": "Managing Incidents",
+          "url": "https://sre.google/sre-book/managing-incidents/"
+        },
+        "15": {
+          "title": "Postmortem Culture: Learning from Failure",
+          "url": "https://sre.google/sre-book/postmortem-culture/"
+        },
+        "17": {
+          "title": "Testing for Reliability",
+          "url": "https://sre.google/sre-book/testing-reliability/"
+        },
+        "19": {
+          "title": "Load Balancing at the Frontend",
+          "url": "https://sre.google/sre-book/load-balancing-frontend/"
+        },
+        "20": {
+          "title": "Load Balancing in the Datacenter",
+          "url": "https://sre.google/sre-book/load-balancing-datacenter/"
+        },
+        "21": {
+          "title": "Handling Overload",
+          "url": "https://sre.google/sre-book/handling-overload/"
+        },
+        "22": {
+          "title": "Addressing Cascading Failures",
+          "url": "https://sre.google/sre-book/addressing-cascading-failures/"
+        },
+        "23": {
+          "title": "Managing Critical State: Distributed Consensus for Reliability",
+          "url": "https://sre.google/sre-book/managing-critical-state/"
+        },
+        "25": {
+          "title": "Data Processing Pipelines",
+          "url": "https://sre.google/sre-book/data-processing-pipelines/"
+        },
+        "26": {
+          "title": "Data Integrity: What You Read Is What You Wrote",
+          "url": "https://sre.google/sre-book/data-integrity/"
+        }
+      }
+    },
+    "bsrs": {
+      "title": "Building Secure and Reliable Systems",
+      "short": "Building Secure and Reliable Systems",
+      "card": "books.html#building-secure-reliable-systems",
+      "source": "google.github.io/building-secure-and-reliable-systems/raw/toc.html and O'Reilly ISBN 9781492083115",
+      "toc": {
+        "1": {
+          "title": "The Intersection of Security and Reliability",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch01.html"
+        },
+        "2": {
+          "title": "Understanding Adversaries",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch02.html"
+        },
+        "3": {
+          "title": "Case Study: Safe Proxies",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch03.html"
+        },
+        "4": {
+          "title": "Design Tradeoffs",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch04.html"
+        },
+        "5": {
+          "title": "Design for Least Privilege",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch05.html"
+        },
+        "6": {
+          "title": "Design for Understandability",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch06.html"
+        },
+        "7": {
+          "title": "Design for a Changing Landscape",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch07.html"
+        },
+        "8": {
+          "title": "Design for Resilience",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch08.html"
+        },
+        "9": {
+          "title": "Design for Recovery",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch09.html"
+        },
+        "10": {
+          "title": "Mitigating Denial-of-Service Attacks",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch10.html"
+        },
+        "11": {
+          "title": "Case Study: Designing, Implementing, and Maintaining a Publicly Trusted CA",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch11.html"
+        },
+        "12": {
+          "title": "Writing Code",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch12.html"
+        },
+        "13": {
+          "title": "Testing Code",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch13.html"
+        },
+        "14": {
+          "title": "Deploying Code",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch14.html"
+        },
+        "15": {
+          "title": "Investigating Systems",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch15.html"
+        },
+        "16": {
+          "title": "Disaster Planning",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch16.html"
+        },
+        "17": {
+          "title": "Crisis Management",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch17.html"
+        },
+        "18": {
+          "title": "Recovery and Aftermath",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch18.html"
+        },
+        "19": {
+          "title": "Case Study: Chrome Security Team",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch19.html"
+        },
+        "20": {
+          "title": "Understanding Roles and Responsibilities",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch20.html"
+        },
+        "21": {
+          "title": "Building a Culture of Security and Reliability",
+          "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch21.html"
+        }
+      }
+    }
+  },
+  "refs": {
+    "01-distributed-systems.html#c1": [
+      [
+        "ddia",
+        9
+      ],
+      [
+        "uds",
+        6
+      ]
+    ],
+    "01-distributed-systems.html#c2": [
+      [
+        "ddia",
+        10
+      ],
+      [
+        "uds",
+        10
+      ],
+      [
+        "dbi",
+        11
+      ]
+    ],
+    "01-distributed-systems.html#c3": [
+      [
+        "uds",
+        10
+      ],
+      [
+        "ddia",
+        10
+      ]
+    ],
+    "01-distributed-systems.html#c4": [
+      [
+        "ddia",
+        10,
+        6
+      ],
+      [
+        "uds",
+        10
+      ]
+    ],
+    "01-distributed-systems.html#c5": [
+      [
+        "ddia",
+        10
+      ],
+      [
+        "uds",
+        8
+      ]
+    ],
+    "01-distributed-systems.html#c6": [
+      [
+        "ddia",
+        10
+      ],
+      [
+        "uds",
+        9,
+        10
+      ],
+      [
+        "dbi",
+        14
+      ],
+      [
+        "sre",
+        23
+      ]
+    ],
+    "01-distributed-systems.html#c7": [
+      [
+        "ddia",
+        6
+      ],
+      [
+        "dbi",
+        11
+      ]
+    ],
+    "01-distributed-systems.html#c8": [
+      [
+        "uds",
+        27
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "01-distributed-systems.html#c9": [
+      [
+        "ss",
+        5
+      ],
+      [
+        "ddia",
+        8,
+        12
+      ],
+      [
+        "uds",
+        23
+      ]
+    ],
+    "01-distributed-systems.html#c10": [
+      [
+        "dbi",
+        9
+      ],
+      [
+        "uds",
+        7
+      ],
+      [
+        "ddia",
+        9
+      ]
+    ],
+    "02-data-storage.html#c1": [
+      [
+        "ddia",
+        4
+      ],
+      [
+        "dbi",
+        2,
+        7
+      ]
+    ],
+    "02-data-storage.html#c2": [
+      [
+        "dbi",
+        1
+      ],
+      [
+        "ddia",
+        4
+      ]
+    ],
+    "02-data-storage.html#c3": [
+      [
+        "ddia",
+        8
+      ],
+      [
+        "dbi",
+        5
+      ]
+    ],
+    "02-data-storage.html#c4": [
+      [
+        "ddia",
+        8
+      ]
+    ],
+    "02-data-storage.html#c5": [
+      [
+        "ddia",
+        8
+      ],
+      [
+        "dbi",
+        5
+      ]
+    ],
+    "02-data-storage.html#c6": [
+      [
+        "ddia",
+        6
+      ],
+      [
+        "uds",
+        10
+      ],
+      [
+        "dbi",
+        11
+      ]
+    ],
+    "02-data-storage.html#c7": [
+      [
+        "ddia",
+        7
+      ],
+      [
+        "uds",
+        16
+      ]
+    ],
+    "02-data-storage.html#c8": [
+      [
+        "ddia",
+        12
+      ],
+      [
+        "fode",
+        7
+      ]
+    ],
+    "02-data-storage.html#c9": [
+      [
+        "ddia",
+        3
+      ],
+      [
+        "ddia",
+        1
+      ]
+    ],
+    "02-data-storage.html#c10": [
+      [
+        "ddia",
+        12
+      ],
+      [
+        "uds",
+        13
+      ]
+    ],
+    "03-apis-contracts.html#c1": [
+      [
+        "uds",
+        5
+      ],
+      [
+        "ddia",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c2": [
+      [
+        "ddia",
+        5
+      ],
+      [
+        "uds",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c3": [
+      [
+        "ddia",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c4": [
+      [
+        "uds",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c5": [
+      [
+        "aposd",
+        10
+      ],
+      [
+        "uds",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c6": [
+      [
+        "uds",
+        28
+      ],
+      [
+        "bsrs",
+        10
+      ]
+    ],
+    "03-apis-contracts.html#c7": [
+      [
+        "bsrs",
+        6
+      ],
+      [
+        "uds",
+        3
+      ]
+    ],
+    "03-apis-contracts.html#c8": [
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "03-apis-contracts.html#c9": [
+      [
+        "uds",
+        5,
+        27
+      ]
+    ],
+    "03-apis-contracts.html#c10": [
+      [
+        "uds",
+        14
+      ]
+    ],
+    "04-microservices-patterns.html#p1": [
+      [
+        "uds",
+        13
+      ]
+    ],
+    "04-microservices-patterns.html#p2": [
+      [
+        "uds",
+        27
+      ],
+      [
+        "sre",
+        22
+      ]
+    ],
+    "04-microservices-patterns.html#p3": [
+      [
+        "uds",
+        27,
+        24
+      ],
+      [
+        "sre",
+        22
+      ]
+    ],
+    "04-microservices-patterns.html#p4": [
+      [
+        "uds",
+        21
+      ]
+    ],
+    "04-microservices-patterns.html#p5": [
+      [
+        "uds",
+        5
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "04-microservices-patterns.html#p6": [
+      [
+        "fosa",
+        15
+      ],
+      [
+        "uds",
+        23
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "04-microservices-patterns.html#p7": [
+      [
+        "uds",
+        26
+      ]
+    ],
+    "04-microservices-patterns.html#p8": [
+      [
+        "uds",
+        4,
+        18
+      ]
+    ],
+    "04-microservices-patterns.html#p9": [
+      [
+        "ddia",
+        3
+      ],
+      [
+        "fosa",
+        20
+      ]
+    ],
+    "04-microservices-patterns.html#p10": [
+      [
+        "uds",
+        13
+      ]
+    ],
+    "04-microservices-patterns.html#p11": [
+      [
+        "fosa",
+        20
+      ],
+      [
+        "uds",
+        22
+      ]
+    ],
+    "04-microservices-patterns.html#p12": [
+      [
+        "fosa",
+        18
+      ],
+      [
+        "uds",
+        21
+      ]
+    ],
+    "05-reliability-observability.html#c1": [
+      [
+        "sre",
+        4,
+        3
+      ]
+    ],
+    "05-reliability-observability.html#c2": [
+      [
+        "sre",
+        6
+      ],
+      [
+        "uds",
+        31
+      ]
+    ],
+    "05-reliability-observability.html#c3": [
+      [
+        "uds",
+        32
+      ],
+      [
+        "bsrs",
+        15
+      ]
+    ],
+    "05-reliability-observability.html#c4": [
+      [
+        "uds",
+        32
+      ]
+    ],
+    "05-reliability-observability.html#c5": [
+      [
+        "sre",
+        10
+      ],
+      [
+        "uds",
+        31
+      ]
+    ],
+    "05-reliability-observability.html#c6": [
+      [
+        "sre",
+        22
+      ],
+      [
+        "uds",
+        28
+      ]
+    ],
+    "05-reliability-observability.html#c7": [
+      [
+        "sre",
+        21
+      ],
+      [
+        "uds",
+        28
+      ]
+    ],
+    "05-reliability-observability.html#c8": [
+      [
+        "sre",
+        8
+      ],
+      [
+        "uds",
+        30
+      ],
+      [
+        "bsrs",
+        14
+      ]
+    ],
+    "05-reliability-observability.html#c9": [
+      [
+        "ddia",
+        5
+      ],
+      [
+        "uds",
+        30
+      ]
+    ],
+    "05-reliability-observability.html#c10": [
+      [
+        "sre",
+        14,
+        15
+      ],
+      [
+        "bsrs",
+        17
+      ]
+    ],
+    "06-performance-scale.html#c1": [
+      [
+        "ddia",
+        2
+      ]
+    ],
+    "06-performance-scale.html#c2": [
+      [
+        "ddia",
+        2
+      ],
+      [
+        "uds",
+        31
+      ]
+    ],
+    "06-performance-scale.html#c3": [
+      [
+        "ddia",
+        3
+      ]
+    ],
+    "06-performance-scale.html#c4": [
+      [
+        "uds",
+        20
+      ]
+    ],
+    "06-performance-scale.html#c5": [
+      [
+        "uds",
+        2
+      ]
+    ],
+    "06-performance-scale.html#c6": [
+      [
+        "ddia",
+        2
+      ],
+      [
+        "uds",
+        2
+      ]
+    ],
+    "06-performance-scale.html#c7": [
+      [
+        "ddia",
+        11,
+        12
+      ],
+      [
+        "ss",
+        1
+      ]
+    ],
+    "06-performance-scale.html#c8": [
+      [
+        "uds",
+        15
+      ]
+    ],
+    "06-performance-scale.html#c9": [
+      [
+        "ddia",
+        7
+      ],
+      [
+        "uds",
+        16
+      ]
+    ],
+    "06-performance-scale.html#c10": [
+      [
+        "sre",
+        17
+      ],
+      [
+        "uds",
+        29
+      ]
+    ],
+    "07-security.html#c1": [
+      [
+        "bsrs",
+        8
+      ]
+    ],
+    "07-security.html#c2": [
+      [
+        "bsrs",
+        2
+      ]
+    ],
+    "07-security.html#c3": [
+      [
+        "bsrs",
+        5,
+        9
+      ]
+    ],
+    "07-security.html#c4": [
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "07-security.html#c5": [
+      [
+        "uds",
+        3
+      ],
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "07-security.html#c6": [
+      [
+        "uds",
+        3
+      ],
+      [
+        "dg",
+        7
+      ]
+    ],
+    "07-security.html#c7": [
+      [
+        "bsrs",
+        14
+      ]
+    ],
+    "07-security.html#c8": [
+      [
+        "bsrs",
+        15
+      ],
+      [
+        "dg",
+        8
+      ]
+    ],
+    "07-security.html#c9": [
+      [
+        "bsrs",
+        10
+      ],
+      [
+        "uds",
+        28
+      ]
+    ],
+    "07-security.html#c10": [
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "08-data-platforms.html#c1": [
+      [
+        "ddia",
+        4
+      ],
+      [
+        "fode",
+        5
+      ]
+    ],
+    "08-data-platforms.html#c2": [
+      [
+        "ddia",
+        4
+      ],
+      [
+        "fode",
+        6
+      ]
+    ],
+    "08-data-platforms.html#c3": [
+      [
+        "fode",
+        6
+      ],
+      [
+        "uds",
+        17
+      ]
+    ],
+    "08-data-platforms.html#c4": [
+      [
+        "fode",
+        3,
+        6
+      ]
+    ],
+    "08-data-platforms.html#c5": [
+      [
+        "fode",
+        6
+      ]
+    ],
+    "08-data-platforms.html#c6": [
+      [
+        "fode",
+        7,
+        5
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "08-data-platforms.html#c7": [
+      [
+        "fode",
+        8
+      ]
+    ],
+    "08-data-platforms.html#c8": [
+      [
+        "fode",
+        2
+      ]
+    ],
+    "08-data-platforms.html#c9": [
+      [
+        "dqf",
+        3
+      ],
+      [
+        "dqf",
+        5
+      ]
+    ],
+    "08-data-platforms.html#c10": [
+      [
+        "fode",
+        9,
+        4
+      ]
+    ],
+    "08-data-platforms.html#c11": [
+      [
+        "ss",
+        1,
+        2,
+        3
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "08-data-platforms.html#c12": [
+      [
+        "dqf",
+        4,
+        7
+      ]
+    ],
+    "08-data-platforms.html#c13": [
+      [
+        "dg",
+        1,
+        7
+      ],
+      [
+        "fode",
+        10
+      ]
+    ],
+    "payment-system.html#c1": [
+      [
+        "uds",
+        13
+      ],
+      [
+        "fosa",
+        18
+      ]
+    ],
+    "payment-system.html#c2": [
+      [
+        "ddia",
+        3,
+        12
+      ]
+    ],
+    "payment-system.html#c3": [
+      [
+        "ss",
+        5
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "payment-system.html#c4": [
+      [
+        "ddia",
+        8
+      ]
+    ],
+    "payment-system.html#c5": [
+      [
+        "uds",
+        13
+      ]
+    ],
+    "payment-system.html#c6": [
+      [
+        "bsrs",
+        5
+      ],
+      [
+        "dg",
+        7
+      ]
+    ],
+    "payment-system.html#c7": [
+      [
+        "ddia",
+        11
+      ],
+      [
+        "dqf",
+        3
+      ],
+      [
+        "sre",
+        26
+      ]
+    ],
+    "payment-system.html#c8": [
+      [
+        "uds",
+        27,
+        23
+      ]
+    ],
+    "order-fulfilment.html#c1": [
+      [
+        "fosa",
+        15
+      ],
+      [
+        "uds",
+        21
+      ]
+    ],
+    "order-fulfilment.html#c2": [
+      [
+        "ddia",
+        8
+      ]
+    ],
+    "order-fulfilment.html#c3": [
+      [
+        "ddia",
+        4
+      ]
+    ],
+    "order-fulfilment.html#c4": [
+      [
+        "uds",
+        13
+      ]
+    ],
+    "order-fulfilment.html#c5": [
+      [
+        "ddia",
+        4,
+        12
+      ]
+    ],
+    "order-fulfilment.html#c6": [
+      [
+        "fode",
+        9
+      ],
+      [
+        "ss",
+        4
+      ]
+    ],
+    "order-fulfilment.html#c7": [
+      [
+        "uds",
+        13
+      ]
+    ],
+    "order-fulfilment.html#c8": [
+      [
+        "ddia",
+        12
+      ],
+      [
+        "ss",
+        6
+      ]
+    ],
+    "lakehouse-platform.html#c1": [
+      [
+        "fosa",
+        4
+      ],
+      [
+        "fode",
+        3
+      ]
+    ],
+    "lakehouse-platform.html#c2": [
+      [
+        "fode",
+        4,
+        6
+      ]
+    ],
+    "lakehouse-platform.html#c3": [
+      [
+        "fode",
+        7
+      ],
+      [
+        "ss",
+        6
+      ],
+      [
+        "ddia",
+        12
+      ]
+    ],
+    "lakehouse-platform.html#c4": [
+      [
+        "fode",
+        4
+      ]
+    ],
+    "lakehouse-platform.html#c5": [
+      [
+        "fode",
+        7
+      ],
+      [
+        "uds",
+        3
+      ]
+    ],
+    "lakehouse-platform.html#c6": [
+      [
+        "dqf",
+        3,
+        4
+      ]
+    ],
+    "lakehouse-platform.html#c7": [
+      [
+        "dg",
+        7
+      ],
+      [
+        "fode",
+        10
+      ]
+    ],
+    "lakehouse-platform.html#c8": [
+      [
+        "fosa",
+        21,
+        19
+      ],
+      [
+        "fode",
+        4
+      ]
+    ],
+    "architecture-decisions.html#c1": [
+      [
+        "fosa",
+        21
+      ]
+    ],
+    "architecture-decisions.html#c2": [
+      [
+        "fosa",
+        21,
+        5
+      ]
+    ],
+    "architecture-decisions.html#c3": [
+      [
+        "fosa",
+        21
+      ]
+    ],
+    "architecture-decisions.html#c4": [
+      [
+        "fosa",
+        21
+      ]
+    ],
+    "architecture-decisions.html#c5": [
+      [
+        "fosa",
+        21,
+        22
+      ]
+    ],
+    "architecture-decisions.html#c6": [
+      [
+        "fosa",
+        21,
+        25
+      ]
+    ]
+  }
+}
