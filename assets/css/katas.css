@@ -30,6 +30,7 @@
      12  Prep checklist
      12b Roadmap (roadmap.html)
      12c Learning map (learning-map.html) and the per-concept mastery bar
+     12d On this page
      13  Responsive, print, reduced motion
 
    The kata class names (.pattern, .callout-box, .code-pane ...) are kept and
@@ -37,10 +38,12 @@
    class a script depends on keeps its name and gets restyled. New components
    are prefixed .kt-.
 
-   NAVIGATION is the sidebar's job, and only the sidebar's: it lists every
-   page and expands the current one into its sections. There is no on-page
-   contents card and no page-end prev / next -- the header's arrows are the one
-   sequential control. tools/build-nav.js writes both from one site map. */
+   NAVIGATION is the sidebar's job: it lists every page and expands the
+   current one into its sections. On wide screens "On this page" (12d) repeats
+   those sections beside the content; katas.js builds it from the sidebar's
+   links, so there is still one source. There is no page-end prev / next --
+   the header's arrows are the one sequential control. tools/build-nav.js
+   writes the sidebar and header from one site map. */
 
 
 /* ==========================================================================
@@ -59,6 +62,7 @@
   --kt-cover-w:         128px;   /* book cover on the reading list */
   --kt-cover-w-sm:      80px;
   --kt-lm-panel-w:      380px;   /* learning map: the concept panel */
+  --kt-toc-w:           200px;   /* "On this page", right of the content */
 
   /* Syntax. Near-monochrome on purpose: weight and ink carry most of it, and
      the two status hues used are there to separate literals from code, not to
@@ -1052,6 +1056,93 @@ a.hf-iconbtn { text-decoration: none; }
 
 
 /* ==========================================================================
+   12d  ON THIS PAGE
+   A contents list pinned beside the content on wide screens. katas.js adds
+   .kt-has-toc and the aside to .kt-page; below 1400px it stays hidden and the
+   sidebar's expanded page does the same job. Absolutely positioned rather
+   than a grid column, so .kt-page's children (and .kt-page > footer) keep
+   their layout.
+   ========================================================================== */
+
+.kt-toc { display: none; }
+
+@media (min-width: 1400px) {
+  .kt-page.kt-has-toc {
+    position: relative;
+    max-width: calc(var(--kt-read-max) + var(--kt-toc-w) + var(--hf-sp-8));
+    padding-right: calc(var(--kt-toc-w) + var(--hf-sp-8));
+  }
+  .kt-toc {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--kt-toc-w);
+  }
+}
+
+.kt-toc__inner {
+  position: sticky;
+  top: calc(var(--hf-header-h) + var(--hf-sp-5));
+  max-height: calc(100vh - var(--hf-header-h) - var(--hf-sp-8));
+  overflow-y: auto;
+  padding-left: var(--hf-sp-3);
+  border-left: 1px solid var(--hf-hairline-soft);
+}
+.kt-toc__label {
+  margin: 0 0 var(--hf-sp-2);
+  font-size: var(--hf-fs-xxs);
+  font-weight: var(--hf-fw-semibold);
+  letter-spacing: var(--hf-ls-caps);
+  text-transform: uppercase;
+  color: var(--hf-ink-muted);
+}
+.kt-toc__list { list-style: none; margin: 0; padding: 0; }
+.kt-toc__link {
+  position: relative;
+  display: flex;
+  gap: var(--hf-sp-2);
+  padding: var(--hf-sp-1) 0;
+  font-size: var(--hf-fs-xs);
+  line-height: var(--hf-lh-snug);
+  color: var(--hf-ink-secondary);
+  text-decoration: none;
+}
+.kt-toc__link:hover { color: var(--hf-ink); }
+.kt-toc__link.is-active { color: var(--hf-ink); font-weight: var(--hf-fw-semibold); }
+/* The same bar the sidebar uses for the current section, on the rule. */
+.kt-toc__link.is-active::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--hf-sp-3) - 1px);
+  top: var(--hf-sp-1);
+  bottom: var(--hf-sp-1);
+  width: 2px;
+  background: var(--hf-ink);
+}
+.kt-toc__num {
+  flex: none;
+  min-width: 2ch;
+  font-family: var(--hf-font-mono);
+  color: var(--hf-ink-faint);
+}
+.kt-toc__link.is-active .kt-toc__num { color: var(--hf-ink-muted); }
+.kt-toc__top {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hf-sp-1);
+  margin-top: var(--hf-sp-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--hf-fs-xxs);
+  color: var(--hf-ink-muted);
+}
+.kt-toc__top:hover { color: var(--hf-ink); }
+
+
+/* ==========================================================================
    13  RESPONSIVE, PRINT, REDUCED MOTION
    Breakpoints match SiteUI (Bootstrap): lg 992, md 768.
    ========================================================================== */
@@ -1104,4 +1195,6 @@ a.hf-iconbtn { text-decoration: none; }
   .code-pane { display: block; max-height: none; }
   .code-tabs { display: none; }
   .pattern { break-inside: avoid-page; }
+  .kt-toc { display: none; }
+  .kt-page.kt-has-toc { padding-right: 0; }
 }

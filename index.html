@@ -27,7 +27,16 @@
     </a>
 
     <nav class="hf-nav" aria-label="Main navigation">
-      <div class="hf-nav__item"><a class="hf-nav__link is-active" aria-current="page" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="index.html" aria-current="page">
+          <i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#principles" title="Principles"><span class="hf-nav__text">Principles</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#how-to-read" title="How to read this"><span class="hf-nav__text">How to read this</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#the-curriculum" title="The curriculum"><span class="hf-nav__text">The curriculum</span></a></div>
+        </div>
+      </div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="learning-map.html"><i class="bi bi-diagram-2 hf-nav__icon"></i><span class="hf-nav__text">Learning map</span></a></div>
       <div class="hf-nav__section">Tier 1 · Foundations</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
@@ -92,7 +101,7 @@
         </div>
       </header>
 
-      <section class="principles" aria-label="Principles">
+      <section class="principles" id="principles" data-nav="Principles" aria-label="Principles">
         <div class="principle">
           <div class="num">Principle 01</div>
           <h4>Theory pays rent.</h4>
@@ -115,14 +124,14 @@
         </div>
       </section>
 
-      <div class="card hf-card--sunken kt-howto">
+      <div class="card hf-card--sunken kt-howto" id="how-to-read" data-nav="How to read this">
         <div class="card-body">
           <span class="hf-eyebrow">How to read this</span>
           <p>The pillars are ordered into <strong>five tiers</strong>, each building on the last. You <em>can</em> jump around, but the cross-references assume you've seen the foundations. One tier a month gives you a senior engineer's mental model in about five months. Cramming for an interview? Read tier one cover to cover, skim tier two, and pick from three to five by role: tier five if the role touches data platforms, streaming or data governance. The <a href="learning-map.html">learning map</a> puts every concept in study order, and the <a href="roadmap.html">roadmap</a> and <a href="prep-checklist.html">interview checklist</a> turn it into a plan.</p>
         </div>
       </div>
 
-      <section class="hf-section kt-curriculum" aria-labelledby="curriculum">
+      <section class="hf-section kt-curriculum" id="the-curriculum" data-nav="The curriculum" aria-labelledby="curriculum">
         <div class="hf-section__head">
           <h2 class="hf-section__title" id="curriculum">The curriculum</h2>
           <p class="hf-meta">In reading order — the sidebar follows the same order.</p>
