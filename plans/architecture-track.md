@@ -47,8 +47,38 @@ not on feeling.
 
 ## The weekly rhythm (10 h)
 
-| Block | Hours | Output |
-|---|---|---|
+Since 11 Oct 2026 the 10 hours are split three ways: **5 h exam track**, **3 h
+mastering the guide's concepts**, **2 h coding**. The same table is on the
+roadmap page under "Your week".
+
+| Day | Hours | Block | What you do |
+|---|---|---|---|
+| Mon | 1 | **Coding** | Two LeetCode mediums, 25 min each on a timer; say the approach out loud before coding |
+| Tue | 1 | **Concept A** | 10 min recalling last week's two concepts from memory; then the page, the diagram, a 2-minute explanation out loud |
+| Wed | 1 | **Exam track: understand** | This week's roadmap item on Microsoft Learn, read through its architect's question |
+| Thu | 1 | **Coding** | As Monday, plus redo one problem you failed before |
+| Sat | 4 | **Exam track: understand, prove, decide** | 1 h finish the learning · 2 h the Azure spike (Bicep: deploy, check, tear down) · 1 h the ADR and saying it three ways |
+| Sun | 2 | **Concept B, in depth** | The page, the chapter on its "Read" line, then its practice exercise (or the smallest version that teaches it); set mastery on the learning map |
+
+- **Concept order:** the learning map's architect path, two concepts a week
+  (about 10-12 months for all of it). Concepts that repeat each other count as
+  one session. When a sprint covers the same ground, take the concepts from its
+  page: 07 during Sprint 2, 08 during Sprint 3's data weeks.
+- **Exam weeks:** the last week of each sprint flips to 7 h of practice tests
+  and weak areas, 1 h concept review, coding stays at 2 h.
+- **Once a month:** Sunday becomes a mock interview: one applied design,
+  35 minutes, out loud, timed; write down what you could not explain.
+- **Mastered** means level 3 on the map: explained without notes, you know when
+  not to use it, and the exercise is done.
+- **Missed a session:** drop the concept, never the coding or the exam spike.
+
+The exam block keeps its shape from the original plan: **understand** (the
+domain through the architect's question behind it), **prove** (the smallest
+Azure spike that tests the idea), **decide** (one ADR), **explain** (interview
+answer, stakeholder line, teach it). In the final week of each sprint it flips
+to practice tests, weak areas and the exam.
+
+---|---|---|
 | **Understand**: the exam domain through the architect's question behind it (Microsoft Learn + docs) | 3 | A diagram and a one-page note |
 | **Prove**: the smallest Azure spike that tests the idea | 3 | Bicep + a few lines of code, deployed, checked, torn down |
 | **Decide**: one architecture decision record | 1 | ADR (context, options, decision, consequences, when to revisit) |

@@ -879,6 +879,10 @@ a.hf-iconbtn { text-decoration: none; }
 .kt-rm-exam.is-passed { border-top: 3px solid var(--hf-success-fg); }
 .kt-rm-exam.is-next   { border-top: 3px solid var(--hf-ink); }
 
+/* Your week: the 10-hour split as a table, then the rules that keep it. */
+.kt-rm-week { margin: 0 0 var(--hf-sp-6); }
+.kt-rm-week .kt-reminders { margin: var(--hf-sp-4) 0 0; }
+
 .kt-rm-timeline { margin: 0 0 var(--hf-sp-5); }
 .kt-rm-timeline .card-body { padding: var(--hf-sp-3) var(--hf-sp-4) var(--hf-sp-2); }
 .kt-rm-timeline__scroll { overflow-x: auto; }
