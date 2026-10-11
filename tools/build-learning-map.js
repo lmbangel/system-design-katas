@@ -36,6 +36,7 @@ const PAGES = [
   ['payment-system.html', 'Applied A · Payment processing'],
   ['order-fulfilment.html', 'Applied B · Order fulfilment'],
   ['lakehouse-platform.html', 'Applied C · Lakehouse platform'],
+  ['architecture-decisions.html', 'Practice · Architecture decisions'],
 ];
 
 const text = s => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
