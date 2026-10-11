@@ -55,6 +55,7 @@
           <i class="bi bi-signpost-split hf-nav__icon"></i><span class="hf-nav__text">Architecture roadmap</span><i class="bi bi-chevron-right hf-nav__chev"></i>
         </button>
         <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#your-week" title="Your week"><span class="hf-nav__text">Your week</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-1" title="Sprint 1 · AZ-104"><span class="hf-nav__text">Sprint 1 · AZ-104</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#sprint-2" title="Sprint 2 · SC-500"><span class="hf-nav__text">Sprint 2 · SC-500</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#q1-review" title="Q1 · Review and delivery"><span class="hf-nav__text">Q1 · Review and delivery</span></a></div>
@@ -96,7 +97,7 @@
       <header class="kt-hero">
         <span class="hf-eyebrow">Study plan · October 2026 – September 2027</span>
         <h1 class="kt-hero__title">Four exams, <em>one architect</em>.</h1>
-        <p class="hf-lede">The architecture track as a working roadmap: every week is one decision to understand, prove in Azure and explain. Tick weeks off as you go; the current week opens itself, and the exams count down. Progress is saved in this browser only.</p>
+        <p class="hf-lede">The architecture track as a working roadmap: every week is one decision to understand, prove in Azure and explain. Ten hours a week: five on the exam track, three mastering the guide's concepts, two on coding. Tick weeks off as you go; the current week opens itself, and the exams count down. Progress is saved in this browser only.</p>
         <div class="kt-facts">
           <div class="hf-stat"><span class="hf-stat__label">Weeks</span><span class="hf-stat__value" id="rm-fact-weeks">—</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Hours a week</span><span class="hf-stat__value">10</span></div>
@@ -107,6 +108,49 @@
 
       <section class="kt-rm-exams" aria-label="Exams">
         <div class="hf-grid hf-grid--4" id="rm-exams"></div>
+      </section>
+
+      <section class="hf-section kt-rm-week" id="your-week" data-nav="Your week" aria-labelledby="rm-week">
+        <div class="hf-section__head">
+          <h2 class="hf-section__title" id="rm-week">Your week</h2>
+          <p class="hf-meta">10 hours: 5 on the exam track, 3 on the guide's concepts, 2 on coding.</p>
+        </div>
+        <div class="hf-table-wrap">
+          <div class="hf-table-scroll">
+          <table class="hf-table">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th class="hf-num" scope="col">Hours</th>
+                <th scope="col">Block</th>
+                <th scope="col">What you do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Mon</td><td class="hf-num">1</td><td>Coding</td><td class="hf-ink-2">Two LeetCode mediums, 25 minutes each on a timer. Say the approach out loud before you write code.</td></tr>
+              <tr><td>Tue</td><td class="hf-num">1</td><td>Concept A</td><td class="hf-ink-2">Ten minutes recalling last week's two concepts from memory. Then read the page, study the diagram, and explain it out loud in two minutes.</td></tr>
+              <tr><td>Wed</td><td class="hf-num">1</td><td>Exam track: understand</td><td class="hf-ink-2">This week's roadmap item: Microsoft Learn, read through the architect's question it carries.</td></tr>
+              <tr><td>Thu</td><td class="hf-num">1</td><td>Coding</td><td class="hf-ink-2">As Monday, and redo one problem you failed before.</td></tr>
+              <tr><td>Sat</td><td class="hf-num">4</td><td>Exam track: understand, prove, decide</td><td class="hf-ink-2">One hour to finish the learning, two hours on the Azure spike (Bicep: deploy, check, tear down), one hour on the ADR and saying it three ways.</td></tr>
+              <tr><td>Sun</td><td class="hf-num">2</td><td>Concept B, in depth</td><td class="hf-ink-2">The page, then the chapter on its “Read” line, then its practice exercise (or the smallest version that teaches it). Set your mastery on the learning map.</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="kt-reminders">
+          <dl>
+            <dt>Concept order</dt>
+            <dd>The <a href="learning-map.html">learning map</a>'s architect path, two concepts a week. Concepts that repeat each other count as one session (idempotency appears on 01, 03 and 04). When a sprint covers the same ground, take the concepts from its page: 07 during Sprint 2, 08 during Sprint 3's data weeks.</dd>
+            <dt>Exam weeks</dt>
+            <dd>The last week of a sprint flips: seven hours of practice tests and weak areas, one hour reviewing concepts, coding stays at two.</dd>
+            <dt>Once a month</dt>
+            <dd>Sunday becomes a mock interview: whiteboard one applied design in 35 minutes, out loud, on a timer, and write down what you could not explain.</dd>
+            <dt>Mastered means</dt>
+            <dd>Level 3 on the map: explained without notes, you know when not to use it, and you have done the exercise. Reading is not mastering.</dd>
+            <dt>Missed a session</dt>
+            <dd>Drop the concept, never the coding or the exam spike: the exam dates and the coding habit are what compound.</dd>
+          </dl>
+        </div>
       </section>
 
       <section class="card kt-rm-timeline" aria-label="Timeline">
