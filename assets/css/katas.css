@@ -952,6 +952,10 @@ a.hf-iconbtn { text-decoration: none; }
   margin: 0 0 var(--hf-sp-1);
 }
 .kt-rm-item__body p { margin: 0; line-height: var(--hf-lh-body); }
+.kt-rm-item__routine { grid-column: 1 / -1; }
+.kt-rm-item__routine ol { margin: 0; padding-left: 1.25em; line-height: var(--hf-lh-body); }
+.kt-rm-item__routine li + li { margin-top: var(--hf-sp-1); }
+.kt-rm-item__routine strong { color: var(--hf-ink); font-weight: var(--hf-fw-semibold); }
 
 .kt-rm-empty { padding: var(--hf-sp-4); }
 
