@@ -112,6 +112,12 @@ the current outline on Microsoft Learn when you start.
 | 7 | 23 Nov | Networking II + Monitor: private endpoints, load balancing, VPN basics; Monitor, Log Analytics, alerts, Backup, Site Recovery | **How will you know it broke, and how fast can you recover?** | A private endpoint to a database; an outcome-based alert; a timed restore |
 | 8 | 30 Nov | **Practice tests → sit AZ-104** | | |
 
+**How to work each study week (weeks 1-7):**
+
+1. **Read.** Read the Microsoft Learn modules for this week's topic and do the knowledge checks at the end of each module.
+2. **Build.** Build it on Saturday. Use the official GitHub lab for this topic ([MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator](https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator)), then your Bicep version. Do each one at least once in the portal too, because the exam asks about portal steps.
+3. **Write.** Write it down: the ADR and saying it three ways.
+
 **Exit:** AZ-104 passed, and the harness identity model designed and proven at work.
 
 ---

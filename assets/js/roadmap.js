@@ -27,11 +27,20 @@
 
   // Each item: id (stable: progress is saved against it), start (a Monday),
   // weeks, title, q (the architect's decision), learn, prove, strands.
+  // A sprint's routine (read, build, write) shows on every study week in it;
+  // exam weeks and light weeks skip it.
   var ROADMAP = [
     {
       id: 's1', anchor: 'sprint-1', name: 'Sprint 1 · Azure foundations',
       exam: { code: 'AZ-104', name: 'Azure Administrator', date: '2026-12-04' },
       note: 'The company AI harness runs on work time in weeks 1-4. The week 1, 2 and 5 proofs reuse its pieces, so both sides help each other.',
+      routine: [
+        { step: 'Read', text: 'Read the Microsoft Learn modules for this week\'s topic and do the knowledge checks at the end of each module.' },
+        { step: 'Build', text: 'Build it on Saturday. Use the official GitHub lab for this topic (',
+          link: { href: 'https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator', text: 'MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator' },
+          after: '), then your Bicep version. Do each one at least once in the portal too, because the exam asks about portal steps.' },
+        { step: 'Write', text: 'Write it down: the ADR and saying it three ways.' }
+      ],
       items: [
         { id: 's1w1', start: '2026-10-12', weeks: 1, title: 'Identities', strands: ['cloud', 'security', 'ai'],
           q: 'Whose identity does a system act as?',
@@ -436,6 +445,25 @@
         var a = el('div'); a.appendChild(el('h4', null, 'Understand')); a.appendChild(el('p', null, it.learn));
         var b = el('div'); b.appendChild(el('h4', null, 'Prove')); b.appendChild(el('p', null, it.prove));
         body.appendChild(a); body.appendChild(b);
+        if (sp.routine && it.strands.indexOf('exam') < 0 && !it.light) {
+          var r = el('div', 'kt-rm-item__routine');
+          r.appendChild(el('h4', null, 'How to work it'));
+          var ol = el('ol');
+          sp.routine.forEach(function (st) {
+            var li = el('li');
+            li.appendChild(el('strong', null, st.step + '. '));
+            li.appendChild(document.createTextNode(st.text));
+            if (st.link) {
+              var ln = el('a', null, st.link.text);
+              ln.href = st.link.href; ln.target = '_blank'; ln.rel = 'noopener';
+              li.appendChild(ln);
+            }
+            if (st.after) li.appendChild(document.createTextNode(st.after));
+            ol.appendChild(li);
+          });
+          r.appendChild(ol);
+          body.appendChild(r);
+        }
         d.appendChild(body);
         if (it.current || it === nextItem) d.open = true;
         host.appendChild(d);
