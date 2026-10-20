@@ -118,6 +118,14 @@ the current outline on Microsoft Learn when you start.
 2. **Build.** Build it on Saturday. Use the official GitHub lab for this topic ([MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator](https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator)), then your Bicep version. Do each one at least once in the portal too, because the exam asks about portal steps.
 3. **Write.** Write it down: the ADR and saying it three ways.
 
+**Extra networking time (weeks 4-7).** The baseline practice assessment
+(16 Oct) put networking lowest, at about 20%. In weeks 4-7, Tuesday's concept
+hour moves to networking, so the exam track gets 6 h those weeks and concepts
+get 2 h:
+
+- **Weeks 4-5:** a head start, one module from the AZ-104 networking path each Tuesday.
+- **Weeks 6-7:** redo the week's lab through the CLI and drill the questions you got wrong.
+
 **Exit:** AZ-104 passed, and the harness identity model designed and proven at work.
 
 ---

@@ -26,7 +26,8 @@
   };
 
   // Each item: id (stable: progress is saved against it), start (a Monday),
-  // weeks, title, q (the architect's decision), learn, prove, strands.
+  // weeks, title, q (the architect's decision), learn, prove, strands, and
+  // optionally extra (where this week's extra hours go).
   // A sprint's routine (read, build, write) shows on every study week in it;
   // exam weeks and light weeks skip it.
   var ROADMAP = [
@@ -57,18 +58,22 @@
         { id: 's1w4', start: '2026-11-02', weeks: 1, title: 'Compute I: VMs and availability', strands: ['cloud'],
           q: 'What level of availability is worth paying for?',
           learn: 'VMs, availability sets and zones, scale sets, Bicep/ARM.',
+          extra: 'Networking head start: Tuesday\'s concept hour becomes one module from the AZ-104 networking path, so the exam track gets 6 h this week. Networking was the weakest area on the baseline (about 20%).',
           prove: 'A zone-redundant VM pair from Bicep; break one zone\'s VM.' },
         { id: 's1w5', start: '2026-11-09', weeks: 1, title: 'Compute II: where code runs', strands: ['cloud'],
           q: 'Where does code run: VMs, App Service, Container Apps or Functions?',
           learn: 'App Service, Container Apps, ACI, ACR: cost, scale, operations, cold starts, limits.',
+          extra: 'Networking head start: Tuesday\'s concept hour becomes one module from the AZ-104 networking path, so the exam track gets 6 h this week. Networking was the weakest area on the baseline (about 20%).',
           prove: 'The same small API on App Service and Container Apps, compared.' },
         { id: 's1w6', start: '2026-11-16', weeks: 1, title: 'Networking I', strands: ['cloud', 'security'],
           q: 'How is the network shaped: flat or hub-spoke?',
           learn: 'VNets, peering, NSGs and ASGs, routing, DNS.',
+          extra: 'Tuesday\'s concept hour goes to networking: redo the week\'s lab through the CLI and drill the questions you got wrong. The exam track gets 6 h this week.',
           prove: 'Hub-spoke with peering; prove an NSG blocks what it should.' },
         { id: 's1w7', start: '2026-11-23', weeks: 1, title: 'Networking II + monitoring', strands: ['cloud'],
           q: 'How will you know it broke, and how fast can you recover?',
           learn: 'Private endpoints, load balancing, VPN basics; Azure Monitor, Log Analytics, alerts, Backup, Site Recovery.',
+          extra: 'Tuesday\'s concept hour goes to networking: redo the week\'s lab through the CLI and drill the questions you got wrong. The exam track gets 6 h this week.',
           prove: 'A private endpoint to a database; an outcome-based alert; a timed restore.' },
         { id: 's1w8', start: '2026-11-30', weeks: 1, title: 'Practice tests → sit AZ-104', strands: ['exam'],
           q: 'Are the practice scores telling you to sit, or to move the date?',
@@ -445,6 +450,12 @@
         var a = el('div'); a.appendChild(el('h4', null, 'Understand')); a.appendChild(el('p', null, it.learn));
         var b = el('div'); b.appendChild(el('h4', null, 'Prove')); b.appendChild(el('p', null, it.prove));
         body.appendChild(a); body.appendChild(b);
+        if (it.extra) {
+          var x = el('div', 'kt-rm-item__extra');
+          x.appendChild(el('h4', null, 'Extra time'));
+          x.appendChild(el('p', null, it.extra));
+          body.appendChild(x);
+        }
         if (sp.routine && it.strands.indexOf('exam') < 0 && !it.light) {
           var r = el('div', 'kt-rm-item__routine');
           r.appendChild(el('h4', null, 'How to work it'));
