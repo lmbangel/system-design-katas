@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-/* Design-system checks for the katas -- the same rules the reference app and
-   the reports app enforce with tools/verify_design_tokens.php, written
-   for a static site with no PHP.
+/* Design-system checks for the katas -- the design system's rules, written
+   for a static site.
 
      node tools/verify-design.js
 
@@ -43,7 +42,7 @@ const ORDER = [
   'assets/css/katas.css',
 ];
 
-// sha256 of the SiteUI v1.0.0 files as vendored from the reference app.
+// sha256 of the vendored files.
 const VENDORED = require('./vendored.json');
 
 let failures = 0;

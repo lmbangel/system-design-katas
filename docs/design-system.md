@@ -2,20 +2,17 @@
 
 **Site:** System design katas (`backend.systems`)
 **Design system:** SiteUI v1.0.0
-**Reference implementation:** `the reference app` (also used by `the reports app`)
 **Retrofitted:** 2026-10-06
 
 Until this retrofit the katas used their own dark theme: navy gradients, a film
 grain overlay, Fraunces / Inter Tight / JetBrains Mono from Google Fonts, and
-eight decorative accent colours. They now use SiteUI, so the guide is the
-same application to look at as the reports portal. `the reference app` is the
-reference: when the two disagree, it is right and this is wrong.
+eight decorative accent colours. They now use SiteUI.
 
 ---
 
 ## 1. The rules
 
-The same ones `the reference app` and `the reports app` follow:
+The design system's own:
 
 1. **Reference `var(--hf-*)` tokens only.** No literal colours, radii, shadows
    or font sizes in project CSS. The handful of `--kt-*` tokens in
@@ -34,7 +31,7 @@ The same ones `the reference app` and `the reports app` follow:
 `node tools/verify-design.js` enforces 1–3, the load order, the sidebar toggle, the
 single font, the nav-tier limit, token-only diagrams, the site icon, that every
 page's navigation matches the site map (`tools/build-nav.js --check`) and the
-vendored-file hashes (`tools/vendored.json`, taken from `the reference app`). It cannot check
+vendored-file hashes (`tools/vendored.json`). It cannot check
 visual regression or cross-browser rendering — those still need a person.
 
 ---
@@ -105,9 +102,9 @@ and the two free Google books link each chapter online. A new concept with no
 entry, or a chapter that is not in its book's contents, fails
 `verify-design.js` (rule 13). The learning map shows the same reading.
 
-**Brand.** Links home, same deviation and reason as the reports portal.
+**Brand.** Links home: from a deep page there must be a way back.
 
-**Brand mark.** The sibling apps put a two-letter monogram in
+**Brand mark.** The design system expects a two-letter monogram in
 `.hf-sidebar__mark`. Here it carries the site icon's diagram, so
 the sidebar and the browser tab show one mark. `tools/build-icons.py` is the
 single definition: it writes the favicon set and `assets/brand/mark.svg`, which
@@ -120,7 +117,7 @@ system's own colours, including `.hf-sidebar--dark`.
 |---|---|---|
 | 1 | Sidebar toggle | As the system ships it. Collapse state persists. |
 | 2 | Freshness indicator | **Omitted, deliberately.** The first version showed when the content was last revised; removed at the owner's request on 2026-10-06. The site has no data feed, so nothing is lost. |
-| 3 | User menu | **Omitted, deliberately.** There is no user. The reports portal's sign-in page drops the shell controls for the same reason: a control that can do nothing is worse than none. Its slot holds the previous / next arrows. |
+| 3 | User menu | **Omitted, deliberately.** There is no user. A control that can do nothing is worse than none. Its slot holds the previous / next arrows. |
 
 ---
 
@@ -131,7 +128,7 @@ was. This retrofit is a skin, plus the fixes in § 6.
 
 **The kata class names.** `.pattern`, `.callout-box`, `.code-pane`,
 `.principle` and the rest keep their names and are restyled onto `--hf-*`
-tokens in `katas.css`, following the rule `the reference app` records: *a class
+tokens in `katas.css`, following the rule *a class
 a script depends on keeps its name and gets restyled*. New components are
 prefixed `.kt-`.
 
@@ -199,8 +196,7 @@ produce the system's own pale status backgrounds.
 
 ## 7. Still outstanding
 
-- Visual check against `the reports app` side by side at 1280 / 768 /
-  375 — needs a person with both open.
+- Visual check at 1280 / 768 / 375 — needs a person.
 - Print preview of a long pillar page.
 - Diagrams position text with fixed x offsets measured for Inter Tight and
   JetBrains Mono. Archivo and the system mono stack are close, but labels

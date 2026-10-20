@@ -1,7 +1,7 @@
 /* Project layer for the SiteUI design system.
    System design katas · backend.systems
 
-   RULES (the same ones its reference apps follow):
+   RULES (the design system's own):
      - Reference var(--hf-*) tokens only. No literal colours, radii or shadows.
        The few --kt-* tokens below are geometry and are composed from --hf-*
        wherever the system has a value for it.
@@ -108,8 +108,8 @@ strong { font-weight: var(--hf-fw-semibold); color: var(--hf-ink); }
 em     { font-style: italic; color: inherit; }
 
 /* The brand, made clickable. SiteUI documents .hf-sidebar__brand as a
-   <div>; as an <a> it would arrive underlined. Same treatment, and the same
-   reason, as the reports app: from a deep page there must be a way home
+   <div>; as an <a> it would arrive underlined. Same treatment, for a simple
+   reason: from a deep page there must be a way home
    that is where everybody reaches for it. */
 a.hf-sidebar__brand {
   text-decoration: none;
