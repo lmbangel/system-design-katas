@@ -37,6 +37,7 @@ const PAGES = [
   ['payment-system.html', 'Applied A · Payment processing'],
   ['order-fulfilment.html', 'Applied B · Order fulfilment'],
   ['lakehouse-platform.html', 'Applied C · Lakehouse platform'],
+  ['ai-operations-assistant.html', 'Applied D · AI operations assistant'],
   ['architecture-decisions.html', 'Practice · Architecture decisions'],
 ];
 

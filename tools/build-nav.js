@@ -51,6 +51,7 @@ const SITE = [
   { file: 'payment-system.html', title: 'Payment processing', icon: 'credit-card' },
   { file: 'order-fulfilment.html', title: 'Order fulfilment', icon: 'truck' },
   { file: 'lakehouse-platform.html', title: 'Lakehouse platform', icon: 'bricks' },
+  { file: 'ai-operations-assistant.html', title: 'AI operations assistant', icon: 'robot' },
 
   { section: 'Architecture practice', crumb: 'Architecture practice' },
   { file: 'architecture-decisions.html', title: 'Architecture decisions', icon: 'journal-check' },

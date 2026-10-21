@@ -60,6 +60,7 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c8" title="Choosing between them: trade-offs and the triggers to move"><span class="hf-nav__text">Choosing between them: trade-offs and the triggers to move</span></a></div>
         </div>
       </div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="ai-operations-assistant.html"><i class="bi bi-robot hf-nav__icon"></i><span class="hf-nav__text">AI operations assistant</span></a></div>
       <div class="hf-nav__section">Architecture practice</div>
       <div class="hf-nav__item"><a class="hf-nav__link" href="architecture-decisions.html"><i class="bi bi-journal-check hf-nav__icon"></i><span class="hf-nav__text">Architecture decisions</span></a></div>
       <div class="hf-nav__section">Interview prep</div>
@@ -90,7 +91,7 @@
 
       <div class="hf-header__actions">
         <a class="hf-iconbtn" href="order-fulfilment.html" aria-label="Previous: Order fulfilment" title="Previous: Order fulfilment"><i class="bi bi-arrow-left"></i></a>
-        <a class="hf-iconbtn" href="architecture-decisions.html" aria-label="Next: Architecture decisions" title="Next: Architecture decisions"><i class="bi bi-arrow-right"></i></a>
+        <a class="hf-iconbtn" href="ai-operations-assistant.html" aria-label="Next: AI operations assistant" title="Next: AI operations assistant"><i class="bi bi-arrow-right"></i></a>
       </div>
     </header>
 
@@ -1352,7 +1353,7 @@
         <p><strong>Row-level security is where most designs break, because there are several doors.</strong> Power BI enforces RLS with roles filtered on <code>USERPRINCIPALNAME()</code>; the database enforces it with a security policy on the caller's login. Both must read <strong>one entitlement table</strong> (user, entity, cost centre), owned by finance and audited. Watch import mode: a dataset refreshed by a service account bypasses database RLS, so the semantic model's own roles must do the filtering. The <strong>AI assistant</strong> is the newest door. It calls curated, parameterised tools with an <strong>on-behalf-of token</strong> for the asking user, so the database applies that user's rows. An assistant running as a service account that sees every entity turns any question into a cross-entity leak, and prompt injection hidden in the data makes that worse. Log every tool call with the user, the arguments and the row count.</p>
         <p><strong>PII and POPIA.</strong> Classify columns in the contract: customer contacts, driver and employee details. Keep raw PII only in a restricted bronze area with short retention, hash or drop it in silver, and keep it out of gold and out of the assistant's tools unless a stated purpose needs it. POPIA asks for a lawful purpose, minimality, security safeguards and notification of compromises, and it restricts sending personal information outside South Africa (section 72). That matters when you choose the cloud region and move Namibian and Botswana data, which bring their own jurisdictions too: get the data-residency decision signed off by the information officer instead of letting a default region make it.</p>
         <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Use when</div><ul><li>One entitlement table, enforced at every door</li><li>On-behalf-of tokens for anything acting for a user</li><li>PII classified in the contract, not discovered later</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>A shared "powerbi" or "assistant" login</li><li>Letting the model write free SQL against gold</li><li>PII in gold "because a dashboard might need it"</li></ul></div></div>
-        <div class="connects"><strong>Connects to</strong> <a href="07-security.html#c4">Least privilege &amp; IAM</a>, <a href="07-security.html#c3">Secrets management</a>, <a href="03-apis-contracts.html#c8">RBAC vs ABAC</a>, <a href="07-security.html#c8">Audit logging</a></div>
+        <div class="connects"><strong>Connects to</strong> <a href="07-security.html#c4">Least privilege &amp; IAM</a>, <a href="07-security.html#c3">Secrets management</a>, <a href="03-apis-contracts.html#c8">RBAC vs ABAC</a>, <a href="07-security.html#c8">Audit logging</a>, <a href="ai-operations-assistant.html#c5">The assistant acts as the asker</a></div>
         <div class="reference"><i class="bi bi-book" aria-hidden="true"></i> <strong>Docs:</strong> <a href="https://learn.microsoft.com/en-us/sql/relational-databases/security/row-level-security" target="_blank" rel="noopener">SQL Server row-level security</a></div>
         <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 7 Data Protection · <a href="books.html#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering">Fundamentals of Data Engineering</a> ch. 10 Security and Privacy</div>
       </div>

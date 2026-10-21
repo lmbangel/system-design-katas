@@ -1686,6 +1686,81 @@
         21,
         25
       ]
+    ],
+    "ai-operations-assistant.html#c1": [
+      [
+        "fosa",
+        4,
+        5
+      ]
+    ],
+    "ai-operations-assistant.html#c2": [
+      [
+        "fosa",
+        19
+      ],
+      [
+        "uds",
+        27
+      ]
+    ],
+    "ai-operations-assistant.html#c3": [
+      [
+        "ddia",
+        4
+      ],
+      [
+        "fode",
+        9
+      ]
+    ],
+    "ai-operations-assistant.html#c4": [
+      [
+        "uds",
+        13
+      ],
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "ai-operations-assistant.html#c5": [
+      [
+        "bsrs",
+        5
+      ],
+      [
+        "dg",
+        7
+      ]
+    ],
+    "ai-operations-assistant.html#c6": [
+      [
+        "bsrs",
+        2,
+        3
+      ]
+    ],
+    "ai-operations-assistant.html#c7": [
+      [
+        "sre",
+        4,
+        17
+      ],
+      [
+        "dqf",
+        4
+      ]
+    ],
+    "ai-operations-assistant.html#c8": [
+      [
+        "fosa",
+        21
+      ],
+      [
+        "uds",
+        20
+      ]
     ]
   }
 }

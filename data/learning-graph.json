@@ -1269,6 +1269,104 @@
         "07-security.html#c4"
       ],
       "practice": "Write the review line for a team (what needs board review and what does not). Turn one ADR into an Azure Policy or a CI fitness function that cites it, and rehearse a two-minute ADR-shaped answer to \"why that database?\"."
+    },
+    "ai-operations-assistant.html#c1": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Turning \"we want an AI assistant\" into requirements: the four kinds of question, the systems that hold each answer, latency and cost ceilings, and who may see what.",
+      "why": "The question kinds decide the mechanism (tools, retrieval, confirmed actions, SQL) and the permission model decides everything else. Starting from a model or a vector database is the most common failure.",
+      "prereqs": [
+        "lakehouse-platform.html#c1",
+        "05-reliability-observability.html#c1"
+      ],
+      "practice": "Collect 30 real questions from a support inbox or team chat. Label each as lookup, how-do-I, do-it or how-many, note which system holds the answer, and write the latency, cost and permission requirements in one YAML file."
+    },
+    "ai-operations-assistant.html#c2": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "An orchestrator service that owns the agent loop: the model proposes steps, the orchestrator checks, runs and records them within step, time and token limits.",
+      "why": "Owning the loop is what makes an LLM system governable: limits, policy, tracing and identity all live in your code, and models can be swapped behind a gateway.",
+      "prereqs": [
+        "ai-operations-assistant.html#c1",
+        "04-microservices-patterns.html#p4",
+        "05-reliability-observability.html#c4"
+      ],
+      "practice": "Write a minimal agent loop in Go or Python against a fake model that returns scripted steps. Enforce a maximum of five steps and a token budget, and emit one trace span per step."
+    },
+    "ai-operations-assistant.html#c3": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Retrieval-augmented generation done as search engineering: chunk by heading with metadata, hybrid keyword and vector search, reciprocal rank fusion, reranking, and entitlement filters inside the query.",
+      "why": "Most bad answers are retrieval failures. Hybrid search handles both exact codes and paraphrases, and filtering inside the query avoids leaking or starving results.",
+      "prereqs": [
+        "ai-operations-assistant.html#c1",
+        "02-data-storage.html#c3",
+        "08-data-platforms.html#c13"
+      ],
+      "practice": "Index 50 procedure documents in Postgres with pgvector and full-text search. Implement hybrid search with RRF and an entity filter, and measure recall@6 on 20 questions with known answers, with and without the keyword half."
+    },
+    "ai-operations-assistant.html#c4": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "Typed tools with schemas and scopes; reads run immediately, writes become pending actions the user confirms, executed once with the action id as the idempotency key.",
+      "why": "Actions are where an assistant can do real damage. Confirmation, idempotency and going through the normal service path make a model mistake visible and reversible.",
+      "prereqs": [
+        "ai-operations-assistant.html#c2",
+        "03-apis-contracts.html#c9",
+        "04-microservices-patterns.html#p10"
+      ],
+      "practice": "Add a rebook tool to your agent loop that saves a pending action, shows a confirmation, and executes on approval using the action id as an idempotency key. Prove that a double confirmation changes the booking once."
+    },
+    "ai-operations-assistant.html#c5": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "The assistant acts as the asking user: on-behalf-of tokens to every API, row-level security in SQL, the same entitlement table for retrieval, and a workload identity only for its own resources.",
+      "why": "A service account that can read everything turns one prompt injection or filter bug into a full data leak. Delegated identity keeps the assistant inside the user's permissions by construction.",
+      "prereqs": [
+        "ai-operations-assistant.html#c4",
+        "07-security.html#c4",
+        "03-apis-contracts.html#c8",
+        "lakehouse-platform.html#c7"
+      ],
+      "practice": "Register two Entra apps (assistant and API) and implement the on-behalf-of exchange. Call the API as two different test users and show that each sees only their own entity's rows."
+    },
+    "ai-operations-assistant.html#c6": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "Defence in depth against prompt injection: untrusted context fenced and labelled, small tool sets, no egress tools, confirmed writes, and output checks on citations, schema and personal data.",
+      "why": "Injection cannot be fully prevented, so the design must make a successful injection harmless. Interviewers probe this more than any other AI topic.",
+      "prereqs": [
+        "ai-operations-assistant.html#c4",
+        "ai-operations-assistant.html#c5",
+        "07-security.html#c1",
+        "07-security.html#c2"
+      ],
+      "practice": "Plant an instruction inside a test document and ticket note. Show that your assistant does not follow it, that no tool exists to exfiltrate data, and that the output check rejects an answer citing a source that was not retrieved."
+    },
+    "ai-operations-assistant.html#c7": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "A golden set and a release gate: retrieval recall, groundedness and tool accuracy measured separately, leaks and injections as hard zero gates, canary releases, and production failures fed back as new cases.",
+      "why": "LLM systems regress silently when prompts, models or indexes change. Without an eval gate there is no evidence a change is better, only a demo.",
+      "prereqs": [
+        "ai-operations-assistant.html#c3",
+        "ai-operations-assistant.html#c6",
+        "05-reliability-observability.html#c8"
+      ],
+      "practice": "Build a 40-case golden set, including five must-refuse and five injection cases. Write a harness that scores recall@6, tool accuracy and leaks, and fails CI when a threshold drops."
+    },
+    "ai-operations-assistant.html#c8": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "Cost and latency levers (routing, prompt caching, trimmed context, streaming, entitlement-keyed caching) and the build, platform or buy decision, plus RAG versus tools versus fine-tuning.",
+      "why": "Architects are judged on the decision and its triggers, not the tooling. Cost per question and the need for writes and per-user rules usually decide build versus buy.",
+      "prereqs": [
+        "ai-operations-assistant.html#c1",
+        "ai-operations-assistant.html#c2",
+        "architecture-decisions.html#c5",
+        "06-performance-scale.html#c4"
+      ],
+      "practice": "Model monthly cost for three routing mixes and two context sizes. Write an ADR choosing between a managed agent platform and your own orchestrator, with the triggers that would make you switch."
     }
   },
   "paths": [
@@ -1474,7 +1572,15 @@
         "lakehouse-platform.html#c4",
         "lakehouse-platform.html#c6",
         "lakehouse-platform.html#c7",
-        "lakehouse-platform.html#c8"
+        "lakehouse-platform.html#c8",
+        "ai-operations-assistant.html#c1",
+        "ai-operations-assistant.html#c2",
+        "ai-operations-assistant.html#c3",
+        "ai-operations-assistant.html#c4",
+        "ai-operations-assistant.html#c5",
+        "ai-operations-assistant.html#c6",
+        "ai-operations-assistant.html#c7",
+        "ai-operations-assistant.html#c8"
       ]
     }
   ]

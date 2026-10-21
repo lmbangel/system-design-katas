@@ -182,7 +182,7 @@ and monitoring; data storage; business continuity; infrastructure.
 | 3 May | **Business continuity design** | RPO/RTO per tier, zones vs regions, backup vs replication |
 | 10 May | **AI architecture** | Tools vs RAG (Azure AI Search), evaluation and trust, ML in the platform |
 | 17 May, 24 May | **Capstone: Applied C, lakehouse under three constraints** | The same requirements solved lean, at scale with fresh data, and managed (Fabric) |
-| 31 May | **Capstone: Applied D, AI harness over company data** | The work problem as an interview-grade design: identity, curated tools, RLS, audit, evaluation, threat model |
+| 31 May | **Capstone: Applied D, AI operations assistant** | The site's Applied D page rebuilt from your own ADRs: identity, tools, retrieval, guardrails, evaluation, cost |
 | 7 Jun - 25 Jun | **Practice tests → sit AZ-305** | Three weeks: AZ-305 is a design exam and rewards case-study practice |
 
 **Exit:** *Azure Solutions Architect Expert*, and two capstones you can present.
@@ -218,7 +218,7 @@ the ADRs and proofs:
 | **10 · Data platform architecture** | Sprint 3 |
 | **11 · AI architecture** | Sprints 1-3 |
 | **Applied C · Lakehouse under three constraints** | Sprint 3 |
-| **Applied D · AI harness over company data** | Sprints 1-3 |
+| **Applied D · AI operations assistant** | Sprints 1-3 |
 | **Architecture track study plan** (tickable, with the exam dates) | This document |
 
 ---
