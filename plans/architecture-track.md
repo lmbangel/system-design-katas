@@ -126,6 +126,12 @@ get 2 h:
 - **Weeks 4-5:** a head start, one module from the AZ-104 networking path each Tuesday.
 - **Weeks 6-7:** redo the week's lab through the CLI and drill the questions you got wrong.
 
+**Midpoint check (Mon 9 Nov).** Retake the free Microsoft practice assessment
+(about 45 minutes), cold. Compare each section with the 16 Oct baseline: 40%
+overall, networking about 20%, monitoring about 30%. Identity, governance and
+storage should be around 70% or better by now. If networking is still under
+40%, decide that week whether 4 Dec holds or the exam moves to mid-December.
+
 **Exit:** AZ-104 passed, and the harness identity model designed and proven at work.
 
 ---

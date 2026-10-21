@@ -27,7 +27,8 @@
 
   // Each item: id (stable: progress is saved against it), start (a Monday),
   // weeks, title, q (the architect's decision), learn, prove, strands, and
-  // optionally extra (where this week's extra hours go).
+  // optionally extra (where this week's extra hours go) and checkpoint (a dated
+  // check that decides whether the plan or the exam date has to move).
   // A sprint's routine (read, build, write) shows on every study week in it;
   // exam weeks and light weeks skip it.
   var ROADMAP = [
@@ -64,6 +65,9 @@
           q: 'Where does code run: VMs, App Service, Container Apps or Functions?',
           learn: 'App Service, Container Apps, ACI, ACR: cost, scale, operations, cold starts, limits.',
           extra: 'Networking head start: Tuesday\'s concept hour becomes one module from the AZ-104 networking path, so the exam track gets 6 h this week. Networking was the weakest area on the baseline (about 20%).',
+          checkpoint: { date: '2026-11-09', title: 'Midpoint check',
+            text: 'Retake the free Microsoft practice assessment (about 45 minutes), cold, no looking things up. Compare each section with the 16 October baseline: 40% overall, networking about 20%, monitoring about 30%. Identity, governance and storage should now be around 70% or better. If networking is still under 40%, decide this week whether 4 December holds or the exam moves to mid-December, and give weeks 6 and 7 whatever time they need.',
+            link: { href: 'https://learn.microsoft.com/en-us/credentials/certifications/azure-administrator/practice/assessment?assessment-type=practice&assessmentId=21', text: 'Open the practice assessment' } },
           prove: 'The same small API on App Service and Container Apps, compared.' },
         { id: 's1w6', start: '2026-11-16', weeks: 1, title: 'Networking I', strands: ['cloud', 'security'],
           q: 'How is the network shaped: flat or hub-spoke?',
@@ -442,6 +446,7 @@
         else if (it === nextItem) tags.appendChild(status('solid', 'Starts ' + fmt(it.from)));
         if (it.done) tags.appendChild(status('success', 'Done'));
         if (it.light) tags.appendChild(status('warning', 'Light week'));
+        if (it.checkpoint) tags.appendChild(status('warning', 'Checkpoint ' + fmt(parse(it.checkpoint.date))));
         it.strands.forEach(function (k) { tags.appendChild(status(k === 'exam' ? 'info' : 'neutral', STRANDS[k])); });
         sum.appendChild(tags);
         d.appendChild(sum);
@@ -455,6 +460,18 @@
           x.appendChild(el('h4', null, 'Extra time'));
           x.appendChild(el('p', null, it.extra));
           body.appendChild(x);
+        }
+        if (it.checkpoint) {
+          var cp = el('div', 'kt-rm-item__extra');
+          cp.appendChild(el('h4', null, it.checkpoint.title + ' · ' + fmt(parse(it.checkpoint.date))));
+          var cpText = el('p', null, it.checkpoint.text + ' ');
+          if (it.checkpoint.link) {
+            var cpLink = el('a', null, it.checkpoint.link.text);
+            cpLink.href = it.checkpoint.link.href; cpLink.target = '_blank'; cpLink.rel = 'noopener';
+            cpText.appendChild(cpLink);
+          }
+          cp.appendChild(cpText);
+          body.appendChild(cp);
         }
         if (sp.routine && it.strands.indexOf('exam') < 0 && !it.light) {
           var r = el('div', 'kt-rm-item__routine');
