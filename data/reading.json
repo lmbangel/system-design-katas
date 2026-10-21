@@ -659,6 +659,44 @@
           "url": "https://google.github.io/building-secure-and-reliable-systems/raw/ch21.html"
         }
       }
+    },
+    "aie": {
+      "title": "AI Engineering",
+      "short": "AI Engineering",
+      "card": "books.html#ai-engineering",
+      "source": "the author's companion repo, github.com/chiphuyen/aie-book (ToC.md)",
+      "toc": {
+        "1": {
+          "title": "Introduction to Building AI Applications with Foundation Models"
+        },
+        "2": {
+          "title": "Understanding Foundation Models"
+        },
+        "3": {
+          "title": "Evaluation Methodology"
+        },
+        "4": {
+          "title": "Evaluate AI Systems"
+        },
+        "5": {
+          "title": "Prompt Engineering"
+        },
+        "6": {
+          "title": "RAG and Agents"
+        },
+        "7": {
+          "title": "Finetuning"
+        },
+        "8": {
+          "title": "Dataset Engineering"
+        },
+        "9": {
+          "title": "Inference Optimization"
+        },
+        "10": {
+          "title": "AI Engineering Architecture and User Feedback"
+        }
+      }
     }
   },
   "refs": {
@@ -1689,12 +1727,20 @@
     ],
     "ai-operations-assistant.html#c1": [
       [
+        "aie",
+        1
+      ],
+      [
         "fosa",
         4,
         5
       ]
     ],
     "ai-operations-assistant.html#c2": [
+      [
+        "aie",
+        10
+      ],
       [
         "fosa",
         19
@@ -1706,6 +1752,10 @@
     ],
     "ai-operations-assistant.html#c3": [
       [
+        "aie",
+        6
+      ],
+      [
         "ddia",
         4
       ],
@@ -1715,6 +1765,10 @@
       ]
     ],
     "ai-operations-assistant.html#c4": [
+      [
+        "aie",
+        6
+      ],
       [
         "uds",
         13
@@ -1726,6 +1780,10 @@
     ],
     "ai-operations-assistant.html#c5": [
       [
+        "aie",
+        10
+      ],
+      [
         "bsrs",
         5
       ],
@@ -1736,12 +1794,21 @@
     ],
     "ai-operations-assistant.html#c6": [
       [
+        "aie",
+        5
+      ],
+      [
         "bsrs",
         2,
         3
       ]
     ],
     "ai-operations-assistant.html#c7": [
+      [
+        "aie",
+        3,
+        4
+      ],
       [
         "sre",
         4,
@@ -1753,6 +1820,11 @@
       ]
     ],
     "ai-operations-assistant.html#c8": [
+      [
+        "aie",
+        9,
+        7
+      ],
       [
         "fosa",
         21
