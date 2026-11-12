@@ -63,6 +63,7 @@
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#understanding-distributed-systems" title="Understanding Distributed Systems"><span class="hf-nav__text">Understanding Distributed Systems</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#philosophy-of-software-design" title="A Philosophy of Software Design"><span class="hf-nav__text">A Philosophy of Software Design</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering"><span class="hf-nav__text">Fundamentals of Data Engineering</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-warehouse-toolkit" title="The Data Warehouse Toolkit"><span class="hf-nav__text">The Data Warehouse Toolkit</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#streaming-systems" title="Streaming Systems"><span class="hf-nav__text">Streaming Systems</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-quality-fundamentals" title="Data Quality Fundamentals"><span class="hf-nav__text">Data Quality Fundamentals</span></a></div>
           <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#data-governance-definitive-guide" title="Data Governance: The Definitive Guide"><span class="hf-nav__text">Data Governance: The Definitive Guide</span></a></div>
@@ -103,10 +104,10 @@
 
       <header class="kt-hero">
         <span class="hf-eyebrow">Reading list</span>
-        <h1 class="kt-hero__title">Twelve books that <em>complete the picture</em>.</h1>
+        <h1 class="kt-hero__title">Thirteen books that <em>complete the picture</em>.</h1>
         <p class="hf-lede">This guide teaches the breadth; these books teach the depth. If you only read one, make it DDIA; for data platforms, add Fundamentals of Data Engineering; for the architect’s role, Fundamentals of Software Architecture; for AI systems, AI Engineering. Every concept in the guide ends with the chapters to read. If you're targeting payments or logistics roles, pair them with the applied designs.</p>
         <div class="kt-facts">
-          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">12</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Books</span><span class="hf-stat__value">13</span></div>
           <div class="hf-stat"><span class="hf-stat__label">Start with</span><span class="hf-stat__value">DDIA</span></div>
           <div class="hf-stat"><span class="hf-stat__label">In the study plan</span><span class="hf-stat__value">Weeks 1–3</span></div>
         </div>
@@ -192,7 +193,7 @@
 
       <div class="hf-section__head kt-books__group">
         <h2 class="hf-section__title">Data platforms</h2>
-        <p class="hf-meta">The depth behind pillar 08 and Applied C: one book for the whole lifecycle, then one each for streaming, observability and governance.</p>
+        <p class="hf-meta">The depth behind pillar 08 and Applied C: one book for the whole lifecycle, one for modelling, then one each for streaming, observability and governance.</p>
       </div>
 
       <section class="card kt-book" id="fundamentals-of-data-engineering" data-nav="Fundamentals of Data Engineering" aria-labelledby="fundamentals-of-data-engineering-title">
@@ -209,6 +210,24 @@
             <dd><a href="08-data-platforms.html">08 · Data platform architecture</a>, all thirteen concepts; <a href="lakehouse-platform.html">Applied C · Lakehouse platform</a></dd>
             <dt>In the study plan</dt>
             <dd>Roadmap, Sprint 3 · Data platform architecture (weeks of 19 and 26 April). Read it before the lakehouse capstone.</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card kt-book" id="data-warehouse-toolkit" data-nav="The Data Warehouse Toolkit" aria-labelledby="data-warehouse-toolkit-title">
+        <div class="card-body">
+          <img class="kt-book__cover" src="assets/books/data-warehouse-toolkit.webp" width="320" height="403" alt="Cover of The Data Warehouse Toolkit" loading="lazy" decoding="async">
+          <div class="kt-book__head">
+            <span class="hf-status hf-status--solid hf-status--nodot">Must read</span>
+            <h3 class="kt-book__title" id="data-warehouse-toolkit-title">The Data Warehouse Toolkit</h3>
+            <p class="hf-meta">Ralph Kimball &amp; Margy Ross · 3rd edition</p>
+          </div>
+          <p class="kt-book__desc">The book on dimensional modelling: grain, facts, conformed dimensions, slowly changing dimensions and the bus matrix, then worked case studies by industry. Tools have changed since 2013; the modelling has not. Every gold mart in a medallion lakehouse is a Kimball star schema with a new name.</p>
+          <dl class="kt-book__facts">
+            <dt>Covers</dt>
+            <dd><a href="08-data-platforms.html#c7">08 §7 · Dimensional modelling</a>, <a href="08-data-platforms.html#c6">08 §6 · Ingestion</a>, <a href="lakehouse-platform.html">Applied C · Lakehouse platform</a></dd>
+            <dt>Which chapters</dt>
+            <dd>Not end to end. Chapters 1–2 first, then the case studies that match your data: 4 Inventory, 5 Procurement, 6 Order Management, 7 Accounting and 12 Transportation for logistics and supply chain. Then 18–19 on the modelling process and ETL. Skip the other industries.</dd>
           </dl>
         </div>
       </section>

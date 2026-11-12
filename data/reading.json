@@ -697,6 +697,77 @@
           "title": "AI Engineering Architecture and User Feedback"
         }
       }
+    },
+    "dwt": {
+      "title": "The Data Warehouse Toolkit, 3rd edition",
+      "short": "The Data Warehouse Toolkit",
+      "card": "books.html#data-warehouse-toolkit",
+      "source": "Wiley table of contents, ISBN 9781118530801",
+      "toc": {
+        "1": {
+          "title": "Data Warehousing, Business Intelligence, and Dimensional Modeling Primer"
+        },
+        "2": {
+          "title": "Kimball Dimensional Modeling Techniques Overview"
+        },
+        "3": {
+          "title": "Retail Sales"
+        },
+        "4": {
+          "title": "Inventory"
+        },
+        "5": {
+          "title": "Procurement"
+        },
+        "6": {
+          "title": "Order Management"
+        },
+        "7": {
+          "title": "Accounting"
+        },
+        "8": {
+          "title": "Customer Relationship Management"
+        },
+        "9": {
+          "title": "Human Resources Management"
+        },
+        "10": {
+          "title": "Financial Services"
+        },
+        "11": {
+          "title": "Telecommunications"
+        },
+        "12": {
+          "title": "Transportation"
+        },
+        "13": {
+          "title": "Education"
+        },
+        "14": {
+          "title": "Healthcare"
+        },
+        "15": {
+          "title": "Electronic Commerce"
+        },
+        "16": {
+          "title": "Insurance"
+        },
+        "17": {
+          "title": "Kimball DW/BI Lifecycle Overview"
+        },
+        "18": {
+          "title": "Dimensional Modeling Process and Tasks"
+        },
+        "19": {
+          "title": "ETL Subsystems and Techniques"
+        },
+        "20": {
+          "title": "ETL System Design and Development Process and Tasks"
+        },
+        "21": {
+          "title": "Big Data Analytics"
+        }
+      }
     }
   },
   "refs": {
@@ -1419,12 +1490,21 @@
       [
         "ddia",
         12
+      ],
+      [
+        "dwt",
+        19
       ]
     ],
     "08-data-platforms.html#c7": [
       [
         "fode",
         8
+      ],
+      [
+        "dwt",
+        1,
+        2
       ]
     ],
     "08-data-platforms.html#c8": [
@@ -1619,6 +1699,10 @@
       [
         "fode",
         3
+      ],
+      [
+        "dwt",
+        7
       ]
     ],
     "lakehouse-platform.html#c2": [
@@ -1626,6 +1710,10 @@
         "fode",
         4,
         6
+      ],
+      [
+        "dwt",
+        18
       ]
     ],
     "lakehouse-platform.html#c3": [
