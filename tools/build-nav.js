@@ -55,6 +55,7 @@ const SITE = [
 
   { section: 'Architecture practice', crumb: 'Architecture practice' },
   { file: 'architecture-decisions.html', title: 'Architecture decisions', icon: 'journal-check' },
+  { file: 'data-governance-case-study.html', title: 'Data governance case study', icon: 'shield-check' },
 
   { section: 'Interview prep', crumb: 'Interview prep' },
   { file: 'prep-checklist.html', title: 'Interview checklist', icon: 'list-check' },

@@ -1367,6 +1367,76 @@
         "06-performance-scale.html#c4"
       ],
       "practice": "Model monthly cost for three routing mixes and two context sizes. Write an ADR choosing between a managed agent platform and your own orchestrator, with the triggers that would make you switch."
+    },
+    "data-governance-case-study.html#c1": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Diagnosing a governance problem: counting every door into the data (BI, SQL, APIs, AI, exports), the rulebook each one keeps, and what POPIA requires.",
+      "why": "Leaks happen in the gaps between permission lists kept in different tools. Naming every door is the first step to one set of rules.",
+      "prereqs": [
+        "08-data-platforms.html#c13",
+        "lakehouse-platform.html#c7"
+      ],
+      "practice": "List every way into one dataset you work with, including exports and any AI tool. For each, write who can read it today and where that rule is kept."
+    },
+    "data-governance-case-study.html#c2": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Column-level classification with a short label list, scanners that suggest labels and owners who confirm them, policies attached to labels, and unlabelled columns hidden by default.",
+      "why": "You cannot protect what you have not counted. Policies on labels cover new columns automatically; policies on tables or people drift.",
+      "prereqs": [
+        "data-governance-case-study.html#c1",
+        "08-data-platforms.html#c13"
+      ],
+      "practice": "Write a scanner that flags likely personal columns by name and value (emails, 13-digit IDs passing the Luhn check) on a sample database, then label the results by hand and compare."
+    },
+    "data-governance-case-study.html#c3": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "One entitlement table, filled from directory groups, read by every door as the user: dynamic RLS in BI, row filters in SQL, scopes in the API and on-behalf-of access for the AI assistant.",
+      "why": "A single source of access rules enforced everywhere is what makes \"the same person sees the same rows through any door\" true and testable.",
+      "prereqs": [
+        "data-governance-case-study.html#c2",
+        "07-security.html#c4",
+        "03-apis-contracts.html#c8",
+        "ai-operations-assistant.html#c5"
+      ],
+      "practice": "Build an entitlement table synced from a groups file, then enforce it with a Postgres view and in a small API. Show one user gets identical rows through both."
+    },
+    "data-governance-case-study.html#c4": {
+      "stage": "s7",
+      "level": "advanced",
+      "summary": "POPIA as pipeline design: minimise at extraction, lock bronze, tokenise identifiers in silver, mask by label in gold, enforce retention with a job, keep a purpose register and plan breach notification.",
+      "why": "Privacy obligations are easier to meet, and to prove, when each one is an engineering decision at a specific layer rather than a policy document.",
+      "prereqs": [
+        "data-governance-case-study.html#c2",
+        "08-data-platforms.html#c4",
+        "07-security.html#c6"
+      ],
+      "practice": "Take one table with personal data through bronze, silver and gold: tokenise the identifier, mask a personal column by clearance, and write a retention job that logs what it removed."
+    },
+    "data-governance-case-study.html#c5": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Named owners and stewards per domain, access requests with a reason and expiry, quarterly recertification, and data contracts on gold marts checked in CI.",
+      "why": "Rules need accountable people. Expiring, re-approved access stops permissions accumulating, and contracts stop silent breaking changes.",
+      "prereqs": [
+        "data-governance-case-study.html#c3",
+        "08-data-platforms.html#c9"
+      ],
+      "practice": "Write a data contract for one mart and a CI check that fails when a column is removed, a type changes or the grain changes."
+    },
+    "data-governance-case-study.html#c6": {
+      "stage": "s7",
+      "level": "core",
+      "summary": "Proving governance continuously: one access log across every door, daily leak tests as test users per door, the same tests in CI, and a generated monthly evidence pack.",
+      "why": "Governance an auditor must take on trust is not governance. Daily tests catch drift; the access log answers who saw what, which breach notification depends on.",
+      "prereqs": [
+        "data-governance-case-study.html#c3",
+        "data-governance-case-study.html#c4",
+        "07-security.html#c8"
+      ],
+      "practice": "Write pytest leak tests that sign in as two test users and assert neither can read the other entity's rows through a view and through an API. Run them in CI."
     }
   },
   "paths": [
@@ -1580,7 +1650,13 @@
         "ai-operations-assistant.html#c5",
         "ai-operations-assistant.html#c6",
         "ai-operations-assistant.html#c7",
-        "ai-operations-assistant.html#c8"
+        "ai-operations-assistant.html#c8",
+        "data-governance-case-study.html#c1",
+        "data-governance-case-study.html#c2",
+        "data-governance-case-study.html#c3",
+        "data-governance-case-study.html#c4",
+        "data-governance-case-study.html#c5",
+        "data-governance-case-study.html#c6"
       ]
     }
   ]

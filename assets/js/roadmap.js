@@ -128,7 +128,7 @@
           prove: 'The week 8 flow as a scheduled pipeline with data-quality expectations.' },
         { id: 'dbx10', start: '2027-02-08', weeks: 1, title: 'Governance on the platform', strands: ['data', 'security'],
           q: 'Who can see which data, and how is that enforced?',
-          learn: 'Unity Catalog: catalogs, permissions, lineage; masking and row filters; POPIA (Data Governance chapter 7; site 08 §13).',
+          learn: 'Unity Catalog: catalogs, permissions, lineage; masking and row filters; POPIA (Data Governance chapter 7; site 08 §13 and the data governance case study).',
           prove: 'Row-level access for two test users, driven by one entitlement table.' },
         { id: 'dbx11', start: '2027-02-15', weeks: 1, title: 'Identity and security for data', strands: ['security', 'data'],
           q: 'How do pipelines and people reach the data without a shared key?',

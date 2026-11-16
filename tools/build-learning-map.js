@@ -39,6 +39,7 @@ const PAGES = [
   ['lakehouse-platform.html', 'Applied C · Lakehouse platform'],
   ['ai-operations-assistant.html', 'Applied D · AI operations assistant'],
   ['architecture-decisions.html', 'Practice · Architecture decisions'],
+  ['data-governance-case-study.html', 'Practice · Data governance case study'],
 ];
 
 const text = s => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')

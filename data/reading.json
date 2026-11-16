@@ -1921,6 +1921,60 @@
         "uds",
         20
       ]
+    ],
+    "data-governance-case-study.html#c1": [
+      [
+        "dg",
+        1
+      ],
+      [
+        "fode",
+        10
+      ]
+    ],
+    "data-governance-case-study.html#c2": [
+      [
+        "dg",
+        2,
+        3
+      ]
+    ],
+    "data-governance-case-study.html#c3": [
+      [
+        "dg",
+        7
+      ],
+      [
+        "bsrs",
+        5
+      ]
+    ],
+    "data-governance-case-study.html#c4": [
+      [
+        "dg",
+        9
+      ],
+      [
+        "fode",
+        10
+      ]
+    ],
+    "data-governance-case-study.html#c5": [
+      [
+        "dg",
+        3,
+        4
+      ]
+    ],
+    "data-governance-case-study.html#c6": [
+      [
+        "dg",
+        8
+      ],
+      [
+        "dqf",
+        7
+      ]
     ]
   }
 }

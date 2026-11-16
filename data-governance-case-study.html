@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<!-- LOAD ORDER IS MANDATORY: bootstrap -> icons -> archivo -> site-ui -> katas.
+     site-ui.css re-points Bootstrap's own custom properties; reordering
+     silently un-themes the page. See docs/design-system.md. -->
+<link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/vendor/archivo/archivo.css">
+<link rel="stylesheet" href="assets/site-ui/site-ui.css">
+<link rel="stylesheet" href="assets/css/katas.css">
+<title>Data Governance Case Study · backend.systems</title>
+</head>
+<body>
+<div class="hf-shell">
+
+  <aside class="hf-sidebar">
+    <a class="hf-sidebar__brand" href="index.html" aria-label="Overview">
+      <span class="hf-sidebar__mark"><span class="kt-mark" aria-hidden="true"></span></span>
+      <span class="hf-sidebar__wordmark">System design<small>Backend katas</small></span>
+    </a>
+
+    <nav class="hf-nav" aria-label="Main navigation">
+      <div class="hf-nav__item"><a class="hf-nav__link" href="index.html"><i class="bi bi-grid hf-nav__icon"></i><span class="hf-nav__text">Overview</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="learning-map.html"><i class="bi bi-diagram-2 hf-nav__icon"></i><span class="hf-nav__text">Learning map</span></a></div>
+      <div class="hf-nav__section">Tier 1 · Foundations</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="01-distributed-systems.html"><i class="bi bi-diagram-3 hf-nav__icon"></i><span class="hf-nav__text">01 · Distributed systems</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="02-data-storage.html"><i class="bi bi-database hf-nav__icon"></i><span class="hf-nav__text">02 · Data &amp; storage</span></a></div>
+      <div class="hf-nav__section">Tier 2 · Building blocks</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="03-apis-contracts.html"><i class="bi bi-plug hf-nav__icon"></i><span class="hf-nav__text">03 · APIs &amp; contracts</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="04-microservices-patterns.html"><i class="bi bi-boxes hf-nav__icon"></i><span class="hf-nav__text">04 · Microservices patterns</span></a></div>
+      <div class="hf-nav__section">Tier 3 · Production</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="05-reliability-observability.html"><i class="bi bi-activity hf-nav__icon"></i><span class="hf-nav__text">05 · Reliability &amp; observability</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="06-performance-scale.html"><i class="bi bi-speedometer2 hf-nav__icon"></i><span class="hf-nav__text">06 · Performance &amp; scale</span></a></div>
+      <div class="hf-nav__section">Tier 4 · Cross-cutting</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="07-security.html"><i class="bi bi-shield-lock hf-nav__icon"></i><span class="hf-nav__text">07 · Security</span></a></div>
+      <div class="hf-nav__section">Tier 5 · Data platforms</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="08-data-platforms.html"><i class="bi bi-stack hf-nav__icon"></i><span class="hf-nav__text">08 · Data platform architecture</span></a></div>
+      <div class="hf-nav__section">Applied design</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="payment-system.html"><i class="bi bi-credit-card hf-nav__icon"></i><span class="hf-nav__text">Payment processing</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="order-fulfilment.html"><i class="bi bi-truck hf-nav__icon"></i><span class="hf-nav__text">Order fulfilment</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="lakehouse-platform.html"><i class="bi bi-bricks hf-nav__icon"></i><span class="hf-nav__text">Lakehouse platform</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="ai-operations-assistant.html"><i class="bi bi-robot hf-nav__icon"></i><span class="hf-nav__text">AI operations assistant</span></a></div>
+      <div class="hf-nav__section">Architecture practice</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="architecture-decisions.html"><i class="bi bi-journal-check hf-nav__icon"></i><span class="hf-nav__text">Architecture decisions</span></a></div>
+      <div class="hf-nav__item hf-nav__item--parent is-open">
+        <button class="hf-nav__link is-current-parent" type="button" data-hf-toggle data-hf-key="data-governance-case-study.html" aria-current="page">
+          <i class="bi bi-shield-check hf-nav__icon"></i><span class="hf-nav__text">Data governance case study</span><i class="bi bi-chevron-right hf-nav__chev"></i>
+        </button>
+        <div class="hf-nav__sub">
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c1" title="The situation · four doors, four rulebooks"><span class="hf-nav__text">The situation · four doors, four rulebooks</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c2" title="Classify before you protect · labels, not lists"><span class="hf-nav__text">Classify before you protect · labels, not lists</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c3" title="One entitlement table · enforced at every door"><span class="hf-nav__text">One entitlement table · enforced at every door</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c4" title="POPIA in the pipeline · minimise, mask, expire"><span class="hf-nav__text">POPIA in the pipeline · minimise, mask, expire</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c5" title="Ownership, contracts and access requests"><span class="hf-nav__text">Ownership, contracts and access requests</span></a></div>
+          <div class="hf-nav__item"><a class="hf-nav__link hf-nav__link--t2" href="#c6" title="Proving it · audit, leak tests and the evidence pack"><span class="hf-nav__text">Proving it · audit, leak tests and the evidence pack</span></a></div>
+        </div>
+      </div>
+      <div class="hf-nav__section">Interview prep</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="prep-checklist.html"><i class="bi bi-list-check hf-nav__icon"></i><span class="hf-nav__text">Interview checklist</span></a></div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="roadmap.html"><i class="bi bi-signpost-split hf-nav__icon"></i><span class="hf-nav__text">Architecture roadmap</span></a></div>
+      <div class="hf-nav__section">Reading list</div>
+      <div class="hf-nav__item"><a class="hf-nav__link" href="books.html"><i class="bi bi-journal-bookmark hf-nav__icon"></i><span class="hf-nav__text">Recommended books</span></a></div>
+    </nav>
+
+    <div class="hf-sidebar__foot">
+      <div class="hf-sidebar__env"><span class="hf-sync__dot"></span><span>Study guide · v1</span></div>
+    </div>
+  </aside>
+
+  <div class="hf-main">
+
+    <header class="hf-header">
+      <button class="hf-header__toggle" data-hf-sidebar-toggle aria-label="Toggle navigation" aria-expanded="true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="hf-header__titles">
+        <div class="hf-header__title">Data governance case study</div>
+        <div class="hf-header__crumbs">Backend katas / Architecture practice</div>
+      </div>
+
+      <div class="hf-header__spacer"></div>
+
+      <div class="hf-header__actions">
+        <a class="hf-iconbtn" href="architecture-decisions.html" aria-label="Previous: Architecture decisions" title="Previous: Architecture decisions"><i class="bi bi-arrow-left"></i></a>
+        <a class="hf-iconbtn" href="prep-checklist.html" aria-label="Next: Interview checklist" title="Next: Interview checklist"><i class="bi bi-arrow-right"></i></a>
+      </div>
+    </header>
+
+    <main class="hf-content">
+      <div class="hf-content__inner kt-page">
+      <header class="kt-hero">
+        <span class="hf-eyebrow">Architecture practice · Governance</span>
+        <h1 class="kt-hero__title">One rule, <em>every door</em>.</h1>
+        <p class="hf-lede">Northwind Cold Chain, the fictional group from the lakehouse and AI assistant designs, had a data platform that worked and a governance story that did not: four ways into the same data, four different permission lists, personal information nobody had counted, and no way to show an auditor who saw what. This case study follows how the platform was brought under control, decision by decision: classify before you protect, keep one entitlement table and enforce it at every door, build POPIA into the pipeline, give every dataset an owner, and prove it continuously instead of promising it once a year. The company is fictional; the decisions are the ones every real data platform faces.</p>
+        <div class="kt-facts">
+          <div class="hf-stat"><span class="hf-stat__label">Concepts</span><span class="hf-stat__value">6</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Reading time</span><span class="hf-stat__value">35 min</span></div>
+          <div class="hf-stat"><span class="hf-stat__label">Formats</span><span class="hf-stat__value">SQL · Python · YAML</span></div>
+        </div>
+      </header>
+
+  <section class="principles">
+    <div class="principle"><div class="num">PRINCIPLE 01</div><h4>Classify before you protect.</h4><p>You cannot protect what you have not counted. Label every column first; policies attach to labels, not to tables or people.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 02</div><h4>One rule, every door.</h4><p>BI, SQL, APIs and the AI assistant read the same entitlement table, as the user. A second permission list is a leak waiting for a date.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 03</div><h4>Don't keep what you don't need.</h4><p>The safest personal information is the column you never loaded. Minimise at ingestion, mask in the middle, delete on a timer.</p></div>
+    <div class="principle"><div class="num">PRINCIPLE 04</div><h4>Prove it, continuously.</h4><p>Governance an auditor has to take on trust is not governance. Log every read, test every door daily, and keep the evidence ready.</p></div>
+  </section>
+
+
+  <!-- ============ C1 — THE SITUATION ============ -->
+  <section class="pattern" id="c1">
+    <div class="pattern-head"><div class="pattern-num">01</div><div class="pattern-title-wrap"><h2>The situation · four doors, four rulebooks</h2><div class="pattern-tags"><span class="tag warm">Start here</span><span class="tag deep">Case study</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c1-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">BEFORE · THE SAME DATA, FOUR WAYS IN</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="180" y="120" width="120" height="56" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+            <text x="240" y="139" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Gold marts</text>
+            <text x="240" y="151" text-anchor="middle" fill="var(--hf-ink-secondary)">3 entities</text>
+            <text x="240" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">customers, orders, GL</text>
+            <rect x="15" y="40" width="128" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="79" y="53" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI</text>
+            <text x="79" y="65" text-anchor="middle" fill="var(--hf-ink-secondary)">own role list</text>
+            <text x="79" y="77" text-anchor="middle" fill="var(--hf-ink-secondary)">per report</text>
+            <rect x="337" y="40" width="128" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="401" y="53" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">SQL endpoint</text>
+            <text x="401" y="65" text-anchor="middle" fill="var(--hf-ink-secondary)">analysts: read all</text>
+            <text x="401" y="77" text-anchor="middle" fill="var(--hf-ink-secondary)">&quot;for convenience&quot;</text>
+            <rect x="15" y="212" width="128" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="79" y="225" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">AI assistant</text>
+            <text x="79" y="237" text-anchor="middle" fill="var(--hf-ink-secondary)">service account</text>
+            <text x="79" y="249" text-anchor="middle" fill="var(--hf-ink-secondary)">reads everything</text>
+            <rect x="337" y="212" width="128" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="401" y="225" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">CSV exports</text>
+            <text x="401" y="237" text-anchor="middle" fill="var(--hf-ink-secondary)">emailed, shared</text>
+            <text x="401" y="249" text-anchor="middle" fill="var(--hf-ink-secondary)">no expiry</text>
+            <path d="M143,70 L180,128" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M337,70 L300,128" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M143,226 L180,168" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M337,226 L300,168" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c1-arr)"/>
+            <path d="M144,46 L156,58 M156,46 L144,58" stroke="var(--hf-danger-fg)" stroke-width="1.5" fill="none"/>
+            <text x="150" y="100" text-anchor="middle" fill="var(--hf-danger-fg)">NA user sees ZA debtors</text>
+            <path d="M324,46 L336,58 M336,46 L324,58" stroke="var(--hf-danger-fg)" stroke-width="1.5" fill="none"/>
+            <text x="330" y="100" text-anchor="middle" fill="var(--hf-danger-fg)">ID numbers in a query</text>
+            <path d="M144,264 L156,276 M156,264 L144,276" stroke="var(--hf-danger-fg)" stroke-width="1.5" fill="none"/>
+            <text x="79" y="272" text-anchor="middle" fill="var(--hf-danger-fg)">one prompt = all data</text>
+            <path d="M324,264 L336,276 M336,264 L324,276" stroke="var(--hf-danger-fg)" stroke-width="1.5" fill="none"/>
+            <text x="401" y="272" text-anchor="middle" fill="var(--hf-danger-fg)">personal data in inboxes</text>
+            <line x1="15" y1="286" x2="465" y2="286" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <text x="240" y="304" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Goal: one rule, enforced at every door, provable to an auditor.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Northwind's data platform had done its first job well. Three entities' ERPs and warehouse systems landed in one lakehouse, and finance trusted the reconciled marts. Then the questions changed. A Namibian dispatcher opened a Power BI report and saw South African debtors. An analyst's query on the SQL endpoint returned customer ID numbers, because nobody had decided they should not be there. The new AI assistant ran on a service account that could read everything. And every month, CSV exports of customer lists travelled by email with no owner and no expiry.</p>
+        <p>None of these was a breach yet, but each was the same failure: <strong>four doors into the same data, each with its own rulebook</strong>. Power BI had role lists per report, the SQL endpoint trusted analysts, the assistant trusted itself, and exports trusted whoever pressed the button. Rules kept in four places drift apart, and the gaps between them are where leaks happen. On top of that sat POPIA, South Africa's Protection of Personal Information Act, which requires a lawful purpose for personal information, reasonable security safeguards, limits on how long it is kept, and notifying the Information Regulator and the people affected after a security compromise.</p>
+        <p>The brief to the architect was short: <strong>one set of rules, enforced at every door, provable to an auditor</strong>, without stopping the business from using its data. The rest of this page is how that was done, in the order it was done. Order matters: you cannot write access rules for data you have not classified, and you cannot prove rules you do not log.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Ask first</div><ul><li>How many ways in are there, including exports and the AI?</li><li>Where does personal information live, column by column?</li><li>Who decides who may see a dataset today, if anyone?</li><li>What would you show the Information Regulator tomorrow?</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Red flags</div><ul><li>Permission lists per tool, maintained by hand</li><li>Service accounts that read everything "for convenience"</li><li>Nobody can name the owner of a dataset</li><li>Governance as a policy document nobody can test</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">Classification</a>, <a href="#c3">One entitlement table</a>, <a href="08-data-platforms.html#c13">Governance (page 08)</a>, <a href="lakehouse-platform.html#c7">Lakehouse security</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 1 What Is Data Governance? · <a href="books.html#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering">Fundamentals of Data Engineering</a> ch. 10 Security and Privacy</div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab cfg active" data-target="c1-cfg">YAML · the doors</button><button class="tab sql" data-target="c1-sql">SQL · first count</button><button class="tab py" data-target="c1-py">Python · door audit</button></div>
+      <div class="code-pane active" id="c1-cfg"><pre><span class="c"># doors.yaml: the inventory that started the project. Every way into the data.</span>
+<span class="n">doors</span>:
+  - <span class="n">name</span>: <span class="s">power_bi</span>
+    <span class="n">users</span>: <span class="num">60</span>
+    <span class="n">rules</span>: <span class="s">per-report</span> <span class="s">role</span> <span class="s">lists</span>        <span class="c"># maintained by hand, by three people</span>
+    <span class="n">personal_data</span>: <span class="s">yes</span>
+  - <span class="n">name</span>: <span class="s">sql_endpoint</span>
+    <span class="n">users</span>: <span class="num">8</span>
+    <span class="n">rules</span>: <span class="s">analysts</span> <span class="s">read</span> <span class="s">all</span> <span class="s">schemas</span>    <span class="c"># "for convenience"</span>
+    <span class="n">personal_data</span>: <span class="s">yes</span>
+  - <span class="n">name</span>: <span class="s">ai_assistant</span>
+    <span class="n">users</span>: <span class="num">40</span>
+    <span class="n">rules</span>: <span class="s">service</span> <span class="s">account</span>, <span class="s">reads</span> <span class="s">all</span>   <span class="c"># the newest and widest door</span>
+    <span class="n">personal_data</span>: <span class="s">yes</span>
+  - <span class="n">name</span>: <span class="s">csv_exports</span>
+    <span class="n">users</span>: <span class="s">unknown</span>
+    <span class="n">rules</span>: <span class="s">none</span>
+    <span class="n">personal_data</span>: <span class="s">yes</span>
+<span class="n">target</span>:
+  <span class="n">rule_sources</span>: <span class="num">1</span>                       <span class="c"># one entitlement table</span>
+  <span class="n">doors_enforcing_it</span>: <span class="s">all</span>
+  <span class="n">evidence</span>: <span class="s">continuous</span></pre></div>
+      <div class="code-pane" id="c1-sql"><pre><span class="c">-- The first honest question: where might personal information be?</span>
+<span class="c">-- A crude name scan finds candidates; classification (deep-dive 2) decides.</span>
+<span class="k">select</span> <span class="n">table_schema</span>,
+       <span class="n">table_name</span>,
+       <span class="n">column_name</span>,
+       <span class="n">data_type</span>
+<span class="k">from</span> <span class="n">information_schema.columns</span>
+<span class="k">where</span> <span class="n">table_schema</span> <span class="k">in</span> (<span class="s">'silver'</span>, <span class="s">'gold'</span>)
+  <span class="k">and</span> (<span class="n">column_name</span> <span class="n">like</span> <span class="s">'%id_number%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%passport%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%email%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%phone%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%address%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%birth%'</span>
+       <span class="k">or</span> <span class="n">column_name</span> <span class="n">like</span> <span class="s">'%bank%'</span>)
+<span class="k">order</span> <span class="k">by</span> <span class="n">table_schema</span>, <span class="n">table_name</span>, <span class="n">column_name</span>;</pre></div>
+      <div class="code-pane" id="c1-py"><pre><span class="c"># Who can read what today? Compare each door's effective access to what it should be.</span>
+<span class="k">from</span> <span class="n">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+
+
+<span class="o">@</span><span class="n">dataclass</span>(<span class="n">frozen</span><span class="o">=</span><span class="k">True</span>)
+<span class="k">class</span> <span class="t">Door</span>:
+    <span class="n">name</span>: <span class="t">str</span>
+    <span class="n">principals</span>: <span class="t">set</span>[<span class="t">str</span>]          <span class="c"># users or service accounts with access</span>
+    <span class="n">entities_visible</span>: <span class="t">set</span>[<span class="t">str</span>]    <span class="c"># entities those principals can read</span>
+
+
+<span class="k">def</span> <span class="n">over_exposed</span>(<span class="n">door</span>: <span class="t">Door</span>, <span class="n">entitled</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">set</span>[<span class="t">str</span>]]) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">str</span>]:
+    <span class="s">"""Principals who can see an entity they are not entitled to."""</span>
+    <span class="n">problems</span> <span class="o">=</span> []
+    <span class="k">for</span> <span class="n">p</span> <span class="k">in</span> <span class="n">sorted</span>(<span class="n">door</span>.<span class="n">principals</span>):
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">door</span>.<span class="n">entities_visible</span> <span class="o">-</span> <span class="n">entitled</span>.<span class="n">get</span>(<span class="n">p</span>, <span class="t">set</span>())
+        <span class="k">if</span> <span class="n">extra</span>:
+            <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"{door.name}: {p} can see {sorted(extra)}"</span>)
+    <span class="k">return</span> <span class="n">problems</span>
+
+
+<span class="c"># The baseline that made the case for the project: every door over-exposed someone.</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C2 — CLASSIFICATION ============ -->
+  <section class="pattern" id="c2">
+    <div class="pattern-head"><div class="pattern-num">02</div><div class="pattern-title-wrap"><h2>Classify before you protect · labels, not lists</h2><div class="pattern-tags"><span class="tag warm">Core</span><span class="tag deep">Governance</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">EVERY COLUMN GETS A LABEL; POLICY ATTACHES TO THE LABEL</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <text x="15" y="40" text-anchor="start" fill="var(--hf-ink-muted)" font-weight="600">COLUMNS</text>
+            <rect x="15" y="48" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="62" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">customer.name</text>
+            <rect x="15" y="76" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="90" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">customer.id_number</text>
+            <rect x="15" y="104" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="118" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">customer.email</text>
+            <rect x="15" y="132" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="146" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">order.total_zar</text>
+            <rect x="15" y="160" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="174" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">employee.medical_note</text>
+            <rect x="15" y="188" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="202" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">product.sku</text>
+            <text x="240" y="40" text-anchor="middle" fill="var(--hf-ink-muted)" font-weight="600">LABEL</text>
+            <rect x="180" y="48" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="62" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">personal</text>
+            <rect x="180" y="76" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-warning-fg)" stroke-width="1"/>
+            <text x="240" y="90" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">personal: identifier</text>
+            <rect x="180" y="104" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="118" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">personal</text>
+            <rect x="180" y="132" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="146" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">confidential</text>
+            <rect x="180" y="160" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-danger-fg)" stroke-width="1"/>
+            <text x="240" y="174" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">special personal</text>
+            <rect x="180" y="188" width="120" height="22" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="202" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">internal</text>
+            <path d="M135,59 L178,59" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M135,87 L178,87" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M135,115 L178,115" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M135,143 L178,143" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M135,171 L178,171" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M135,199 L178,199" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <text x="405" y="40" text-anchor="middle" fill="var(--hf-ink-muted)" font-weight="600">POLICY</text>
+            <rect x="345" y="48" width="120" height="50" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="405" y="64" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">personal</text>
+            <text x="405" y="76" text-anchor="middle" fill="var(--hf-ink-secondary)">entitled users only;</text>
+            <text x="405" y="88" text-anchor="middle" fill="var(--hf-ink-secondary)">masked for others</text>
+            <rect x="345" y="104" width="120" height="36" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="405" y="119" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">identifier</text>
+            <text x="405" y="131" text-anchor="middle" fill="var(--hf-ink-secondary)">tokenised in silver</text>
+            <rect x="345" y="146" width="120" height="36" rx="3" fill="var(--hf-surface)" stroke="var(--hf-danger-fg)" stroke-width="1"/>
+            <text x="405" y="161" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">special personal</text>
+            <text x="405" y="173" text-anchor="middle" fill="var(--hf-ink-secondary)">not loaded at all</text>
+            <rect x="345" y="188" width="120" height="22" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="405" y="202" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">internal: all staff</text>
+            <path d="M300,59 L343,66" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M300,87 L343,120" stroke="var(--hf-warning-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <path d="M300,171 L343,164" stroke="var(--hf-danger-fg)" stroke-width="1" fill="none" marker-end="url(#c2-arr)"/>
+            <line x1="15" y1="226" x2="465" y2="226" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <text x="240" y="246" text-anchor="middle" fill="var(--hf-ink-secondary)">Every dataset has a named owner; every label was set by a person, not a guess.</text>
+            <text x="240" y="264" text-anchor="middle" fill="var(--hf-ink-secondary)">A scanner suggests labels from names and patterns. The owner confirms them.</text>
+            <text x="240" y="282" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">New columns arrive unlabelled and are hidden until someone labels them.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>The first decision was not about access at all. It was to <strong>count and label</strong>. Every column in silver and gold got one label from a short list: <em>public</em>, <em>internal</em>, <em>confidential</em>, <em>personal</em>, <em>personal identifier</em> and <em>special personal</em>. The last follows POPIA's special personal information category, which includes things such as health, religious beliefs and biometric data and carries stricter conditions. Five or six labels is enough; a scheme with twenty is never applied consistently.</p>
+        <p>Labelling 1&nbsp;400 columns by hand is how these projects die, so a <strong>scanner proposed labels</strong> from column names and from the values themselves: a 13-digit string whose check digit passes the Luhn test is very likely a South African ID number, and an <code>@</code> with a domain is an email address. The scanner only suggests. Each dataset's <strong>owner</strong> confirmed or corrected the labels, because a label is a decision someone must be accountable for.</p>
+        <p>Then the important design choice: <strong>policies attach to labels, not to tables or people</strong>. "Personal data is visible only to users entitled to that entity" is one rule, and it covers every personal column that exists now or later. "Personal identifiers are tokenised in silver" is another. "Special personal information is not loaded" is the strictest and the simplest. And the default protects the gaps: a new column arrives <strong>unlabelled and hidden</strong> until its owner labels it, so a schema change in the ERP cannot quietly expose something new.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Do</div><ul><li>A short label list everyone can apply</li><li>Scanners that suggest; owners who decide</li><li>Policies written against labels</li><li>Unlabelled means hidden, by default</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Classifying tables instead of columns</li><li>Twenty labels nobody remembers</li><li>Trusting the scanner without an owner's review</li><li>New columns visible until someone notices</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c3">One entitlement table</a>, <a href="#c4">POPIA in the pipeline</a>, <a href="08-data-platforms.html#c13">Governance (page 08)</a>, <a href="07-security.html#c6">Encryption</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 2 Ingredients of Data Governance: Tools, ch. 3 Ingredients of Data Governance: People and Processes</div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c2-sql">SQL · labels</button><button class="tab py" data-target="c2-py">Python · scanner</button><button class="tab cfg" data-target="c2-cfg">YAML · label policies</button></div>
+      <div class="code-pane active" id="c2-sql"><pre><span class="c">-- The catalog of labels: one row per column, set and confirmed by the owner.</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">governance.column_label</span> (
+    <span class="n">table_schema</span>  <span class="t">text</span> <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">table_name</span>    <span class="t">text</span> <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">column_name</span>   <span class="t">text</span> <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">label</span>         <span class="t">text</span> <span class="k">not</span> <span class="k">null</span> <span class="k">check</span> (<span class="n">label</span> <span class="k">in</span> (
+                      <span class="s">'public'</span>, <span class="s">'internal'</span>, <span class="s">'confidential'</span>,
+                      <span class="s">'personal'</span>, <span class="s">'personal_identifier'</span>, <span class="s">'special_personal'</span>)),
+    <span class="n">suggested_by</span>  <span class="t">text</span> <span class="k">not</span> <span class="k">null</span>,          <span class="c">-- 'scanner' or a person</span>
+    <span class="n">confirmed_by</span>  <span class="t">text</span>,                   <span class="c">-- the dataset owner; null = not yet</span>
+    <span class="n">confirmed_at</span>  <span class="t">timestamptz</span>,
+    <span class="k">primary</span> <span class="k">key</span> (<span class="n">table_schema</span>, <span class="n">table_name</span>, <span class="n">column_name</span>)
+);
+
+<span class="c">-- Unlabelled or unconfirmed columns: hidden from every door until this is empty.</span>
+<span class="k">select</span> <span class="n">c.table_schema</span>, <span class="n">c.table_name</span>, <span class="n">c.column_name</span>
+<span class="k">from</span> <span class="n">information_schema.columns</span> <span class="n">c</span>
+<span class="k">left</span> <span class="k">join</span> <span class="n">governance.column_label</span> <span class="n">l</span>
+  <span class="k">on</span> <span class="n">l.table_schema</span> <span class="o">=</span> <span class="n">c.table_schema</span>
+ <span class="k">and</span> <span class="n">l.table_name</span> <span class="o">=</span> <span class="n">c.table_name</span>
+ <span class="k">and</span> <span class="n">l.column_name</span> <span class="o">=</span> <span class="n">c.column_name</span>
+<span class="k">where</span> <span class="n">c.table_schema</span> <span class="o">=</span> <span class="s">'gold'</span>
+  <span class="k">and</span> (<span class="n">l.label</span> <span class="k">is</span> <span class="k">null</span> <span class="k">or</span> <span class="n">l.confirmed_by</span> <span class="k">is</span> <span class="k">null</span>);</pre></div>
+      <div class="code-pane" id="c2-py"><pre><span class="c"># Suggest labels from names and values. The owner confirms; the scanner never decides.</span>
+<span class="k">import</span> <span class="n">re</span>
+
+<span class="t">EMAIL</span> <span class="o">=</span> <span class="n">re</span>.<span class="n">compile</span>(<span class="n">r</span><span class="s">"^[^@\s]+@[^@\s]+\.[a-z]{2,}$"</span>, <span class="n">re</span>.<span class="t">I</span>)
+<span class="t">SA_ID</span> <span class="o">=</span> <span class="n">re</span>.<span class="n">compile</span>(<span class="n">r</span><span class="s">"^\d{13}$"</span>)
+
+
+<span class="k">def</span> <span class="n">luhn_ok</span>(<span class="n">digits</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">bool</span>:
+    <span class="n">total</span> <span class="o">=</span> <span class="num">0</span>
+    <span class="k">for</span> <span class="n">i</span>, <span class="n">ch</span> <span class="k">in</span> <span class="n">enumerate</span>(<span class="n">reversed</span>(<span class="n">digits</span>)):
+        <span class="n">n</span> <span class="o">=</span> <span class="t">int</span>(<span class="n">ch</span>)
+        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="num">2</span> <span class="o">==</span> <span class="num">1</span>:
+            <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="num">2</span> <span class="o">-</span> <span class="num">9</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="num">4</span> <span class="k">else</span> <span class="n">n</span> <span class="o">*</span> <span class="num">2</span>
+        <span class="n">total</span> <span class="o">+</span><span class="o">=</span> <span class="n">n</span>
+    <span class="k">return</span> <span class="n">total</span> <span class="o">%</span> <span class="num">10</span> <span class="o">==</span> <span class="num">0</span>
+
+
+<span class="k">def</span> <span class="n">suggest</span>(<span class="n">column</span>: <span class="t">str</span>, <span class="n">sample</span>: <span class="t">list</span>[<span class="t">str</span>]) <span class="o">-&gt;</span> <span class="t">str</span> | <span class="k">None</span>:
+    <span class="n">name</span> <span class="o">=</span> <span class="n">column</span>.<span class="n">lower</span>()
+    <span class="n">values</span> <span class="o">=</span> [<span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="k">in</span> <span class="n">sample</span> <span class="k">if</span> <span class="n">v</span>]
+    <span class="k">if</span> <span class="n">values</span> <span class="k">and</span> <span class="n">sum</span>(<span class="t">bool</span>(<span class="t">SA_ID</span>.<span class="n">match</span>(<span class="n">v</span>) <span class="k">and</span> <span class="n">luhn_ok</span>(<span class="n">v</span>)) <span class="k">for</span> <span class="n">v</span> <span class="k">in</span> <span class="n">values</span>) <span class="o">/</span> <span class="n">len</span>(<span class="n">values</span>) <span class="o">&gt;</span> <span class="num">0.8</span>:
+        <span class="k">return</span> <span class="s">"personal_identifier"</span>          <span class="c"># very likely SA ID numbers</span>
+    <span class="k">if</span> <span class="n">values</span> <span class="k">and</span> <span class="n">sum</span>(<span class="t">bool</span>(<span class="t">EMAIL</span>.<span class="n">match</span>(<span class="n">v</span>)) <span class="k">for</span> <span class="n">v</span> <span class="k">in</span> <span class="n">values</span>) <span class="o">/</span> <span class="n">len</span>(<span class="n">values</span>) <span class="o">&gt;</span> <span class="num">0.8</span>:
+        <span class="k">return</span> <span class="s">"personal"</span>
+    <span class="k">if</span> <span class="n">any</span>(<span class="n">k</span> <span class="k">in</span> <span class="n">name</span> <span class="k">for</span> <span class="n">k</span> <span class="k">in</span> (<span class="s">"medical"</span>, <span class="s">"health"</span>, <span class="s">"religion"</span>, <span class="s">"biometric"</span>)):
+        <span class="k">return</span> <span class="s">"special_personal"</span>
+    <span class="k">if</span> <span class="n">any</span>(<span class="n">k</span> <span class="k">in</span> <span class="n">name</span> <span class="k">for</span> <span class="n">k</span> <span class="k">in</span> (<span class="s">"name"</span>, <span class="s">"phone"</span>, <span class="s">"address"</span>, <span class="s">"birth"</span>)):
+        <span class="k">return</span> <span class="s">"personal"</span>
+    <span class="k">return</span> <span class="k">None</span>                               <span class="c"># no suggestion; the owner labels it</span></pre></div>
+      <div class="code-pane" id="c2-cfg"><pre><span class="c"># label-policies.yaml: rules attach to labels, so new columns inherit them.</span>
+<span class="n">labels</span>:
+  <span class="n">public</span>: { <span class="s">visible_to:</span> <span class="s">everyone</span> }
+  <span class="n">internal</span>: { <span class="s">visible_to:</span> <span class="s">all_staff</span> }
+  <span class="n">confidential</span>: { <span class="s">visible_to:</span> <span class="s">entitled_users</span> }
+  <span class="n">personal</span>:
+    <span class="n">visible_to</span>: <span class="s">entitled_users</span>          <span class="c"># entity-level entitlement (deep-dive 3)</span>
+    <span class="n">exports</span>: <span class="s">deny</span>
+  <span class="n">personal_identifier</span>:
+    <span class="n">stored_as</span>: <span class="s">token</span>                    <span class="c"># raw value only in the bronze vault</span>
+    <span class="n">visible_to</span>: <span class="s">nobody_by_default</span>
+  <span class="n">special_personal</span>:
+    <span class="n">load</span>: <span class="k">false</span>                         <span class="c"># not needed for any approved purpose</span>
+<span class="n">unlabelled</span>:
+  <span class="n">visible_to</span>: <span class="s">nobody</span>                    <span class="c"># until the owner labels it</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C3 — ONE ENTITLEMENT TABLE ============ -->
+  <section class="pattern" id="c3">
+    <div class="pattern-head"><div class="pattern-num">03</div><div class="pattern-title-wrap"><h2>One entitlement table · enforced at every door</h2><div class="pattern-tags"><span class="tag hot">Critical</span><span class="tag warm">Core</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">ONE SOURCE OF TRUTH, FOUR ENFORCEMENT POINTS</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="15" y="40" width="120" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="75" y="53" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Entra ID groups</text>
+            <text x="75" y="65" text-anchor="middle" fill="var(--hf-ink-secondary)">joiners, movers,</text>
+            <text x="75" y="77" text-anchor="middle" fill="var(--hf-ink-secondary)">leavers</text>
+            <path d="M135,62 L168,62" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c3-arr)"/>
+            <text x="152" y="56" text-anchor="middle" fill="var(--hf-success-fg)">sync</text>
+            <rect x="170" y="34" width="140" height="56" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.4"/>
+            <text x="240" y="53" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">security.user_entity</text>
+            <text x="240" y="65" text-anchor="middle" fill="var(--hf-ink-secondary)">user -&gt; entity,</text>
+            <text x="240" y="77" text-anchor="middle" fill="var(--hf-ink-secondary)">cost centre, clearance</text>
+            <path d="M240,90 L240,110" stroke="var(--hf-success-fg)" stroke-width="1" fill="none"/>
+            <path d="M60,110 L420,110" stroke="var(--hf-success-fg)" stroke-width="1" fill="none"/>
+            <path d="M60,110 L60,136" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c3-arr)"/>
+            <path d="M180,110 L180,136" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c3-arr)"/>
+            <path d="M300,110 L300,136" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c3-arr)"/>
+            <path d="M420,110 L420,136" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c3-arr)"/>
+            <rect x="15" y="138" width="90" height="50" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="60" y="154" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Power BI</text>
+            <text x="60" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)">dynamic RLS</text>
+            <text x="60" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">reads the table</text>
+            <rect x="135" y="138" width="90" height="50" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="180" y="154" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">SQL endpoint</text>
+            <text x="180" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)">row filter</text>
+            <text x="180" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">per session user</text>
+            <rect x="255" y="138" width="90" height="50" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="300" y="154" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Marts API</text>
+            <text x="300" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)">scopes +</text>
+            <text x="300" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">entity claim</text>
+            <rect x="375" y="138" width="90" height="50" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="420" y="154" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">AI assistant</text>
+            <text x="420" y="166" text-anchor="middle" fill="var(--hf-ink-secondary)">on behalf of user</text>
+            <text x="420" y="178" text-anchor="middle" fill="var(--hf-ink-secondary)">retrieval filter</text>
+            <rect x="15" y="210" width="450" height="44" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink-secondary)" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="240" y="228" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">The same person sees the same rows, whichever door they use.</text>
+            <text x="240" y="244" text-anchor="middle" fill="var(--hf-ink-secondary)">No door has its own list. No service account reads business data.</text>
+            <line x1="15" y1="266" x2="465" y2="266" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <text x="240" y="286" text-anchor="middle" fill="var(--hf-ink-secondary)">Access changes in one place (a group membership) and reaches every door the same day.</text>
+            <text x="240" y="304" text-anchor="middle" fill="var(--hf-success-fg)">Leavers lose access everywhere when their account is disabled.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>With columns labelled, the question became <em>which rows</em> each person may see. The answer was one table, <code>security.user_entity</code>: a row per user and entity, with their cost centres and a clearance level. It is not edited by hand. A sync job fills it from <strong>Entra ID group memberships</strong>, so joiners, movers and leavers are handled by the process the business already runs. Disable someone's account and their access disappears from every door at the next sync.</p>
+        <p>Then each door was changed to read that table instead of keeping its own list. <strong>Power BI</strong> uses dynamic row-level security: one role whose filter looks up the signed-in user in the table, instead of a role list per report. The <strong>SQL endpoint</strong> applies a row filter based on the session user. The <strong>Marts API</strong> checks scopes and the user's entities on every call. The <strong>AI assistant</strong> acts on behalf of the user and filters retrieval with the same table, as designed in <a href="ai-operations-assistant.html#c5">Applied D</a>. Column labels from deep-dive 2 decide what each permitted row shows.</p>
+        <p>The rule that made it hold: <strong>no door may have its own permission list, and no service account may read business data</strong>. Pipelines still need identities to write the marts, but those are workload identities that can write gold and read nothing a person would query through them. The result is the property the brief asked for: the same person sees the same rows whichever door they use, and access changes in one place.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Design rules</div><ul><li>Entitlements derived from directory groups</li><li>Every door reads the same table, as the user</li><li>Dynamic RLS instead of role lists per report</li><li>Workload identities write; people read</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>A permission list inside each tool</li><li>Hand-edited entitlement rows</li><li>A shared "reporting" account behind BI</li><li>Filtering in the UI instead of the query</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c6">Proving it</a>, <a href="ai-operations-assistant.html#c5">The assistant acts as the asker</a>, <a href="lakehouse-platform.html#c7">Lakehouse security</a>, <a href="07-security.html#c4">Least privilege</a>, <a href="03-apis-contracts.html#c8">Authorization</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 7 Data Protection · <a href="books.html#building-secure-reliable-systems" title="Building Secure and Reliable Systems">Building Secure and Reliable Systems</a> ch. 5 <a href="https://google.github.io/building-secure-and-reliable-systems/raw/ch05.html" target="_blank" rel="noopener">Design for Least Privilege</a></div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c3-sql">SQL · table and filter</button><button class="tab py" data-target="c3-py">Python · group sync</button><button class="tab cfg" data-target="c3-cfg">YAML · doors</button></div>
+      <div class="code-pane active" id="c3-sql"><pre><span class="c">-- The single source of truth, filled from directory groups, never edited by hand.</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">security.user_entity</span> (
+    <span class="n">user_oid</span>      <span class="t">uuid</span> <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">entity_code</span>   <span class="t">varchar</span>(<span class="num">6</span>) <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">cost_centres</span>  <span class="t">text</span>[] <span class="k">not</span> <span class="k">null</span> <span class="k">default</span> <span class="s">'{}'</span>,   <span class="c">-- empty = all in the entity</span>
+    <span class="n">clearance</span>     <span class="t">int</span> <span class="k">not</span> <span class="k">null</span> <span class="k">default</span> <span class="num">1</span>,
+    <span class="n">synced_at</span>     <span class="t">timestamptz</span> <span class="k">not</span> <span class="k">null</span>,
+    <span class="k">primary</span> <span class="k">key</span> (<span class="n">user_oid</span>, <span class="n">entity_code</span>)
+);
+
+<span class="c">-- One filter, used by the SQL endpoint, the API and the assistant's SQL tool.</span>
+<span class="k">create</span> <span class="k">view</span> <span class="n">gold.v_customer</span> <span class="k">as</span>
+<span class="k">select</span> <span class="n">c.</span><span class="o">*</span>
+<span class="k">from</span> <span class="n">gold.dim_customer</span> <span class="n">c</span>
+<span class="k">where</span> <span class="n">c.entity_code</span> <span class="k">in</span> (
+    <span class="k">select</span> <span class="n">entity_code</span>
+    <span class="k">from</span> <span class="n">security.user_entity</span>
+    <span class="k">where</span> <span class="n">user_oid</span> <span class="o">=</span> <span class="k">current_setting</span>(<span class="s">'app.user_oid'</span>)<span class="o">::</span><span class="t">uuid</span>
+);
+<span class="c">-- A missing app.user_oid raises an error: no setting means no rows, never all rows.</span></pre></div>
+      <div class="code-pane" id="c3-py"><pre><span class="c"># Fill the entitlement table from directory groups. Idempotent: safe to rerun.</span>
+<span class="c"># Group naming convention: data-&lt;entity&gt;-&lt;clearance&gt;, e.g. data-NCC-NA-2</span>
+<span class="k">import</span> <span class="n">re</span>
+<span class="k">from</span> <span class="n">datetime</span> <span class="k">import</span> <span class="n">datetime</span>, <span class="n">timezone</span>
+
+<span class="t">GROUP</span> <span class="o">=</span> <span class="n">re</span>.<span class="n">compile</span>(<span class="n">r</span><span class="s">"^data-(NCC-[A-Z]{2})-(\d)$"</span>)
+
+
+<span class="k">def</span> <span class="n">desired_rows</span>(<span class="n">memberships</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">list</span>[<span class="t">str</span>]]) <span class="o">-&gt;</span> <span class="t">set</span>[<span class="t">tuple</span>[<span class="t">str</span>, <span class="t">str</span>, <span class="t">int</span>]]:
+    <span class="s">"""memberships: user_oid -&gt; group names, read from the directory."""</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="t">set</span>()
+    <span class="k">for</span> <span class="n">user</span>, <span class="n">groups</span> <span class="k">in</span> <span class="n">memberships</span>.<span class="n">items</span>():
+        <span class="k">for</span> <span class="n">g</span> <span class="k">in</span> <span class="n">groups</span>:
+            <span class="n">m</span> <span class="o">=</span> <span class="t">GROUP</span>.<span class="n">match</span>(<span class="n">g</span>)
+            <span class="k">if</span> <span class="n">m</span>:
+                <span class="n">rows</span>.<span class="n">add</span>((<span class="n">user</span>, <span class="n">m</span>.<span class="n">group</span>(<span class="num">1</span>), <span class="t">int</span>(<span class="n">m</span>.<span class="n">group</span>(<span class="num">2</span>))))
+    <span class="k">return</span> <span class="n">rows</span>
+
+
+<span class="k">def</span> <span class="n">sync</span>(<span class="n">db</span>, <span class="n">memberships</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">list</span>[<span class="t">str</span>]]) <span class="o">-&gt;</span> <span class="t">dict</span>[<span class="t">str</span>, <span class="t">int</span>]:
+    <span class="n">want</span> <span class="o">=</span> <span class="n">desired_rows</span>(<span class="n">memberships</span>)
+    <span class="n">have</span> <span class="o">=</span> <span class="n">db</span>.<span class="n">current_rows</span>()                     <span class="c"># same tuple shape</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span>.<span class="n">now</span>(<span class="n">timezone</span>.<span class="n">utc</span>)
+    <span class="n">db</span>.<span class="n">delete_rows</span>(<span class="n">have</span> <span class="o">-</span> <span class="n">want</span>)                  <span class="c"># leavers and movers lose access</span>
+    <span class="n">db</span>.<span class="n">upsert_rows</span>(<span class="n">want</span> <span class="o">-</span> <span class="n">have</span>, <span class="n">synced_at</span><span class="o">=</span><span class="n">now</span>)   <span class="c"># joiners gain it</span>
+    <span class="k">return</span> {<span class="s">"added"</span>: <span class="n">len</span>(<span class="n">want</span> <span class="o">-</span> <span class="n">have</span>), <span class="s">"removed"</span>: <span class="n">len</span>(<span class="n">have</span> <span class="o">-</span> <span class="n">want</span>)}</pre></div>
+      <div class="code-pane" id="c3-cfg"><pre><span class="c"># enforcement.yaml: every door, and how it reads the one table.</span>
+<span class="n">entitlement_source</span>: <span class="s">security.user_entity</span>
+<span class="n">filled_from</span>: <span class="s">entra_groups</span>              <span class="c"># data-&lt;entity&gt;-&lt;clearance&gt;</span>
+<span class="n">sync_every_minutes</span>: <span class="num">60</span>
+<span class="n">doors</span>:
+  <span class="n">power_bi</span>: { <span class="s">method:</span> <span class="s">dynamic_rls</span>, <span class="s">lookup:</span> <span class="s">user_principal_name</span> }
+  <span class="n">sql_endpoint</span>: { <span class="s">method:</span> <span class="s">row_filter</span>, <span class="s">session_setting:</span> <span class="s">app.user_oid</span> }
+  <span class="n">marts_api</span>: { <span class="s">method:</span> <span class="s">scopes_and_entity_claim</span> }
+  <span class="n">ai_assistant</span>: { <span class="s">method:</span> <span class="s">on_behalf_of</span>, <span class="s">retrieval_filter:</span> <span class="k">true</span> }
+<span class="n">forbidden</span>:
+  - <span class="s">per_tool_permission_lists</span>
+  - <span class="s">service_accounts_reading_business_data</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C4 — POPIA ============ -->
+  <section class="pattern" id="c4">
+    <div class="pattern-head"><div class="pattern-num">04</div><div class="pattern-title-wrap"><h2>POPIA in the pipeline · minimise, mask, expire</h2><div class="pattern-tags"><span class="tag hot">Compliance</span><span class="tag deep">Privacy</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">PRIVACY DECISIONS AT EACH LAYER</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="15" y="44" width="96" height="52" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="63" y="61" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Sources</text>
+            <text x="63" y="73" text-anchor="middle" fill="var(--hf-ink-secondary)">ERP, WMS,</text>
+            <text x="63" y="85" text-anchor="middle" fill="var(--hf-ink-secondary)">CRM</text>
+            <path d="M111,70 L131,70" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c4-arr)"/>
+            <rect x="133" y="44" width="96" height="52" rx="3" fill="var(--hf-surface)" stroke="var(--hf-warning-fg)" stroke-width="1"/>
+            <text x="181" y="61" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Bronze</text>
+            <text x="181" y="73" text-anchor="middle" fill="var(--hf-ink-secondary)">raw, locked vault</text>
+            <text x="181" y="85" text-anchor="middle" fill="var(--hf-ink-secondary)">90-day retention</text>
+            <path d="M229,70 L249,70" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c4-arr)"/>
+            <rect x="251" y="44" width="96" height="52" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="299" y="61" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Silver</text>
+            <text x="299" y="73" text-anchor="middle" fill="var(--hf-ink-secondary)">IDs tokenised</text>
+            <text x="299" y="85" text-anchor="middle" fill="var(--hf-ink-secondary)">minimised columns</text>
+            <path d="M347,70 L367,70" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c4-arr)"/>
+            <rect x="369" y="44" width="96" height="52" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+            <text x="417" y="61" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Gold</text>
+            <text x="417" y="73" text-anchor="middle" fill="var(--hf-ink-secondary)">labelled, masked</text>
+            <text x="417" y="85" text-anchor="middle" fill="var(--hf-ink-secondary)">per entitlement</text>
+            <text x="63" y="112" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">MINIMISE</text>
+            <text x="63" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)">don&#x27;t extract what</text>
+            <text x="63" y="136" text-anchor="middle" fill="var(--hf-ink-secondary)">no purpose needs</text>
+            <text x="181" y="112" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">RESTRICT</text>
+            <text x="181" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)">pipelines only;</text>
+            <text x="181" y="136" text-anchor="middle" fill="var(--hf-ink-secondary)">no human reads</text>
+            <text x="299" y="112" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">PROTECT</text>
+            <text x="299" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)">tokens replace</text>
+            <text x="299" y="136" text-anchor="middle" fill="var(--hf-ink-secondary)">raw identifiers</text>
+            <text x="417" y="112" text-anchor="middle" fill="var(--hf-success-fg)" font-weight="600">EXPOSE LEAST</text>
+            <text x="417" y="124" text-anchor="middle" fill="var(--hf-ink-secondary)">mask by label,</text>
+            <text x="417" y="136" text-anchor="middle" fill="var(--hf-ink-secondary)">filter by entity</text>
+            <line x1="15" y1="152" x2="465" y2="152" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <rect x="15" y="164" width="140" height="52" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="85" y="181" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Purpose register</text>
+            <text x="85" y="193" text-anchor="middle" fill="var(--hf-ink-secondary)">every personal field</text>
+            <text x="85" y="205" text-anchor="middle" fill="var(--hf-ink-secondary)">has a purpose</text>
+            <rect x="170" y="164" width="140" height="52" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="181" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Retention timers</text>
+            <text x="240" y="193" text-anchor="middle" fill="var(--hf-ink-secondary)">per layer, enforced</text>
+            <text x="240" y="205" text-anchor="middle" fill="var(--hf-ink-secondary)">by a nightly job</text>
+            <rect x="325" y="164" width="140" height="52" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="395" y="181" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Data stays in region</text>
+            <text x="395" y="193" text-anchor="middle" fill="var(--hf-ink-secondary)">cross-border transfers</text>
+            <text x="395" y="205" text-anchor="middle" fill="var(--hf-ink-secondary)">assessed first</text>
+            <rect x="15" y="228" width="450" height="46" rx="3" fill="var(--hf-surface)" stroke="var(--hf-danger-fg)" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="240" y="246" text-anchor="middle" fill="var(--hf-danger-fg)" font-weight="600">Security compromise: notify the Information Regulator and affected people</text>
+            <text x="240" y="262" text-anchor="middle" fill="var(--hf-ink-secondary)">as soon as reasonably possible; the access log (deep-dive 6) says who was affected.</text>
+            <text x="240" y="300" text-anchor="middle" fill="var(--hf-ink-muted)">Not legal advice: confirm interpretations with the Information Officer.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>POPIA turned out to be easier to satisfy in the pipeline than in a policy binder. Its conditions for lawful processing include <strong>processing limitation</strong> (only what is necessary for the purpose), <strong>purpose specification</strong>, <strong>retention limits</strong> and <strong>security safeguards</strong>. Each became an engineering decision at a specific layer of the medallion architecture.</p>
+        <p><strong>Minimise at the source:</strong> the extraction stopped pulling columns no approved purpose needed. The staff medical notes that had been landing "just in case" stopped landing; the safest personal information is the column you never load. <strong>Restrict bronze:</strong> raw data is a locked vault that pipelines read and people do not, with a 90-day retention timer. <strong>Protect in silver:</strong> ID numbers are replaced by stable tokens, so joins still work but the raw value never reaches gold. <strong>Expose least in gold:</strong> personal columns are masked unless the viewer is entitled to that entity, using the labels from deep-dive 2.</p>
+        <p>Around the pipeline, three things made it auditable. A <strong>purpose register</strong> lists each personal field, why it is processed and how long it is kept. A <strong>nightly retention job</strong> enforces the timers, so retention is a fact, not an intention. And the platform keeps data <strong>in region</strong>; any transfer outside South Africa is assessed against POPIA's cross-border rules first. When something does go wrong, POPIA requires notifying the Information Regulator and the people affected; the access log from deep-dive 6 is what makes it possible to say exactly who those people are.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Do</div><ul><li>A purpose for every personal field, written down</li><li>Tokenise identifiers before they reach gold</li><li>Retention enforced by a job, per layer</li><li>The Information Officer reviews the register</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Landing personal data "just in case"</li><li>Raw ID numbers in analytics tables</li><li>Retention as a policy nobody runs</li><li>Masking in the report instead of the data</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c2">Classification</a>, <a href="#c6">Proving it</a>, <a href="08-data-platforms.html#c13">Governance (page 08)</a>, <a href="07-security.html#c6">Encryption</a>, <a href="07-security.html#c3">Secrets management</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 9 Building a Culture of Data Privacy and Security · <a href="books.html#fundamentals-of-data-engineering" title="Fundamentals of Data Engineering">Fundamentals of Data Engineering</a> ch. 10 Security and Privacy</div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab sql active" data-target="c4-sql">SQL · tokens and masking</button><button class="tab py" data-target="c4-py">Python · retention job</button><button class="tab cfg" data-target="c4-cfg">YAML · purpose register</button></div>
+      <div class="code-pane active" id="c4-sql"><pre><span class="c">-- Silver: identifiers become stable tokens; the raw value stays in the bronze vault.</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">silver.customer</span> (
+    <span class="n">customer_key</span>    <span class="t">bigint</span> <span class="k">primary</span> <span class="k">key</span>,
+    <span class="n">entity_code</span>     <span class="t">varchar</span>(<span class="num">6</span>) <span class="k">not</span> <span class="k">null</span>,
+    <span class="n">id_token</span>        <span class="t">text</span> <span class="k">not</span> <span class="k">null</span>,          <span class="c">-- keyed hash of the ID number</span>
+    <span class="n">full_name</span>       <span class="t">text</span>,                   <span class="c">-- label: personal</span>
+    <span class="n">email</span>           <span class="t">text</span>,                   <span class="c">-- label: personal</span>
+    <span class="n">created_on</span>      <span class="t">date</span> <span class="k">not</span> <span class="k">null</span>
+);
+
+<span class="c">-- Gold view: personal columns masked unless the viewer is entitled at clearance 2+.</span>
+<span class="k">create</span> <span class="k">view</span> <span class="n">gold.v_customer_contact</span> <span class="k">as</span>
+<span class="k">select</span> <span class="n">c.customer_key</span>,
+       <span class="n">c.entity_code</span>,
+       <span class="k">case</span> <span class="k">when</span> <span class="n">e.clearance</span> <span class="o">&gt;</span><span class="o">=</span> <span class="num">2</span> <span class="k">then</span> <span class="n">c.full_name</span> <span class="k">else</span> <span class="s">'•••'</span> <span class="k">end</span> <span class="k">as</span> <span class="n">full_name</span>,
+       <span class="k">case</span> <span class="k">when</span> <span class="n">e.clearance</span> <span class="o">&gt;</span><span class="o">=</span> <span class="num">2</span> <span class="k">then</span> <span class="n">c.email</span>     <span class="k">else</span> <span class="s">'•••'</span> <span class="k">end</span> <span class="k">as</span> <span class="n">email</span>
+<span class="k">from</span> <span class="n">silver.customer</span> <span class="n">c</span>
+<span class="k">join</span> <span class="n">security.user_entity</span> <span class="n">e</span>
+  <span class="k">on</span> <span class="n">e.entity_code</span> <span class="o">=</span> <span class="n">c.entity_code</span>
+ <span class="k">and</span> <span class="n">e.user_oid</span> <span class="o">=</span> <span class="k">current_setting</span>(<span class="s">'app.user_oid'</span>)<span class="o">::</span><span class="t">uuid</span>;</pre></div>
+      <div class="code-pane" id="c4-py"><pre><span class="c"># Nightly: enforce retention per layer, and record what was removed.</span>
+<span class="k">from</span> <span class="n">datetime</span> <span class="k">import</span> <span class="n">date</span>, <span class="n">timedelta</span>
+
+<span class="t">RETENTION_DAYS</span> <span class="o">=</span> {<span class="s">"bronze"</span>: <span class="num">90</span>, <span class="s">"silver.customer_inactive"</span>: <span class="num">5</span> <span class="o">*</span> <span class="num">365</span>}
+
+
+<span class="k">def</span> <span class="n">run</span>(<span class="n">db</span>, <span class="n">today</span>: <span class="n">date</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">dict</span>]:
+    <span class="n">removed</span> <span class="o">=</span> []
+    <span class="k">for</span> <span class="n">target</span>, <span class="n">days</span> <span class="k">in</span> <span class="t">RETENTION_DAYS</span>.<span class="n">items</span>():
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">timedelta</span>(<span class="n">days</span><span class="o">=</span><span class="n">days</span>)
+        <span class="n">n</span> <span class="o">=</span> <span class="n">db</span>.<span class="n">delete_older_than</span>(<span class="n">target</span>, <span class="n">cutoff</span>)     <span class="c"># partition drop where possible</span>
+        <span class="n">removed</span>.<span class="n">append</span>({<span class="s">"target"</span>: <span class="n">target</span>, <span class="s">"cutoff"</span>: <span class="n">cutoff</span>.<span class="n">isoformat</span>(), <span class="s">"rows"</span>: <span class="n">n</span>})
+    <span class="n">db</span>.<span class="n">log</span>(<span class="s">"retention"</span>, <span class="n">removed</span>)                     <span class="c"># evidence for deep-dive 6</span>
+    <span class="k">return</span> <span class="n">removed</span></pre></div>
+      <div class="code-pane" id="c4-cfg"><pre><span class="c"># purpose-register.yaml: one entry per personal field, reviewed by the Information Officer.</span>
+- <span class="n">field</span>: <span class="s">silver.customer.email</span>
+  <span class="n">label</span>: <span class="s">personal</span>
+  <span class="n">purpose</span>: <span class="s">delivery</span> <span class="s">notifications</span> <span class="s">and</span> <span class="s">account</span> <span class="s">statements</span>
+  <span class="n">lawful_basis</span>: <span class="s">contract</span>
+  <span class="n">retention</span>: <span class="num">5</span> <span class="s">years</span> <span class="s">after</span> <span class="s">last</span> <span class="s">activity</span>
+  <span class="n">visible_in_gold_to</span>: <span class="s">entitled</span> <span class="s">users</span>, <span class="s">clearance</span> <span class="s">2+</span>
+- <span class="n">field</span>: <span class="s">bronze.erp_customer.id_number</span>
+  <span class="n">label</span>: <span class="s">personal_identifier</span>
+  <span class="n">purpose</span>: <span class="s">credit</span> <span class="s">checks</span> <span class="s">at</span> <span class="s">account</span> <span class="s">opening</span>
+  <span class="n">lawful_basis</span>: <span class="s">contract</span>
+  <span class="n">retention</span>: <span class="num">90</span> <span class="s">days</span> <span class="s">in</span> <span class="s">bronze;</span> <span class="s">token</span> <span class="s">only</span> <span class="s">after</span> <span class="s">that</span>
+  <span class="n">visible_in_gold_to</span>: <span class="s">nobody</span>
+- <span class="n">field</span>: <span class="s">hr.employee.medical_note</span>
+  <span class="n">label</span>: <span class="s">special_personal</span>
+  <span class="n">purpose</span>: <span class="s">none</span> <span class="s">in</span> <span class="s">analytics</span>
+  <span class="n">decision</span>: <span class="s">not</span> <span class="s">extracted</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C5 — OWNERSHIP AND ACCESS ============ -->
+  <section class="pattern" id="c5">
+    <div class="pattern-head"><div class="pattern-num">05</div><div class="pattern-title-wrap"><h2>Ownership, contracts and access requests</h2><div class="pattern-tags"><span class="tag warm">Ops</span><span class="tag deep">Governance</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c5-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">EVERY DATASET HAS AN OWNER; EVERY GRANT HAS AN EXPIRY</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <text x="15" y="40" text-anchor="start" fill="var(--hf-ink-muted)" font-weight="600">OWNERSHIP</text>
+            <rect x="15" y="48" width="140" height="46" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="85" y="62" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Owner</text>
+            <text x="85" y="74" text-anchor="middle" fill="var(--hf-ink-secondary)">business head of</text>
+            <text x="85" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">the domain: decides</text>
+            <rect x="170" y="48" width="140" height="46" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="62" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Steward</text>
+            <text x="240" y="74" text-anchor="middle" fill="var(--hf-ink-secondary)">keeps labels and</text>
+            <text x="240" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">contract current</text>
+            <rect x="325" y="48" width="140" height="46" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="395" y="62" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Platform team</text>
+            <text x="395" y="74" text-anchor="middle" fill="var(--hf-ink-secondary)">enforces; never</text>
+            <text x="395" y="86" text-anchor="middle" fill="var(--hf-ink-secondary)">decides access</text>
+            <line x1="15" y1="108" x2="465" y2="108" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <text x="15" y="126" text-anchor="start" fill="var(--hf-ink-muted)" font-weight="600">ACCESS REQUEST</text>
+            <rect x="15" y="134" width="84" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="57" y="151" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Request</text>
+            <text x="57" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">why, how long</text>
+            <path d="M99,154 L115,154" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c5-arr)"/>
+            <rect x="117" y="134" width="84" height="40" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="159" y="151" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Owner</text>
+            <text x="159" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">approves</text>
+            <path d="M201,154 L217,154" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c5-arr)"/>
+            <rect x="219" y="134" width="84" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="261" y="151" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Group</text>
+            <text x="261" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">membership</text>
+            <path d="M303,154 L319,154" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c5-arr)"/>
+            <rect x="321" y="134" width="66" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="354" y="151" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Table</text>
+            <text x="354" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">next sync</text>
+            <path d="M387,154 L403,154" stroke="var(--hf-success-fg)" stroke-width="1" fill="none" marker-end="url(#c5-arr)"/>
+            <rect x="405" y="134" width="60" height="40" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="435" y="151" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Every</text>
+            <text x="435" y="163" text-anchor="middle" fill="var(--hf-ink-secondary)">door</text>
+            <path d="M259,174 L259,196 L95,196" stroke="var(--hf-warning-fg)" stroke-width="1" fill="none" marker-end="url(#c5-arr)" stroke-dasharray="3 3"/>
+            <text x="180" y="210" text-anchor="middle" fill="var(--hf-warning-fg)">quarterly review: owner re-approves or access lapses</text>
+            <line x1="15" y1="224" x2="465" y2="224" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <rect x="15" y="234" width="450" height="48" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="252" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Data contract on every gold mart: schema, grain, freshness, labels, owner.</text>
+            <text x="240" y="268" text-anchor="middle" fill="var(--hf-ink-secondary)">A breaking change needs the owner&#x27;s approval in CI before it can merge.</text>
+            <text x="240" y="302" text-anchor="middle" fill="var(--hf-ink-muted)">The platform team enforces decisions. Owners make them.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>Rules need people who own them. Every domain (customers, orders, inventory, finance, people) got a named <strong>owner</strong>, a business head who decides who may see the data and why, and a <strong>steward</strong> who keeps its labels and contract current. The platform team's role was redrawn just as clearly: it <strong>enforces</strong> access decisions and never makes them. That one sentence ended the old habit of engineers granting access to whoever asked politely.</p>
+        <p>Access became a short, visible process. A person <strong>requests</strong> access with a reason and a duration; the dataset owner <strong>approves</strong>; approval adds a group membership; the sync from deep-dive 3 carries it to every door. Nothing is granted forever. Every quarter, owners receive the list of who has access to their data and <strong>re-approve or let it lapse</strong>. Access that nobody vouches for disappears, which is how permissions stop accumulating.</p>
+        <p>Each gold mart also got a <strong>data contract</strong>: its schema, grain, freshness promise, column labels and owner, kept next to the dbt model. A pipeline check compares any change against the contract. Adding a column is fine (it arrives unlabelled and hidden), but removing one, changing a type or changing the grain is a <strong>breaking change</strong> that needs the owner's approval before it can merge. Consumers, including the AI assistant, can rely on the contract instead of on hope.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Do</div><ul><li>A named owner per domain who decides access</li><li>Requests with a reason and an expiry</li><li>Quarterly recertification by owners</li><li>Contracts checked in CI on every change</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Engineers granting access on request</li><li>Access that never expires</li><li>Owners in name only, who never review</li><li>Breaking a mart's shape without telling consumers</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c3">One entitlement table</a>, <a href="#c6">Proving it</a>, <a href="08-data-platforms.html#c9">Data contracts</a>, <a href="architecture-decisions.html#c6">Reviews and governance</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 3 Ingredients of Data Governance: People and Processes, ch. 4 Data Governance over a Data Life Cycle</div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab cfg active" data-target="c5-cfg">YAML · data contract</button><button class="tab py" data-target="c5-py">Python · contract check</button><button class="tab sql" data-target="c5-sql">SQL · recertification</button></div>
+      <div class="code-pane active" id="c5-cfg"><pre><span class="c"># contracts/gold.fct_delivery.yaml: kept next to the dbt model.</span>
+<span class="n">dataset</span>: <span class="s">gold.fct_delivery</span>
+<span class="n">owner</span>: <span class="s">head_of_transport</span>            <span class="c"># decides access</span>
+<span class="n">steward</span>: <span class="s">transport_data_steward</span>     <span class="c"># keeps this file current</span>
+<span class="n">grain</span>: <span class="s">one</span> <span class="s">row</span> <span class="s">per</span> <span class="s">delivery</span> <span class="s">stop</span>
+<span class="n">freshness</span>: { <span class="s">max_age_hours:</span> <span class="num">2</span> }
+<span class="n">columns</span>:
+  - { <span class="s">name:</span> <span class="s">delivery_id</span>, <span class="s">type:</span> <span class="s">bigint</span>, <span class="s">label:</span> <span class="s">internal</span> }
+  - { <span class="s">name:</span> <span class="s">entity_code</span>, <span class="s">type:</span> <span class="s">varchar(6)</span>, <span class="s">label:</span> <span class="s">internal</span> }
+  - { <span class="s">name:</span> <span class="s">customer_key</span>, <span class="s">type:</span> <span class="s">bigint</span>, <span class="s">label:</span> <span class="s">internal</span> }
+  - { <span class="s">name:</span> <span class="s">delivered_at</span>, <span class="s">type:</span> <span class="s">timestamptz</span>, <span class="s">label:</span> <span class="s">internal</span> }
+  - { <span class="s">name:</span> <span class="s">driver_name</span>, <span class="s">type:</span> <span class="s">text</span>, <span class="s">label:</span> <span class="s">personal</span> }
+<span class="n">breaking_changes_need</span>: <span class="s">owner_approval</span></pre></div>
+      <div class="code-pane" id="c5-py"><pre><span class="c"># CI: compare a model's new schema with its contract and flag breaking changes.</span>
+<span class="k">def</span> <span class="n">breaking_changes</span>(<span class="n">contract</span>: <span class="t">dict</span>, <span class="n">new_columns</span>: <span class="t">dict</span>[<span class="t">str</span>, <span class="t">str</span>], <span class="n">new_grain</span>: <span class="t">str</span>) <span class="o">-&gt;</span> <span class="t">list</span>[<span class="t">str</span>]:
+    <span class="n">problems</span> <span class="o">=</span> []
+    <span class="n">old</span> <span class="o">=</span> {<span class="n">c</span>[<span class="s">"name"</span>]: <span class="n">c</span>[<span class="s">"type"</span>] <span class="k">for</span> <span class="n">c</span> <span class="k">in</span> <span class="n">contract</span>[<span class="s">"columns"</span>]}
+    <span class="k">for</span> <span class="n">name</span>, <span class="n">typ</span> <span class="k">in</span> <span class="n">old</span>.<span class="n">items</span>():
+        <span class="k">if</span> <span class="n">name</span> <span class="k">not</span> <span class="k">in</span> <span class="n">new_columns</span>:
+            <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"removed column {name}"</span>)
+        <span class="k">elif</span> <span class="n">new_columns</span>[<span class="n">name</span>] <span class="o">!=</span> <span class="n">typ</span>:
+            <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"{name}: type {typ} -&gt; {new_columns[name]}"</span>)
+    <span class="k">if</span> <span class="n">new_grain</span> <span class="o">!=</span> <span class="n">contract</span>[<span class="s">"grain"</span>]:
+        <span class="n">problems</span>.<span class="n">append</span>(<span class="s">f"grain changed: {contract['grain']!r} -&gt; {new_grain!r}"</span>)
+    <span class="k">return</span> <span class="n">problems</span>   <span class="c"># non-empty: the merge needs the owner's approval</span>
+
+
+<span class="c"># New columns are not breaking. They arrive unlabelled and hidden until labelled.</span></pre></div>
+      <div class="code-pane" id="c5-sql"><pre><span class="c">-- Quarterly: what each owner must re-approve, and what lapses if they don't.</span>
+<span class="k">select</span> <span class="n">g.owner</span>,
+       <span class="n">g.dataset</span>,
+       <span class="n">a.user_oid</span>,
+       <span class="n">a.granted_at</span>,
+       <span class="n">a.expires_at</span>,
+       <span class="n">a.reason</span>
+<span class="k">from</span> <span class="n">governance.access_grant</span> <span class="n">a</span>
+<span class="k">join</span> <span class="n">governance.dataset</span> <span class="n">g</span> <span class="k">on</span> <span class="n">g.dataset</span> <span class="o">=</span> <span class="n">a.dataset</span>
+<span class="k">where</span> <span class="n">a.expires_at</span> <span class="o">&lt;</span> <span class="k">now</span>() <span class="o">+</span> <span class="k">interval</span> <span class="s">'30 days'</span>
+   <span class="k">or</span> <span class="n">a.last_reviewed_at</span> <span class="o">&lt;</span> <span class="k">now</span>() <span class="o">-</span> <span class="k">interval</span> <span class="s">'90 days'</span>
+<span class="k">order</span> <span class="k">by</span> <span class="n">g.owner</span>, <span class="n">g.dataset</span>, <span class="n">a.expires_at</span>;</pre></div>
+    </div>
+  </section>
+
+  <!-- ============ C6 — PROVING IT ============ -->
+  <section class="pattern" id="c6">
+    <div class="pattern-head"><div class="pattern-num">06</div><div class="pattern-title-wrap"><h2>Proving it · audit, leak tests and the evidence pack</h2><div class="pattern-tags"><span class="tag hot">Critical</span><span class="tag fresh">Evidence</span></div></div><div class="difficulty">Difficulty<div class="bars"><span class="bar on"></span><span class="bar on"></span><span class="bar on"></span><span class="bar off"></span><span class="bar off"></span></div></div></div>
+    <div class="pattern-body">
+      <div class="diagram-card">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="c6-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--hf-ink-secondary)"/></marker></defs>
+          <text x="240" y="18" text-anchor="middle" fill="var(--hf-ink-muted)" font-family="var(--hf-font-mono)" font-size="10" letter-spacing="2">GOVERNANCE YOU CAN SHOW, NOT JUST CLAIM</text>
+          <g font-family="var(--hf-font-mono)" font-size="8">
+            <rect x="15" y="40" width="140" height="56" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-ink)" stroke-width="1.2"/>
+            <text x="85" y="59" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Access log</text>
+            <text x="85" y="71" text-anchor="middle" fill="var(--hf-ink-secondary)">every read: who, door,</text>
+            <text x="85" y="83" text-anchor="middle" fill="var(--hf-ink-secondary)">dataset, labels, rows</text>
+            <rect x="170" y="40" width="140" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="240" y="59" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Leak tests, daily</text>
+            <text x="240" y="71" text-anchor="middle" fill="var(--hf-ink-secondary)">test users try every</text>
+            <text x="240" y="83" text-anchor="middle" fill="var(--hf-ink-secondary)">door for other entities</text>
+            <rect x="325" y="40" width="140" height="56" rx="3" fill="var(--hf-surface)" stroke="var(--hf-ink)" stroke-width="1"/>
+            <text x="395" y="59" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Reviews</text>
+            <text x="395" y="71" text-anchor="middle" fill="var(--hf-ink-secondary)">quarterly access,</text>
+            <text x="395" y="83" text-anchor="middle" fill="var(--hf-ink-secondary)">labels, purposes</text>
+            <path d="M85,96 L200,136" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c6-arr)"/>
+            <path d="M240,96 L240,136" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c6-arr)"/>
+            <path d="M395,96 L280,136" stroke="var(--hf-info-fg)" stroke-width="1" fill="none" marker-end="url(#c6-arr)"/>
+            <rect x="150" y="138" width="180" height="52" rx="3" fill="var(--hf-surface-alt)" stroke="var(--hf-success-fg)" stroke-width="1.2"/>
+            <text x="240" y="155" text-anchor="middle" fill="var(--hf-ink)" font-weight="600">Evidence pack</text>
+            <text x="240" y="167" text-anchor="middle" fill="var(--hf-ink-secondary)">generated monthly</text>
+            <text x="240" y="179" text-anchor="middle" fill="var(--hf-ink-secondary)">for audit and the IO</text>
+            <line x1="15" y1="206" x2="465" y2="206" stroke="var(--hf-hairline-strong)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <text x="15" y="224" text-anchor="start" fill="var(--hf-ink-muted)" font-weight="600">WHAT IT ANSWERS IN MINUTES</text>
+            <text x="15" y="242" text-anchor="start" fill="var(--hf-ink-secondary)">· Who saw personal data about customer X this year?</text>
+            <text x="15" y="258" text-anchor="start" fill="var(--hf-ink-secondary)">· Can a Namibian user reach South African rows through any door?</text>
+            <text x="15" y="274" text-anchor="start" fill="var(--hf-ink-secondary)">· Which personal fields exist, why, and when are they deleted?</text>
+            <text x="15" y="290" text-anchor="start" fill="var(--hf-ink-secondary)">· After an incident: exactly whose data was exposed?</text>
+            <text x="465" y="306" text-anchor="end" fill="var(--hf-ink-muted)">IO = Information Officer</text>
+          </g>
+        </svg>
+      </div>
+      <div class="explanation">
+        <h3>The story</h3>
+        <p>The last step turned promises into evidence. Every door writes to one <strong>access log</strong>: who read, through which door, which dataset, which column labels and how many rows. With the AI assistant that includes the tool calls and retrieved documents, tied to the person who asked. The log is what answers the hard questions in minutes: who saw this customer's personal data this year, and, after an incident, exactly whose data was exposed, which POPIA's notification duty depends on.</p>
+        <p>Then the rules are tested the way code is. Every night, <strong>leak tests</strong> sign in as test users with known entitlements and try every door: a Namibia-only user queries South African rows through Power BI's dataset, the SQL endpoint, the API and the assistant. Any row that comes back fails the run and pages the platform team. The same suite runs in CI before any change to a view, a policy or the sync. Governance that is tested daily cannot drift silently.</p>
+        <p>Finally, a monthly <strong>evidence pack</strong> is generated, not assembled: the leak-test history, access-review outcomes, label coverage, the purpose register and retention-job results. The Information Officer and auditors read the same pack. The measurable results for Northwind: one source of access rules instead of four; every gold column labelled; zero cross-entity rows in daily tests; access requests granted in a day instead of a week; and the next audit took an afternoon. Each decision on this page has an <a href="architecture-decisions.html">ADR</a>, so the next architect knows why.</p>
+        <div class="callout"><div class="callout-box use"><div class="label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Prove with</div><ul><li>One access log across every door, including the AI</li><li>Daily leak tests as test users, per door</li><li>The same tests in CI before policy changes</li><li>An evidence pack generated, not assembled</li></ul></div><div class="callout-box avoid"><div class="label"><i class="bi bi-x-circle" aria-hidden="true"></i> Avoid</div><ul><li>Logs per tool that cannot be joined</li><li>Testing access once, at go-live</li><li>Evidence assembled by hand before an audit</li><li>Metrics nobody owns or reads</li></ul></div></div>
+        <div class="connects"><strong>Connects to</strong> <a href="#c3">One entitlement table</a>, <a href="#c4">POPIA in the pipeline</a>, <a href="07-security.html#c8">Audit logging</a>, <a href="ai-operations-assistant.html#c7">Evaluation and observability</a>, <a href="architecture-decisions.html#c5">Writing an ADR</a></div>
+        <div class="reading"><i class="bi bi-journal-bookmark" aria-hidden="true"></i> <strong>Read:</strong> <a href="books.html#data-governance-definitive-guide" title="Data Governance: The Definitive Guide">Data Governance</a> ch. 8 Monitoring · <a href="books.html#data-quality-fundamentals" title="Data Quality Fundamentals">Data Quality Fundamentals</a> ch. 7 Building End-to-End Lineage</div>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-tabs"><button class="tab py active" data-target="c6-py">Python · leak tests</button><button class="tab sql" data-target="c6-sql">SQL · audit questions</button><button class="tab cfg" data-target="c6-cfg">YAML · evidence pack</button></div>
+      <div class="code-pane active" id="c6-py"><pre><span class="c"># Nightly and in CI: every door, as test users with known entitlements.</span>
+<span class="k">import</span> <span class="n">pytest</span>
+
+<span class="t">DOORS</span> <span class="o">=</span> [<span class="s">"power_bi_dataset"</span>, <span class="s">"sql_endpoint"</span>, <span class="s">"marts_api"</span>, <span class="s">"ai_assistant"</span>]
+<span class="t">CASES</span> <span class="o">=</span> [
+    (<span class="s">"test_dispatcher_na"</span>, {<span class="s">"NCC-NA"</span>}),
+    (<span class="s">"test_cs_agent_za"</span>, {<span class="s">"NCC-ZA"</span>}),
+]
+
+
+<span class="o">@</span><span class="n">pytest</span>.<span class="n">mark</span>.<span class="n">parametrize</span>(<span class="s">"door"</span>, <span class="t">DOORS</span>)
+<span class="o">@</span><span class="n">pytest</span>.<span class="n">mark</span>.<span class="n">parametrize</span>(<span class="s">"user,entitled"</span>, <span class="t">CASES</span>)
+<span class="k">def</span> <span class="n">test_no_cross_entity_rows</span>(<span class="n">door</span>, <span class="n">user</span>, <span class="n">entitled</span>, <span class="n">clients</span>):
+    <span class="n">client</span> <span class="o">=</span> <span class="n">clients</span>.<span class="n">sign_in</span>(<span class="n">door</span>, <span class="n">user</span>)
+    <span class="n">entities_seen</span> <span class="o">=</span> <span class="n">client</span>.<span class="n">entities_in</span>(<span class="s">"gold.fct_delivery"</span>)
+    <span class="k">assert</span> <span class="n">entities_seen</span> <span class="o">&lt;=</span> <span class="n">entitled</span>, <span class="s">f"{user} saw {entities_seen - entitled} via {door}"</span>
+
+
+<span class="o">@</span><span class="n">pytest</span>.<span class="n">mark</span>.<span class="n">parametrize</span>(<span class="s">"door"</span>, <span class="t">DOORS</span>)
+<span class="k">def</span> <span class="n">test_identifiers_never_raw</span>(<span class="n">door</span>, <span class="n">clients</span>):
+    <span class="n">client</span> <span class="o">=</span> <span class="n">clients</span>.<span class="n">sign_in</span>(<span class="n">door</span>, <span class="s">"test_manager_group"</span>)
+    <span class="k">assert</span> <span class="k">not</span> <span class="n">client</span>.<span class="n">any_value_matches</span>(<span class="s">"gold.v_customer_contact"</span>, <span class="n">r</span><span class="s">"^\d{13}$"</span>)</pre></div>
+      <div class="code-pane" id="c6-sql"><pre><span class="c">-- Who read personal data about one customer this year, through which door?</span>
+<span class="k">select</span> <span class="n">a.read_at</span>,
+       <span class="n">a.user_oid</span>,
+       <span class="n">a.door</span>,
+       <span class="n">a.dataset</span>,
+       <span class="n">a.row_count</span>
+<span class="k">from</span> <span class="n">governance.access_log</span> <span class="n">a</span>
+<span class="k">where</span> <span class="n">a.labels</span> &amp;&amp; <span class="n">array</span>[<span class="s">'personal'</span>, <span class="s">'personal_identifier'</span>]
+  <span class="k">and</span> <span class="n">a.customer_keys</span> @<span class="o">&gt;</span> <span class="n">array</span>[<span class="num">48213</span>]<span class="o">::</span><span class="t">bigint</span>[]
+  <span class="k">and</span> <span class="n">a.read_at</span> <span class="o">&gt;</span><span class="o">=</span> <span class="n">date_trunc</span>(<span class="s">'year'</span>, <span class="k">now</span>())
+<span class="k">order</span> <span class="k">by</span> <span class="n">a.read_at</span>;
+
+<span class="c">-- Label coverage for the evidence pack: share of gold columns confirmed by an owner.</span>
+<span class="k">select</span> <span class="n">round</span>(<span class="num">100.0</span> <span class="o">*</span> <span class="n">count</span>(<span class="o">*</span>) <span class="k">filter</span> (<span class="k">where</span> <span class="n">confirmed_by</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>) <span class="o">/</span> <span class="n">count</span>(<span class="o">*</span>), <span class="num">1</span>) <span class="k">as</span> <span class="n">pct_confirmed</span>
+<span class="k">from</span> <span class="n">governance.column_label</span>
+<span class="k">where</span> <span class="n">table_schema</span> <span class="o">=</span> <span class="s">'gold'</span>;</pre></div>
+      <div class="code-pane" id="c6-cfg"><pre><span class="c"># evidence-pack.yaml: generated on the 1st of every month.</span>
+<span class="n">audience</span>: [<span class="s">information_officer</span>, <span class="s">internal_audit</span>]
+<span class="n">sections</span>:
+  - <span class="n">leak_tests</span>: { <span class="s">period:</span> <span class="s">last_30_days</span>, <span class="s">expect_failures:</span> <span class="num">0</span> }
+  - <span class="n">access_reviews</span>: { <span class="s">quarter:</span> <span class="s">current</span>, <span class="s">show:</span> [<span class="s">approved</span>, <span class="s">lapsed</span>, <span class="s">overdue</span>] }
+  - <span class="n">label_coverage</span>: { <span class="s">schema:</span> <span class="s">gold</span>, <span class="s">expect_pct:</span> <span class="num">100</span> }
+  - <span class="n">purpose_register</span>: { <span class="s">changed_since_last_pack:</span> <span class="k">true</span> }
+  - <span class="n">retention_runs</span>: { <span class="s">period:</span> <span class="s">last_30_days</span> }
+  - <span class="n">incidents</span>: { <span class="s">period:</span> <span class="s">last_30_days</span>, <span class="s">with_affected_people:</span> <span class="k">true</span> }
+<span class="n">delivery</span>: <span class="s">secure_share</span>
+<span class="n">retention_years</span>: <span class="num">5</span></pre></div>
+    </div>
+  </section>
+
+
+  <footer>
+    <p class="big">Count it, label it, own it, enforce it once, and prove it every day.</p>
+    <p>backend.systems · practice · data governance case study</p>
+    <p class="colophon">The situation <span>·</span> Classification <span>·</span> One entitlement table <span>·</span> POPIA in the pipeline <span>·</span> Ownership and access <span>·</span> Proving it</p>
+  </footer>
+
+      </div>
+    </main>
+
+  </div><!-- /.hf-main -->
+</div><!-- /.hf-shell -->
+
+<script src="assets/site-ui/site-ui.js"></script>
+<script src="assets/js/katas.js"></script>
+</body>
+</html>
