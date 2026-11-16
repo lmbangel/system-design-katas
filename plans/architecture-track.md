@@ -28,15 +28,19 @@ talk about in interviews and with stakeholders.
 | Quarter | Exam (target) | Track content that prepares you |
 |---|---|---|
 | **Q4 2026** | **AZ-104** Azure Administrator: sit **week of 30 Nov** | Sprint 1: Azure foundations + the company AI harness (work) |
-| **Q1 2027** | **SC-500** Cloud and AI Security Engineer: sit **week of 1 Feb** | Sprint 2: security architecture, AI security, then secure delivery |
+| **Q1 2027** | **Databricks Certified Data Engineer Associate**: sit **by 5 Mar** | Sprint 2: dimensional modelling, correctness, orchestration, Spark and Delta, governance |
 | **Q2 2027** | **AZ-305** Azure Solutions Architect: sit **late June** → with AZ-104, *Azure Solutions Architect Expert* | Sprint 3: reliability, data platform, AI architecture, capstones |
-| **Q3 2027** | **AWS Solutions Architect – Associate**: sit **late September** | Sprint 4: translate every Azure decision to AWS, and back |
-| *later, optional* | SC-100 Cybersecurity Architect | Check whether SC-500 counts as a prerequisite first |
+| **Q3 2027** | **Databricks Certified Generative AI Engineer Associate**: sit **by 24 Sep** | Sprint 4: RAG, agents and tools, evaluation, serving and cost, building the minimal Applied D |
 
-**Stretch option:** sit SC-500 in December instead, *only if* AZ-104 is
-passed by about 20 November *and* SC-500 practice tests score 80%+ by
-early December. That means ~15 h/week through December leave. Decide on
-1 December, not now.
+**Four certifications, no more** (decided 16 Nov 2026): Azure Solutions
+Architect Expert (AZ-104 + AZ-305), Databricks Data Engineer Associate and
+Databricks Generative AI Engineer Associate. Together they say *data and AI
+architect*. Dropped: SC-500 (no exam page found on Microsoft Learn on
+16 Nov 2026), AWS Solutions Architect – Associate and SC-100. Security stays
+in the plan as knowledge, without an exam. Microsoft retired AI-102 on
+30 June 2026, which is why the AI certification is Databricks'. Swap the
+Databricks Data Engineer exam for DP-700 (Fabric Data Engineer) only if the
+work platform moves to Fabric.
 
 **Booking:** book each exam when you start its sprint. A date makes the plan
 real. Pearson VUE allows rescheduling ahead of time (check the current
@@ -63,7 +67,7 @@ roadmap page under "Your week".
 - **Concept order:** the learning map's architect path, two concepts a week
   (about 10-12 months for all of it). Concepts that repeat each other count as
   one session. When a sprint covers the same ground, take the concepts from its
-  page: 07 during Sprint 2, 08 during Sprint 3's data weeks.
+  page: 08 during Sprint 2, 07 during Q1's security weeks.
 - **Exam weeks:** the last week of each sprint flips to 7 h of practice tests
   and weak areas, 1 h concept review, coding stays at 2 h.
 - **Once a month:** Sunday becomes a mock interview: one applied design,
@@ -136,43 +140,40 @@ storage should be around 70% or better by now. If networking is still under
 
 ---
 
-## Sprint 2: SC-500 + security architecture (7 Dec 2026 - 5 Feb 2027)
+## Sprint 2: Databricks Data Engineer Associate + data engineering depth (7 Dec 2026 - 5 Mar 2027)
 
-SC-500 domains: identity, access and governance (20-25%) · storage,
-databases and networking (25-30%) · compute (20-25%) · security posture
-(20-25%). **AI security is new and gets 25-30% of study time**, despite its
-modest weight on paper: it's the newest content and the most relevant to
-your work.
+The skill to be expert in, made official. Read *Fundamentals of Data
+Engineering* end to end through this sprint, with the Kimball chapters as
+listed. Practise on a free Databricks workspace (Free Edition or a trial).
+Weeks 11-12 fall over the December break and are kept light.
 
-Weeks 11-12 fall over the December break: keep them light (one block each)
-or use them as catch-up. That's already built into the dates.
-
-| Wk | Starts | SC-500 domain | The architect's decision | Prove / output |
+| Wk | Starts | Topic | The architect's decision | Prove / output |
 |---|---|---|---|---|
-| 9 | 7 Dec | Threat modelling (the frame for everything after) | **What could go wrong, and what matters most?** | A threat model of the AI harness: data flows, trust boundaries, STRIDE |
-| 10 | 14 Dec | Identity and access: conditional access, ID Protection, PIM, app and workload identities | **Which OAuth flow, and how much standing access?** | A sequence diagram per flow; just-in-time admin with PIM |
-| 11 | 21 Dec | *Holiday: light.* Governance: Azure Policy at scale, Defender for Cloud regulatory compliance | **How do you keep a fleet compliant without reviewing every change?** | A policy initiative assigned and its compliance report read |
-| 12 | 28 Dec | *Holiday: light.* Catch-up week | | |
-| 13 | 4 Jan | Storage and databases: Key Vault, encryption and keys, SQL security; data governance: classification and sensitivity labels, masking, row-level security, ownership in a catalog (Purview), access audit, POPIA | **Who can see which data, and how is that enforced?** | An app with no secrets in config; RLS + masking for one consumer and for the harness, driven by column labels, with every read in an access log |
-| 14 | 11 Jan | Network security: Firewall, WAF, private endpoints, DDoS, egress control | **Private by default: what does it cost and what does it buy?** | The Sprint 1 network re-reviewed against the threat model |
-| 15 | 18 Jan | Compute security: VMs, containers, App Service, managed identities, secure delivery (CI/CD with **OIDC, no stored credentials**) | **How does code reach production without anyone holding a key?** | A pipeline deploying to Azure with no stored credential |
-| 16 | 25 Jan | **AI security**: Entra Agent ID, Defender for AI, AI gateway, prompt injection through data, tool permissions; posture: secure score, Sentinel basics | **What can an AI agent do, as whom, and how would you know?** | The harness threat model revisited for AI; an alert on a suspicious agent action |
-| 17 | 1 Feb | **Practice tests → sit SC-500** | | |
+| 9 | 7 Dec | Dimensional modelling (Kimball ch. 1-2) | **What is the grain, and which facts and dimensions follow?** | One sample mart as a star schema, grain in one sentence |
+| 10 | 14 Dec | Modelling your domain (Kimball ch. 4, 5, 6, 7, 12) | **Snapshot, transaction or accumulating fact?** | A bus matrix for a fictional distribution group |
+| 11 | 21 Dec | *Holiday: light.* Reading week (*Fundamentals of Data Engineering*) | | |
+| 12 | 28 Dec | *Holiday: light.* Catch-up | | |
+| 13 | 4 Jan | Data correctness: reconciliation, dbt tests, contracts (*Data Quality Fundamentals* ch. 3-5) | **How do you prove the numbers match the source?** | Reconciliation tests that fail a bad load |
+| 14 | 11 Jan | Orchestration: assets, partitions, backfills | **How does a pipeline recover without double-loading?** | A partitioned backfill and a safe one-day rerun |
+| 15 | 18 Jan | Spark and Delta Lake | **When does a single node stop being enough?** | The same mart on DuckDB and on Databricks, time and cost compared |
+| 16 | 25 Jan | Incremental ingestion and CDC, medallion layers | **Full, incremental or CDC per source?** | Bronze to gold for one source, incremental and rerunnable |
+| 17 | 1 Feb | Declarative pipelines and jobs | **Declarative or hand-written: what do you give up?** | A scheduled pipeline with data-quality expectations |
+| 18 | 8 Feb | Governance: Unity Catalog, masking, row filters, POPIA (*Data Governance* ch. 7) | **Who can see which data, and how is that enforced?** | Row-level access for two users from one entitlement table |
+| 19 | 15 Feb | Identity and security for data | **How do pipelines reach data without a shared key?** | A pipeline with no stored credential |
+| 20-21 | 22 Feb | **Practice tests → sit Databricks Data Engineer Associate** (by 5 Mar) | | |
 
-**Exit:** SC-500 passed; a reviewed, threat-modelled design for the work AI harness.
+**Exit:** Databricks Data Engineer Associate passed; correctness and governance proven on sample data.
 
 ---
 
-## Q1 remainder: security review and delivery architecture (8 Feb - 2 Apr 2027)
+## Q1 remainder: AI security and delivery (8 Mar - 2 Apr 2027)
 
-From here, rows carry dates rather than week numbers.
-
-| Weeks of | Topic | The decisions |
+| Week of | Topic | The decisions |
 |---|---|---|
-| 8 Feb, 15 Feb | **Security review and governance** | Running a security architecture review; risk registers; controls frameworks (CIS, ISO 27001) at stakeholder depth; a review template you can use at work |
-| 22 Feb, 1 Mar | **Delivery architecture** | Environments and promotion, release strategies, feature flags; infrastructure as code as a team practice (modules, review, drift, ownership) |
-| 8 Mar, 15 Mar | **Reliability and cost** | SLOs and error budgets, failure-mode analysis, the Well-Architected Framework as a review method; FinOps, cost models, managed vs self-run |
-| 22 Mar, 29 Mar | **Buffer** (Easter falls here) | Catch up, or start the AZ-305 reading early |
+| 8 Mar | **AI security and guardrails** | Threat model an AI system; prompt injection through data; tool permissions (*AI Engineering* ch. 5; Applied D §5-6) |
+| 15 Mar | **Secure delivery** | Environments and promotion; CI/CD with OIDC and no stored credentials |
+| 22 Mar | **Reliability and cost** | SLOs and error budgets, Well-Architected reviews, FinOps and cost models |
+| 29 Mar | **Buffer** (Easter) | Catch up, or start the AZ-305 reading early |
 
 ---
 
@@ -195,20 +196,19 @@ and monitoring; data storage; business continuity; infrastructure.
 
 ---
 
-## Sprint 4: AWS Solutions Architect - Associate (5 Jul - 30 Sep 2027)
+## Sprint 4: Databricks Generative AI Engineer Associate (5 Jul - 30 Sep 2027)
 
-You learn AWS by **translating**, not from scratch: each week takes an Azure
-decision you've already made and redoes it in AWS (and the AWS
-Well-Architected Framework). That comparison is also strong interview
-material: "in Azure I'd use X, in AWS Y, because…".
+Build the minimal Applied D as you go: the same retrieval, tools and
+evaluation, on your own sample data. Microsoft retired AI-102 in June 2026,
+so this is the AI certification.
 
-| Weeks of | Translate |
-|---|---|
-| 5 Jul, 12 Jul | Identity and access (IAM, Organizations, SCPs vs Entra/RBAC/Policy) |
-| 19 Jul, 26 Jul | Networking (VPC, security groups vs NSGs, PrivateLink vs private endpoints) |
-| 2 Aug, 9 Aug | Compute and storage (EC2/Lambda/ECS vs VMs/Functions/Container Apps; S3 vs Blob) |
-| 16 Aug, 23 Aug | Data, resilience and cost (RDS/Aurora/DynamoDB, Kinesis vs Event Hubs, Lake Formation vs Purview, multi-AZ/region, cost tools) |
-| 30 Aug - 30 Sep | Practice tests → sit AWS SAA (mid-to-late September), with a buffer week |
+| Weeks of | Topic | Prove |
+|---|---|---|
+| 5 Jul, 12 Jul | RAG on your own data (*AI Engineering* ch. 6; Applied D §3) | Hybrid retrieval with recall@6 measured |
+| 19 Jul, 26 Jul | Agents and tools, MCP (Applied D §2, §4) | One read tool, one confirmed write tool |
+| 2 Aug, 9 Aug | Evaluation and monitoring (*AI Engineering* ch. 3-4; Applied D §7) | An eval gate in CI |
+| 16 Aug, 23 Aug | Serving, governance and cost (*AI Engineering* ch. 9-10; Applied D §5, §8) | Cost per question; an access test across two users |
+| 30 Aug - 30 Sep | Practice tests → sit by 24 Sep, with a buffer week | |
 
 ---
 
@@ -219,8 +219,8 @@ the ADRs and proofs:
 
 | Page | From |
 |---|---|
-| **08 · Security architecture** (deeper than 07) | Sprint 2 + Q1 |
-| **09 · Cloud architecture: Azure and AWS** | Sprints 1, 3, 4 |
+| **08 · Security architecture** (deeper than 07) | Q1 + Sprint 3 |
+| **09 · Cloud architecture: Azure** | Sprints 1, 3 |
 | **10 · Data platform architecture** | Sprint 3 |
 | **11 · AI architecture** | Sprints 1-3 |
 | **Applied C · Lakehouse under three constraints** | Sprint 3 |
