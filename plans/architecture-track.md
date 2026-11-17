@@ -30,17 +30,18 @@ talk about in interviews and with stakeholders.
 | **Q4 2026** | **AZ-104** Azure Administrator: sit **week of 30 Nov** | Sprint 1: Azure foundations + the company AI harness (work) |
 | **Q1 2027** | **Databricks Certified Data Engineer Associate**: sit **by 5 Mar** | Sprint 2: dimensional modelling, correctness, orchestration, Spark and Delta, governance |
 | **Q2 2027** | **AZ-305** Azure Solutions Architect: sit **late June** → with AZ-104, *Azure Solutions Architect Expert* | Sprint 3: reliability, data platform, AI architecture, capstones |
-| **Q3 2027** | **Databricks Certified Generative AI Engineer Associate**: sit **by 24 Sep** | Sprint 4: RAG, agents and tools, evaluation, serving and cost, building the minimal Applied D |
+| **Q3 2027** | **AI-103** Azure AI Apps and Agents Developer Associate: sit **by 24 Sep** | Sprint 4: Azure AI solution planning, RAG, agents and tools, evaluation and safety, document extraction, building the minimal Applied D on Foundry |
 
-**Four certifications, no more** (decided 16 Nov 2026): Azure Solutions
-Architect Expert (AZ-104 + AZ-305), Databricks Data Engineer Associate and
-Databricks Generative AI Engineer Associate. Together they say *data and AI
-architect*. Dropped: SC-500 (no exam page found on Microsoft Learn on
-16 Nov 2026), AWS Solutions Architect – Associate and SC-100. Security stays
-in the plan as knowledge, without an exam. Microsoft retired AI-102 on
-30 June 2026, which is why the AI certification is Databricks'. Swap the
-Databricks Data Engineer exam for DP-700 (Fabric Data Engineer) only if the
-work platform moves to Fabric.
+**Four certifications, no more** (decided 16 Nov 2026, AI exam changed
+17 Nov 2026): Azure Solutions Architect Expert (AZ-104 + AZ-305), Databricks
+Data Engineer Associate, and AI-103 Azure AI Apps and Agents Developer
+Associate, which replaced AI-102 in 2026. Together they say *data and AI
+architect* in a Microsoft estate. Not chosen: SC-500 Cloud and AI Security
+Engineer (it exists and replaced AZ-500, but security stays in the plan as
+knowledge, without an exam), the Databricks Generative AI Engineer (AI-103
+fits the Azure work better), AWS Solutions Architect – Associate and SC-100.
+Swap the Databricks Data Engineer exam for DP-700 (Fabric Data Engineer)
+only if the work platform moves to Fabric.
 
 **Booking:** book each exam when you start its sprint. A date makes the plan
 real. Pearson VUE allows rescheduling ahead of time (check the current
@@ -196,19 +197,23 @@ and monitoring; data storage; business continuity; infrastructure.
 
 ---
 
-## Sprint 4: Databricks Generative AI Engineer Associate (5 Jul - 30 Sep 2027)
+## Sprint 4: AI-103 Azure AI Apps and Agents Developer Associate (5 Jul - 3 Oct 2027)
 
-Build the minimal Applied D as you go: the same retrieval, tools and
-evaluation, on your own sample data. Microsoft retired AI-102 in June 2026,
-so this is the AI certification.
+Build the minimal Applied D as you go, on Microsoft Foundry: the same
+retrieval, tools and evaluation, on your own sample data. AI-103 measures
+planning and managing an Azure AI solution, generative AI and agentic
+solutions, computer vision, text analysis and information extraction.
+Microsoft renames AI services often: check names against the current AI-103
+study guide when the sprint starts.
 
 | Weeks of | Topic | Prove |
 |---|---|---|
-| 5 Jul, 12 Jul | RAG on your own data (*AI Engineering* ch. 6; Applied D §3) | Hybrid retrieval with recall@6 measured |
-| 19 Jul, 26 Jul | Agents and tools, MCP (Applied D §2, §4) | One read tool, one confirmed write tool |
-| 2 Aug, 9 Aug | Evaluation and monitoring (*AI Engineering* ch. 3-4; Applied D §7) | An eval gate in CI |
-| 16 Aug, 23 Aug | Serving, governance and cost (*AI Engineering* ch. 9-10; Applied D §5, §8) | Cost per question; an access test across two users |
-| 30 Aug - 30 Sep | Practice tests → sit by 24 Sep, with a buffer week | |
+| 5 Jul, 12 Jul | Plan and manage an Azure AI solution: Foundry projects, model deployments, keyless access with Entra and managed identities, quotas, cost, monitoring | A Foundry setup from Bicep with no stored key |
+| 19 Jul, 26 Jul | RAG on your own data: Azure AI Search, hybrid and semantic ranking, citations (*AI Engineering* ch. 6; Applied D §3) | Hybrid retrieval with recall@6 measured |
+| 2 Aug, 9 Aug | Agents and tools: Foundry agents, tool calling, MCP, multi-agent, confirmed writes (Applied D §2, §4) | One read tool, one confirmed write tool |
+| 16 Aug | Evaluation, safety and cost (*AI Engineering* ch. 3-4, 9; Applied D §6-8) | An eval gate in CI |
+| 23 Aug, 30 Aug | Vision, language and document extraction: Document Intelligence, PII detection, text analysis, vision basics (exam depth) | Fields from a sample delivery note; PII detection feeding the governance scanner |
+| 6 Sep - 3 Oct | Practice tests → sit by 24 Sep, with a buffer week | |
 
 ---
 
